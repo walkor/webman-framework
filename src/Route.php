@@ -82,6 +82,15 @@ class Route
     {
         static::addRoute('DELETE', $path, $callback);
     }
+    
+    /**
+     * @param $path
+     * @param $callback
+     */
+    public static function head($path, $callback)
+    {
+        static::addRoute('HEAD', $path, $callback);
+    }
 
     /**
      * @param $path
