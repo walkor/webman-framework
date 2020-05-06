@@ -13,15 +13,16 @@
  */
 namespace Webman\Exception;
 
-use support\Request;
 use Throwable;
 use Psr\Log\LoggerInterface;
+use support\Request;
+use support\Response;
 
 /**
  * Class Handler
  * @package support\exception
  */
-class ExceptionHandler
+class ExceptionHandler implements ExceptionHandlerInterface
 {
     /**
      * @var LoggerInterface
@@ -46,7 +47,7 @@ class ExceptionHandler
         $this->_logger->error($exception->getMessage(), ['exception' => (string)$exception]);
     }
 
-    public function render(Request $request, Throwable $exception)
+    public function render(Request $request, Throwable $exception) : Response
     {
         if (\method_exists($exception, 'render')) {
             return $exception->render();
@@ -58,7 +59,7 @@ class ExceptionHandler
             $debug && $json['traces'] = (string)$exception;
             return json($json,  JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         }
-        $error = $debug ? (string)$exception : 'Server internal error';
+        $error = $debug ? nl2br((string)$exception) : 'Server internal error';
         return response($error, 500);
     }
 

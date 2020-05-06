@@ -19,6 +19,7 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use support\Request;
 use support\Response;
+use Webman\Exception\ExceptionHandlerInterface;
 use support\exception\Handler;
 use FastRoute\Dispatcher;
 use support\bootstrap\Log;
@@ -143,8 +144,11 @@ class App
             static::send($connection, $callback($request), $request);
         } catch (\Throwable $e) {
             try {
-                /** @var Handler $exception_handler */
-                $exception_handler = \singleton(Handler::class, [Log::channel('default')]);
+                $app = $request->app ? : '';
+                $exception_config = config('exception');
+                $exception_handler_class = $exception_config[$app] ?? Handler::class;
+                /** @var ExceptionHandlerInterface $exception_handler */
+                $exception_handler = \singleton($exception_handler_class, [Log::channel('default')]);
                 $exception_handler->report($e);
                 $response = $exception_handler->render($request, $e);
                 static::send($connection, $response, $request);
