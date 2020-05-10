@@ -54,7 +54,7 @@ class App
     /**
      * @var string
      */
-    protected static $_configPAth = '';
+    protected static $_configPath = '';
 
     /**
      * @var TcpConnection
