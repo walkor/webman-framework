@@ -132,7 +132,12 @@ class App
 
             $controller_and_action = static::parseControllerAction($path);
             if (!$controller_and_action) {
-                static::send404($connection, $request);
+                // when route, controller and action not found, try to use Route::fallback
+                if (($fallback = Route::getFallback()) !== null) {
+                    static::send($connection, $fallback($request), $request);
+                } else {
+                    static::send404($connection, $request);
+                }
                 return null;
             }
             $app = $controller_and_action['app'];

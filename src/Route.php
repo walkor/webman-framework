@@ -37,6 +37,10 @@ class Route
      */
     protected static $_hasRoute = false;
 
+    /**
+     * @var null|callable
+     */
+    protected static $_fallback = null;
 
     /**
      * @param $path
@@ -160,5 +164,21 @@ class Route
     public static function setCollector($route)
     {
         static::$_collector = $route;
+    }
+
+    /**
+     * @param callable $callback
+     */
+    public static function fallback(callable $callback) {
+        if (is_callable($callback)) {
+            static::$_fallback = $callback;
+        }
+    }
+
+    /**
+     * @return callable|null
+     */
+    public static function getFallback() {
+        return is_callable(static::$_fallback) ? static::$_fallback : null;
     }
 }
