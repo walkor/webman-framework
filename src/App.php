@@ -34,12 +34,12 @@ class App
     /**
      * @var bool
      */
-    protected static $_enableStatic = true;
+    protected static $_supportStaticFiles = true;
 
     /**
      * @var bool
      */
-    protected static $_enablePHP = false;
+    protected static $_supportPHPFiles = false;
 
     /**
      * @var array
@@ -96,6 +96,8 @@ class App
         if ($max_requst_count > 0) {
             static::$_maxRequestCount = $max_requst_count;
         }
+        static::$_supportStaticFiles = config('server.support_static_files', true);
+        static::$_supportPHPFiles = config('server.support_php_files', false);
     }
 
     /**
@@ -286,6 +288,9 @@ class App
             return true;
         }
         if (\pathinfo($file, PATHINFO_EXTENSION) === 'php') {
+            if (!static::$_supportPHPFiles) {
+                return false;
+            }
             static::$_callbacks[$key] = [function ($request) use ($file) {
                 return static::execPhpFile($file);
             }, '', '', ''];
@@ -293,6 +298,11 @@ class App
             static::send($connection, static::execPhpFile($file), $request);
             return true;
         }
+
+        if (!static::$_supportStaticFiles) {
+            return false;
+        }
+
         static::$_callbacks[$key] = [function ($request) use ($file) {
             return (new Response())->file($file);
         }, '', '', ''];
