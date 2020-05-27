@@ -184,10 +184,14 @@ class App
             }, function ($request) use ($call, $args) {
 
                 if ($args === null) {
-                    return $call($request);
+                    $response = $call($request);
                 } else {
-                    return $call($request, ...$args);
+                    $response = $call($request, ...$args);
                 }
+                if (\is_scalar($response) || null === $response) {
+                    $response = new Response(200, [], $response);
+                }
+                return $response;
             });
         } else {
             if ($args === null) {
