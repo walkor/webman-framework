@@ -38,13 +38,13 @@ class Middleware
     }
 
 
-    public static function getMiddleware($app_name)
+    public static function getMiddleware($app_name, $with_global_middleware = true)
     {
-        $global_middleware = isset(static::$_instances['']) ? static::$_instances[''] : [];
+        $global_middleware = $with_global_middleware && isset(static::$_instances['']) ? static::$_instances[''] : [];
         if ($app_name === '') {
             return \array_reverse($global_middleware);
         }
-        $app_middleware = isset(static::$_instances[$app_name]) ? static::$_instances[$app_name] : [];
+        $app_middleware = static::$_instances[$app_name] ?? [];
         return \array_reverse($global_middleware + $app_middleware);
     }
 

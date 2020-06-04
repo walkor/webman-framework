@@ -90,14 +90,15 @@ class App
         static::loadController(app_path());
         Route::load(config_path() . '/route.php');
         Middleware::load(config('middleware', []));
+        Middleware::load(['__static__' => config('static.middleware', [])]);
         Http::requestClass($request_class);
         static::onWorkerStart($worker);
         $max_requst_count = (int)config('server.max_request');
         if ($max_requst_count > 0) {
             static::$_maxRequestCount = $max_requst_count;
         }
-        static::$_supportStaticFiles = config('server.support_static_files', true);
-        static::$_supportPHPFiles = config('server.support_php_files', false);
+        static::$_supportStaticFiles = config('static.enable', true);
+        static::$_supportPHPFiles = config('app.support_php_files', false);
     }
 
     /**
@@ -172,10 +173,10 @@ class App
      * @param null $args
      * @return \Closure|mixed
      */
-    protected static function getCallback($app, $call, $args = null)
+    protected static function getCallback($app, $call, $args = null, $with_global_middleware = true)
     {
         $args = $args === null ? null : \array_values($args);
-        $middleware = Middleware::getMiddleware($app);
+        $middleware = Middleware::getMiddleware($app, $with_global_middleware);
         if ($middleware) {
             $callback = array_reduce($middleware, function ($carry, $pipe) {
                 return function ($request) use ($carry, $pipe) {
@@ -307,11 +308,11 @@ class App
             return false;
         }
 
-        static::$_callbacks[$key] = [function ($request) use ($file) {
+        static::$_callbacks[$key] = [static::getCallback('__static__', function ($request) use ($file) {
             return (new Response())->file($file);
-        }, '', '', ''];
+        }, null, false), '', '', ''];
         list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
-        static::send($connection, (new Response())->file($file), $request);
+        static::send($connection, $callback($request), $request);
         return true;
     }
 
@@ -339,7 +340,7 @@ class App
      */
     protected static function send404(TcpConnection $connection, $request)
     {
-        static::send($connection, new Response(404, [], '<h3>404 Not Found</h3>'), $request);
+        static::send($connection, notfound(), $request);
     }
 
     /**
@@ -381,7 +382,7 @@ class App
         if (!empty($explode[1])) {
             $action = $explode[1];
         }
-        $controller_class = "\\app\controller\\$controller";
+        $controller_class = "\\app\\controller\\$controller";
         if (\class_exists($controller_class, false) && \is_callable([\singleton($controller_class), $action])) {
             return [
                 'app' => '',
