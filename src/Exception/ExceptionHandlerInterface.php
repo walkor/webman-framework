@@ -14,8 +14,8 @@
 namespace Webman\Exception;
 
 use Throwable;
-use support\Request;
-use support\Response;
+use Webman\Http\Request;
+use Webman\Http\Response;
 
 interface ExceptionHandlerInterface
 {

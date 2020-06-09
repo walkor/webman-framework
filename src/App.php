@@ -17,12 +17,12 @@ use Workerman\Worker;
 use Workerman\Timer;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
-use support\Request;
-use support\Response;
+use Webman\Http\Request;
+use Webman\Http\Response;
 use Webman\Exception\ExceptionHandlerInterface;
-use support\exception\Handler;
+use Webman\Exception\ExceptionHandler;
+use Webman\Config;
 use FastRoute\Dispatcher;
-use support\bootstrap\Log;
 
 /**
  * Class App
@@ -50,6 +50,11 @@ class App
      * @var Worker
      */
     protected static $_worker = null;
+
+    /**
+     * @var null
+     */
+    protected static $_logger = null;
 
     /**
      * @var string
@@ -81,24 +86,24 @@ class App
      * @param Worker $worker
      * @param $request_class
      */
-    public function __construct(Worker $worker, $request_class)
+    public function __construct(Worker $worker, $request_class, $logger)
     {
-        if ($timezone = config('app.default_timezone')) {
+        if ($timezone = Config::get('app.default_timezone')) {
             date_default_timezone_set($timezone);
         }
         static::$_worker = $worker;
+        static::$_logger = $logger;
         static::loadController(app_path());
         Route::load(config_path() . '/route.php');
-        Middleware::load(config('middleware', []));
-        Middleware::load(['__static__' => config('static.middleware', [])]);
+        Middleware::load(Config::get('middleware', []));
+        Middleware::load(['__static__' => Config::get('static.middleware', [])]);
         Http::requestClass($request_class);
-        static::onWorkerStart($worker);
-        $max_requst_count = (int)config('server.max_request');
+        $max_requst_count = (int)Config::get('server.max_request');
         if ($max_requst_count > 0) {
             static::$_maxRequestCount = $max_requst_count;
         }
-        static::$_supportStaticFiles = config('static.enable', true);
-        static::$_supportPHPFiles = config('app.support_php_files', false);
+        static::$_supportStaticFiles = Config::get('static.enable', true);
+        static::$_supportPHPFiles = Config::get('app.support_php_files', false);
     }
 
     /**
@@ -153,15 +158,15 @@ class App
         } catch (\Throwable $e) {
             try {
                 $app = $request->app ? : '';
-                $exception_config = config('exception');
-                $exception_handler_class = $exception_config[$app] ?? Handler::class;
+                $exception_config = Config::get('exception');
+                $exception_handler_class = $exception_config[$app] ?? ExceptionHandler::class;
                 /** @var ExceptionHandlerInterface $exception_handler */
-                $exception_handler = \singleton($exception_handler_class, [Log::channel('default')]);
+                $exception_handler = \singleton($exception_handler_class, [static::$_logger, Config::get('app.debug')]);
                 $exception_handler->report($e);
                 $response = $exception_handler->render($request, $e);
                 static::send($connection, $response, $request);
             } catch (\Throwable $e) {
-                static::send($connection, config('app.debug') ? (string)$e : $e->getMessage(), $request);
+                static::send($connection, Config::get('app.debug') ? (string)$e : $e->getMessage(), $request);
             }
         }
         return null;
@@ -228,16 +233,6 @@ class App
     public static function worker()
     {
         return static::$_worker;
-    }
-
-    /**
-     * @param $worker
-     */
-    public static function onWorkerStart($worker) {
-        foreach (config('bootstrap', []) as $class_name) {
-            /** @var \Webman\Bootstrap $class_name */
-            $class_name::start($worker);
-        }
     }
 
     /**
@@ -323,7 +318,6 @@ class App
      */
     protected static function send(TcpConnection $connection, $response, Request $request)
     {
-        static::$_connection = static::$_request = null;
         $keep_alive = $request->header('connection');
         if (($keep_alive === null && $request->protocolVersion() === '1.1')
             || $keep_alive === 'keep-alive' || $keep_alive === 'Keep-Alive'

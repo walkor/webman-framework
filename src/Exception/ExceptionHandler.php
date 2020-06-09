@@ -15,8 +15,8 @@ namespace Webman\Exception;
 
 use Throwable;
 use Psr\Log\LoggerInterface;
-use support\Request;
-use support\Response;
+use Webman\Http\Request;
+use Webman\Http\Response;
 
 /**
  * Class Handler
@@ -29,13 +29,19 @@ class ExceptionHandler implements ExceptionHandlerInterface
      */
     protected $_logger = null;
 
+    /**
+     * @var bool
+     */
+    protected $_debug = false;
+
     public $dontReport = [
 
     ];
 
-    public function __construct($logger)
+    public function __construct($logger, $debug)
     {
         $this->_logger = $logger;
+        $this->_debug = $debug;
     }
 
     public function report(Throwable $exception)
@@ -53,13 +59,12 @@ class ExceptionHandler implements ExceptionHandlerInterface
             return $exception->render();
         }
         $code = $exception->getCode();
-        $debug = config('app.debug');
         if ($request->expectsJson()) {
             $json = ['code' => $code ? $code : 500, 'msg' => $exception->getMessage()];
-            $debug && $json['traces'] = (string)$exception;
+            $this->_debug && $json['traces'] = (string)$exception;
             return json($json,  JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         }
-        $error = $debug ? nl2br((string)$exception) : 'Server internal error';
+        $error = $this->_debug ? nl2br((string)$exception) : 'Server internal error';
         return response($error, 500);
     }
 
