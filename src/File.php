@@ -27,7 +27,7 @@ class File extends \SplFileInfo
         set_error_handler(function ($type, $msg) use (&$error) {
             $error = $msg;
         });
-        $path = base_path($destination);
+        $path = pathinfo($destination, PATHINFO_DIRNAME);
         if (!is_dir($path) && !mkdir($path, 0777, true)) {
             restore_error_handler();
             throw new FileException(sprintf('Unable to create the "%s" directory (%s)', $path, strip_tags($error)));
