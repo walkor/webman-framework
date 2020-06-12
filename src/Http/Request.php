@@ -96,11 +96,18 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function file($name = null)
     {
-        $file = $this->file($name);
-        if (null === $file) {
-            return null;
+        $files = parent::file($name);
+        if (null === $files) {
+            return $name === null ? [] : null;
         }
-        return new UploadFile($file['tmp_name'], $file['name'], $file['type'], $file['error']);
+        if ($name !== null) {
+            return new UploadFile($files['tmp_name'], $files['name'], $files['type'], $files['error']);
+        }
+        $upload_files = [];
+        foreach ($files as $name => $file) {
+            $upload_files[$name] = new UploadFile($file['tmp_name'], $file['name'], $file['type'], $file['error']);
+        }
+        return $upload_files;
     }
 
     /**
