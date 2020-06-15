@@ -23,6 +23,8 @@ use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Exception\ExceptionHandler;
 use Webman\Config;
 use FastRoute\Dispatcher;
+use Psr\Container\ContainerInterface;
+use Monolog\Logger;
 
 /**
  * Class App
@@ -52,9 +54,19 @@ class App
     protected static $_worker = null;
 
     /**
-     * @var null
+     * @var ContainerInterface
+     */
+    protected static $_container = null;
+
+    /**
+     * @var Logger
      */
     protected static $_logger = null;
+
+    /**
+     * @var string
+     */
+    protected static $_publicPath = '';
 
     /**
      * @var string
@@ -84,20 +96,19 @@ class App
     /**
      * App constructor.
      * @param Worker $worker
-     * @param $request_class
+     * @param $container
+     * @param $logger
+     * @param $app_path
+     * @param $public_path
      */
-    public function __construct(Worker $worker, $request_class, $logger)
+    public function __construct(Worker $worker, $container, $logger, $app_path, $public_path)
     {
-        if ($timezone = Config::get('app.default_timezone')) {
-            date_default_timezone_set($timezone);
-        }
         static::$_worker = $worker;
+        static::$_container = $container;
         static::$_logger = $logger;
-        static::loadController(app_path());
-        Route::load(config_path() . '/route.php');
-        Middleware::load(Config::get('middleware', []));
-        Middleware::load(['__static__' => Config::get('static.middleware', [])]);
-        Http::requestClass($request_class);
+        static::$_publicPath = $public_path;
+        static::loadController($app_path);
+
         $max_requst_count = (int)Config::get('server.max_request');
         if ($max_requst_count > 0) {
             static::$_maxRequestCount = $max_requst_count;
@@ -151,7 +162,7 @@ class App
             $app = $controller_and_action['app'];
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
-            $callback = static::getCallback($app, [singleton($controller), $action]);
+            $callback = static::getCallback($app, [static::$_container->get($controller), $action]);
             static::$_callbacks[$key] = [$callback, $app, $controller, $action];
             list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
@@ -161,7 +172,10 @@ class App
                 $exception_config = Config::get('exception');
                 $exception_handler_class = $exception_config[$app] ?? ExceptionHandler::class;
                 /** @var ExceptionHandlerInterface $exception_handler */
-                $exception_handler = \singleton($exception_handler_class, [static::$_logger, Config::get('app.debug')]);
+                $exception_handler = static::$_container->make($exception_handler_class, [
+                    'logger' => static::$_logger,
+                    'debug' => Config::get('app.debug')
+                ]);
                 $exception_handler->report($e);
                 $response = $exception_handler->render($request, $e);
                 static::send($connection, $response, $request);
@@ -209,6 +223,14 @@ class App
             }
         }
         return $callback;
+    }
+
+    /**
+     * @return ContainerInterface
+     */
+    public static function container()
+    {
+        return static::$_container;
     }
 
     /**
@@ -276,7 +298,7 @@ class App
      */
     protected static function findFile($connection, $path, $key, $request)
     {
-        $public_dir = \public_path();
+        $public_dir = static::$_publicPath;
         $file = \realpath("$public_dir/$path");
         if (false === $file || false === \is_file($file)) {
             return false;
@@ -334,7 +356,7 @@ class App
      */
     protected static function send404(TcpConnection $connection, $request)
     {
-        static::send($connection, notfound(), $request);
+        static::send($connection, new Response(404, [], file_get_contents(static::$_publicPath . '/404.html')), $request);
     }
 
     /**
@@ -344,17 +366,17 @@ class App
     protected static function parseControllerAction($path)
     {
         if ($path === '/' || $path === '') {
-            $controller_class = '\app\controller\Index';
+            $controller_class = 'app\controller\Index';
             $action = 'index';
-            if (\class_exists($controller_class, false) && \is_callable([\singleton($controller_class), $action])) {
+            if (\class_exists($controller_class, false) && \is_callable([static::$_container->get($controller_class), $action])) {
                 return [
                     'app' => '',
                     'controller' => \app\controller\Index::class,
                     'action' => static::getRealMethod($controller_class, $action)
                 ];
             }
-            $controller_class = '\app\index\controller\Index';
-            if (\class_exists($controller_class, false) && \is_callable([\singleton($controller_class), $action])) {
+            $controller_class = 'app\index\controller\Index';
+            if (\class_exists($controller_class, false) && \is_callable([static::$_container->get($controller_class), $action])) {
                 return [
                     'app' => 'index',
                     'controller' => \app\index\controller\Index::class,
@@ -376,11 +398,11 @@ class App
         if (!empty($explode[1])) {
             $action = $explode[1];
         }
-        $controller_class = "\\app\\controller\\$controller";
-        if (\class_exists($controller_class, false) && \is_callable([\singleton($controller_class), $action])) {
+        $controller_class = "app\\controller\\$controller";
+        if (\class_exists($controller_class, false) && \is_callable([static::$_container->get($controller_class), $action])) {
             return [
                 'app' => '',
-                'controller' => \get_class(\singleton($controller_class)),
+                'controller' => \get_class(static::$_container->get($controller_class)),
                 'action' => static::getRealMethod($controller_class, $action)
             ];
         }
@@ -393,11 +415,11 @@ class App
                 $action = $explode[2];
             }
         }
-        $controller_class = "\\app\\$app\\controller\\$controller";
-        if (\class_exists($controller_class, false) && \is_callable([\singleton($controller_class), $action])) {
+        $controller_class = "app\\$app\\controller\\$controller";
+        if (\class_exists($controller_class, false) && \is_callable([static::$_container->get($controller_class), $action])) {
             return [
                 'app' => $app,
-                'controller' => \get_class(\singleton($controller_class)),
+                'controller' => \get_class(static::$_container->get($controller_class)),
                 'action' => static::getRealMethod($controller_class, $action)
             ];
         }

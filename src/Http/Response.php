@@ -13,6 +13,8 @@
  */
 namespace Webman\Http;
 
+use Webman\App;
+
 /**
  * Class Response
  * @package Webman\Http
@@ -51,7 +53,7 @@ class Response extends \Workerman\Protocols\Http\Response
      */
     protected function notModifiedSince($file)
     {
-        $if_modified_since = request()->header('if-modified-since');
+        $if_modified_since = App::request()->header('if-modified-since');
         if ($if_modified_since === null || !($mtime = \filemtime($file))) {
             return false;
         }

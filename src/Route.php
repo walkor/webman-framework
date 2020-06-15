@@ -15,6 +15,7 @@ namespace Webman;
 
 use FastRoute\Dispatcher\GroupCountBased;
 use FastRoute\RouteCollector;
+use Webman\App;
 
 /**
  * Class Route
@@ -124,8 +125,8 @@ class Route
     {
         if (\is_callable($callback)) return $callback;
         $callback = explode('@', $callback);
-        if (isset($callback[0]) && isset($callback[1]) && \class_exists($callback[0], false) && \is_callable([singleton($callback[0]), $callback[1]])) {
-            return [singleton($callback[0]), $callback[1]];
+        if (isset($callback[0]) && isset($callback[1]) && \class_exists($callback[0]) && \is_callable([App::container()->get($callback[0]), $callback[1]])) {
+            return [App::container()->get($callback[0]), $callback[1]];
         }
         echo "Route set to $path is not callable\n";
         return false;

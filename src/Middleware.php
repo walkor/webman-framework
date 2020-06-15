@@ -1,5 +1,8 @@
 <?php
 namespace Webman;
+
+use Webman\App;
+
 /**
  * This file is part of webman.
  *
@@ -28,7 +31,7 @@ class Middleware
         foreach ($all_middlewares as $app_name => $middlewares) {
             foreach ($middlewares as $class_name) {
                 if (\method_exists($class_name, 'process')) {
-                    static::$_instances[$app_name][] = [\singleton($class_name), 'process'];
+                    static::$_instances[$app_name][] = [App::container()->get($class_name), 'process'];
                 } else {
                     // @todo Log
                     echo "middleware $class_name::process not exsits\n";

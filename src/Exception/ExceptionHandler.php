@@ -34,16 +34,28 @@ class ExceptionHandler implements ExceptionHandlerInterface
      */
     protected $_debug = false;
 
+    /**
+     * @var array
+     */
     public $dontReport = [
 
     ];
 
+    /**
+     * ExceptionHandler constructor.
+     * @param $logger
+     * @param $debug
+     */
     public function __construct($logger, $debug)
     {
         $this->_logger = $logger;
         $this->_debug = $debug;
     }
 
+    /**
+     * @param Throwable $exception
+     * @return void
+     */
     public function report(Throwable $exception)
     {
         if ($this->shouldntReport($exception)) {
@@ -53,6 +65,11 @@ class ExceptionHandler implements ExceptionHandlerInterface
         $this->_logger->error($exception->getMessage(), ['exception' => (string)$exception]);
     }
 
+    /**
+     * @param Request $request
+     * @param Throwable $exception
+     * @return Response
+     */
     public function render(Request $request, Throwable $exception) : Response
     {
         if (\method_exists($exception, 'render')) {
@@ -62,12 +79,17 @@ class ExceptionHandler implements ExceptionHandlerInterface
         if ($request->expectsJson()) {
             $json = ['code' => $code ? $code : 500, 'msg' => $exception->getMessage()];
             $this->_debug && $json['traces'] = (string)$exception;
-            return json($json,  JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            return new Response(200, ['Content-Type' => 'application/json'],
+                json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }
         $error = $this->_debug ? nl2br((string)$exception) : 'Server internal error';
-        return response($error, 500);
+        return new Response(500, [], $error);
     }
 
+    /**
+     * @param Throwable $e
+     * @return bool
+     */
     protected function shouldntReport(Throwable $e) {
         foreach ($this->dontReport as $type) {
             if ($e instanceof $type) {
