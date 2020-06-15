@@ -40,7 +40,11 @@ class Middleware
         }
     }
 
-
+    /**
+     * @param $app_name
+     * @param bool $with_global_middleware
+     * @return array
+     */
     public static function getMiddleware($app_name, $with_global_middleware = true)
     {
         $global_middleware = $with_global_middleware && isset(static::$_instances['']) ? static::$_instances[''] : [];

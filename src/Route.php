@@ -150,7 +150,7 @@ class Route
      */
     public static function load($route_config_file)
     {
-        static::$_dispatcher = \FastRoute\simpleDispatcher(function (\FastRoute\RouteCollector $route) use ($route_config_file) {
+        static::$_dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $route) use ($route_config_file) {
             Route::setCollector($route);
             if (\is_file($route_config_file)) {
                 require_once $route_config_file;

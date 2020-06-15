@@ -16,7 +16,6 @@ namespace Webman;
 use Workerman\Worker;
 use Workerman\Timer;
 use Workerman\Connection\TcpConnection;
-use Workerman\Protocols\Http;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\Exception\ExceptionHandlerInterface;

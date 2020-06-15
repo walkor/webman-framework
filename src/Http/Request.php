@@ -92,7 +92,7 @@ class Request extends \Workerman\Protocols\Http\Request
 
     /**
      * @param null $name
-     * @return null| UploadFile
+     * @return null| array |UploadFile
      */
     public function file($name = null)
     {
