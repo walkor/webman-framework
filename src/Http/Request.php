@@ -42,7 +42,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function all()
     {
-        return $this->get() + $this->post();
+        return $this->post() + $this->get();
     }
 
     /**
@@ -62,19 +62,18 @@ class Request extends \Workerman\Protocols\Http\Request
 
     /**
      * @param array $keys
+     * @return array
      */
     public function only(array $keys)
     {
-        $post = $this->post();
-        $get = $this->get();
+        $all = $this->all();
         $result = [];
         foreach ($keys as $key) {
-            if (isset($post[$key])) {
-                $result[$key] = $post[$key];
-                continue;
+            if (isset($all[$key])) {
+                $result[$key] = $all[$key];
             }
-            $result[$key] = isset($get[$key]) ? $get[$key] : null;
         }
+        return $result;
     }
 
     /**
@@ -92,7 +91,7 @@ class Request extends \Workerman\Protocols\Http\Request
 
     /**
      * @param null $name
-     * @return null| array |UploadFile
+     * @return null| array | UploadFile
      */
     public function file($name = null)
     {
