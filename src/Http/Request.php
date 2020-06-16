@@ -146,7 +146,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function url()
     {
-        return '//' . $this->host() . '/' . $this->path();
+        return '//' . $this->host() . $this->path();
     }
 
     /**
@@ -154,7 +154,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function fullUrl()
     {
-        return '//' . $this->host() . '/' . $this->uri();
+        return '//' . $this->host() . $this->uri();
     }
 
     /**
