@@ -93,7 +93,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
     protected function shouldntReport(Throwable $e) {
         foreach ($this->dontReport as $type) {
             if ($e instanceof $type) {
-                return false;
+                return true;
             }
         }
         return false;

@@ -169,7 +169,9 @@ class App
             try {
                 $app = $request->app ? : '';
                 $exception_config = Config::get('exception');
-                $exception_handler_class = $exception_config[$app] ?? ExceptionHandler::class;
+                $default_exception = $exception_config[''] ?? ExceptionHandler::class;
+                $exception_handler_class = $exception_config[$app] ?? $default_exception;
+                
                 /** @var ExceptionHandlerInterface $exception_handler */
                 $exception_handler = static::$_container->make($exception_handler_class, [
                     'logger' => static::$_logger,
