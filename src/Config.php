@@ -27,13 +27,28 @@ class Config
      */
     public static function load($config_path, $exclude_file = [])
     {
-        foreach (\glob($config_path . '/*.php') as $file) {
-            $basename = \basename($file, '.php');
-            if (\in_array($basename, $exclude_file)) {
-                continue;
+        if (strpos($config_path, 'phar://') === false) {
+            foreach (\glob($config_path . '/*.php') as $file) {
+                $basename = \basename($file, '.php');
+                if (\in_array($basename, $exclude_file)) {
+                    continue;
+                }
+                $config = include $file;
+                static::$_config[$basename] = $config;
             }
-            $config = include $file;
-            static::$_config[$basename] = $config;
+        } else {
+            $handler = opendir($config_path);
+            while (($filename = readdir($handler)) !== false) {
+                if ($filename != "." && $filename != "..") {
+                    $basename = \basename($filename, ".php");
+                    if (\in_array($basename, $exclude_file)) {
+                        continue;
+                    }
+                    $config = include($config_path . '/' . $filename);
+                    static::$_config[$basename] = $config;
+                }
+            }
+            closedir($handler);
         }
     }
 
