@@ -27,7 +27,7 @@ class Config
      */
     public static function load($config_path, $exclude_file = [])
     {
-        if (strpos($config_path, 'phar://') === false) {
+        if (\strpos($config_path, 'phar://') === false) {
             foreach (\glob($config_path . '/*.php') as $file) {
                 $basename = \basename($file, '.php');
                 if (\in_array($basename, $exclude_file)) {
@@ -37,8 +37,8 @@ class Config
                 static::$_config[$basename] = $config;
             }
         } else {
-            $handler = opendir($config_path);
-            while (($filename = readdir($handler)) !== false) {
+            $handler = \opendir($config_path);
+            while (($filename = \readdir($handler)) !== false) {
                 if ($filename != "." && $filename != "..") {
                     $basename = \basename($filename, ".php");
                     if (\in_array($basename, $exclude_file)) {
@@ -48,7 +48,7 @@ class Config
                     static::$_config[$basename] = $config;
                 }
             }
-            closedir($handler);
+            \closedir($handler);
         }
     }
 
