@@ -464,13 +464,38 @@ class App
      */
     public static function loadController($path)
     {
-        foreach (\glob($path. '/controller/*.php') as $file) {
-            require_once $file;
-        }
-        foreach (\glob($path . '/*/controller/*.php') as $file) {
-            require_once $file;
+        if (\strpos($path, 'phar://') === false) {
+            foreach (\glob($path . '/controller/*.php') as $file) {
+                require_once $file;
+            }
+            foreach (\glob($path . '/*/controller/*.php') as $file) {
+                require_once $file;
+            }
+        } else {
+            static::recursiveLoadController($path);
         }
     }
+
+    /**
+     * @param $path
+     * @return void
+     */
+    public static function recursiveLoadController($path)
+    {
+        if (\is_dir($path)) {
+            $opendir = \opendir($path);
+            while ($file = \readdir($opendir)) {
+                if ($file != '.' && $file != '..') {
+                    static::recursiveLoadController($path . '/' . $file);
+                }
+            }
+            \closedir($opendir);
+        }
+        if (!is_dir($path) && \strpos($path, '/controller/') !== false) {
+            require_once $path;
+        }
+    }
+
 
     /**
      * Clear cache.
