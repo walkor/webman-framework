@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman;
 
 use Workerman\Worker;
@@ -167,11 +168,11 @@ class App
             static::send($connection, $callback($request), $request);
         } catch (\Throwable $e) {
             try {
-                $app = $request->app ? : '';
+                $app = $request->app ?: '';
                 $exception_config = Config::get('exception');
                 $default_exception = $exception_config[''] ?? ExceptionHandler::class;
                 $exception_handler_class = $exception_config[$app] ?? $default_exception;
-                
+
                 /** @var ExceptionHandlerInterface $exception_handler */
                 $exception_handler = static::$_container->make($exception_handler_class, [
                     'logger' => static::$_logger,
@@ -464,13 +465,29 @@ class App
      */
     public static function loadController($path)
     {
-        foreach (\glob($path. '/controller/*.php') as $file) {
-            require_once $file;
-        }
-        foreach (\glob($path . '/*/controller/*.php') as $file) {
-            require_once $file;
+        if (\strpos($path, 'phar://') === false) {
+            foreach (\glob($path . '/controller/*.php') as $file) {
+                require_once $file;
+            }
+            foreach (\glob($path . '/*/controller/*.php') as $file) {
+                require_once $file;
+            }
+        } else {
+            $dir_iterator = new \RecursiveDirectoryIterator($path);
+            $iterator = new \RecursiveIteratorIterator($dir_iterator);
+            foreach ($iterator as $file) {
+                if (is_dir($file)) {
+                    continue;
+                }
+                $fileinfo = new \SplFileInfo($file);
+                $ext = $fileinfo->getExtension();
+                if (\strpos($file, '/controller/') !== false && $ext === 'php') {
+                    require_once $file;
+                }
+            }
         }
     }
+
 
     /**
      * Clear cache.
@@ -503,7 +520,7 @@ class App
     protected static function tryToGracefulExit()
     {
         if (static::$_gracefulStopTimer === null) {
-            static::$_gracefulStopTimer = Timer::add(rand(1, 10), function(){
+            static::$_gracefulStopTimer = Timer::add(rand(1, 10), function () {
                 if (\count(static::$_worker->connections) === 0) {
                     Worker::stopAll();
                 }
