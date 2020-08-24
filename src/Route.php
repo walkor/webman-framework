@@ -101,9 +101,28 @@ class Route
      * @param $path
      * @param $callback
      */
+    public static function options($path, $callback)
+    {
+        static::addRoute('OPTIONS', $path, $callback);
+    }
+
+    /**
+     * @param $path
+     * @param $callback
+     */
     public static function any($path, $callback)
     {
-        static::addRoute(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'], $path, $callback);
+        static::addRoute(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], $path, $callback);
+    }
+
+    /**
+     * @param $method
+     * @param $path
+     * @param $callback
+     */
+    public static function add($method, $path, $callback)
+    {
+        static::addRoute($method, $path, $callback);
     }
 
     /**
