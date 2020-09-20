@@ -167,25 +167,30 @@ class App
             list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
         } catch (\Throwable $e) {
-            try {
-                $app = $request->app ?: '';
-                $exception_config = Config::get('exception');
-                $default_exception = $exception_config[''] ?? ExceptionHandler::class;
-                $exception_handler_class = $exception_config[$app] ?? $default_exception;
-
-                /** @var ExceptionHandlerInterface $exception_handler */
-                $exception_handler = static::$_container->make($exception_handler_class, [
-                    'logger' => static::$_logger,
-                    'debug' => Config::get('app.debug')
-                ]);
-                $exception_handler->report($e);
-                $response = $exception_handler->render($request, $e);
-                static::send($connection, $response, $request);
-            } catch (\Throwable $e) {
-                static::send($connection, Config::get('app.debug') ? (string)$e : $e->getMessage(), $request);
-            }
+            static::send($connection, static::exceptionResponse($e, $request), $request);
         }
         return null;
+    }
+
+    protected static function exceptionResponse(\Throwable $e, $request)
+    {
+        try {
+            $app = $request->app ?: '';
+            $exception_config = Config::get('exception');
+            $default_exception = $exception_config[''] ?? ExceptionHandler::class;
+            $exception_handler_class = $exception_config[$app] ?? $default_exception;
+
+            /** @var ExceptionHandlerInterface $exception_handler */
+            $exception_handler = static::$_container->make($exception_handler_class, [
+                'logger' => static::$_logger,
+                'debug' => Config::get('app.debug')
+            ]);
+            $exception_handler->report($e);
+            $response = $exception_handler->render($request, $e);
+            return $response;
+        } catch (\Throwable $e) {
+            return Config::get('app.debug') ? (string)$e : $e->getMessage();
+        }
     }
 
     /**
@@ -205,10 +210,14 @@ class App
                 };
             }, function ($request) use ($call, $args) {
 
-                if ($args === null) {
-                    $response = $call($request);
-                } else {
-                    $response = $call($request, ...$args);
+                try {
+                    if ($args === null) {
+                        $response = $call($request);
+                    } else {
+                        $response = $call($request, ...$args);
+                    }
+                } catch (\Throwable $e) {
+                    return static::exceptionResponse($e, $request);
                 }
                 if (\is_scalar($response) || null === $response) {
                     $response = new Response(200, [], $response);
