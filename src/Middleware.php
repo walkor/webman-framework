@@ -52,7 +52,7 @@ class Middleware
             return \array_reverse($global_middleware);
         }
         $app_middleware = static::$_instances[$app_name] ?? [];
-        return \array_reverse($global_middleware + $app_middleware);
+        return \array_reverse(\array_merge($global_middleware, $app_middleware));
     }
 
     /**
