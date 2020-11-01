@@ -142,9 +142,17 @@ class Route
      */
     public static function convertToCallable($path, $callback)
     {
-        if (\is_callable($callback)) return $callback;
-        $callback = explode('@', $callback);
-        if (isset($callback[0]) && isset($callback[1]) && \class_exists($callback[0]) && \is_callable([App::container()->get($callback[0]), $callback[1]])) {
+        if (\is_array($callback)) {
+            $callback = \array_values($callback);
+        }
+        if (\is_callable($callback)) {
+            if (\is_array($callback) && \is_string($callback[0])) {
+                return [App::container()->get($callback[0]), $callback[1]];
+            }
+            return $callback;
+        }
+        $callback = \explode('@', $callback);
+        if (isset($callback[1]) && \class_exists($callback[0]) && \is_callable([App::container()->get($callback[0]), $callback[1]])) {
             return [App::container()->get($callback[0]), $callback[1]];
         }
         echo "Route set to $path is not callable\n";
