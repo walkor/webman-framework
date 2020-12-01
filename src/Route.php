@@ -124,6 +124,15 @@ class Route
     {
         static::addRoute($method, $path, $callback);
     }
+    
+    /**
+     * @param $path
+     * @param $callback
+     */
+    public static function group($path, $callback)
+    {
+        static::$_collector->addGroup($path, $callback);
+    }
 
     /**
      * @param $method
