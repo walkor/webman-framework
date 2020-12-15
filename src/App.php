@@ -419,7 +419,7 @@ class App
         }
 
         $app = $explode[0];
-        $controller = 'index';
+        $controller = $action = 'index';
         if (!empty($explode[1])) {
             $controller = $explode[1];
             if (!empty($explode[2])) {
