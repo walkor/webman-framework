@@ -16,6 +16,7 @@ namespace Webman;
 use FastRoute\Dispatcher\GroupCountBased;
 use FastRoute\RouteCollector;
 use Webman\App;
+use Webman\Route\Route as RouteObject;
 
 /**
  * Class Route
@@ -24,9 +25,9 @@ use Webman\App;
 class Route
 {
     /**
-     * @var Route[]
+     * @var Route
      */
-    protected static $_instance = [];
+    protected static $_instance = null;
 
     /**
      * @var GroupCountBased
@@ -49,51 +50,24 @@ class Route
     protected static $_fallback = null;
 
     /**
+     * @var array
+     */
+    protected static $_nameList = [];
+
+    /**
      * @var string
      */
     protected static $_groupPrefix = '';
 
     /**
-     * @var Route[]
+     * @var RouteObject[]
      */
-    protected static $_nameList = [];
-
-    /**
-     * @var string|null
-     */
-    protected $_name = null;
-
-    /**
-     * @var array
-     */
-    protected $_methods = [];
-
-    /**
-     * @var string
-     */
-    protected $_path = '';
-
-    /**
-     * @var callable
-     */
-    protected $_callback = null;
-
-    /**
-     * Route constructor.
-     * @param $methods
-     * @param $path
-     */
-    public function __construct($methods, $path, $callback)
-    {
-        $this->_methods = (array) $methods;
-        $this->_path = $path;
-        $this->_callback = $callback;
-    }
+    protected $_routes = [];
 
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function get($path, $callback)
     {
@@ -103,7 +77,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function post($path, $callback)
     {
@@ -113,7 +87,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function put($path, $callback)
     {
@@ -123,7 +97,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function patch($path, $callback)
     {
@@ -133,7 +107,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function delete($path, $callback)
     {
@@ -143,7 +117,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function head($path, $callback)
     {
@@ -153,7 +127,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function options($path, $callback)
     {
@@ -163,7 +137,7 @@ class Route
     /**
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function any($path, $callback)
     {
@@ -174,92 +148,65 @@ class Route
      * @param $method
      * @param $path
      * @param $callback
-     * @return Route
+     * @return RouteObject
      */
     public static function add($method, $path, $callback)
     {
         return static::addRoute($method, $path, $callback);
     }
-    
+
     /**
      * @param $path
      * @param $callback
+     * @return Route
      */
     public static function group($path, $callback)
     {
         static::$_groupPrefix = $path;
+        $instance = static::$_instance = new static;
         static::$_collector->addGroup($path, $callback);
+        static::$_instance = null;
         static::$_groupPrefix = '';
+        return $instance;
     }
 
     /**
-     * @return mixed|null
-     */
-    public function getName()
-    {
-        return $this->_name ?? null;
-    }
-
-    /**
-     * @param $name
+     * @param $middleware
      * @return $this
      */
-    public function name($name)
+    public function middleware($middleware)
     {
-        $this->_name = $name;
-        static::$_nameList[$name] = $this;
-        return $this;
+        foreach ($this->_routes as $route) {
+            $route->middleware($middleware);
+        }
     }
 
     /**
-     * @return string
+     * @param RouteObject $route
      */
-    public function getPath()
+    public function collect(RouteObject $route)
     {
-        return $this->_path;
-    }
-
-    /**
-     * @return array
-     */
-    public function getMethods()
-    {
-        return $this->_methods;
-    }
-
-    /**
-     * @return callable
-     */
-    public function getCallback()
-    {
-        return $this->_callback;
+        $this->_routes[] = $route;
     }
 
     /**
      * @param $name
-     * @return null|Route
+     * @param RouteObject $instance
+     */
+    public static function setByName($name, RouteObject $instance)
+    {
+        static::$_nameList[$name] = $instance;
+    }
+
+    /**
+     * @param $name
+     * @return null|RouteObject
      */
     public static function getByName($name)
     {
         return static::$_nameList[$name] ?? null;
     }
 
-    /**
-     * @param $parameters
-     * @return string
-     */
-    public function url($parameters = [])
-    {
-        if (empty($parameters)) {
-            return $this->_path;
-        }
-        return preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use ($parameters) {
-            if (isset($parameters[$matches[1]])) {
-                return $parameters[$matches[1]];
-            }
-            return $matches[0];
-        }, $this->_path);
-    }
 
     /**
      * @param $method
@@ -299,14 +246,17 @@ class Route
      * @param $method
      * @param $path
      * @param $callback
-     * @return static
+     * @return RouteObject
      */
     protected static function addRoute($method, $path, $callback)
     {
         static::$_hasRoute = true;
-        $route = new static($method, static::$_groupPrefix . $path, $callback);
+        $route = new RouteObject($method, static::$_groupPrefix . $path, $callback);
         if ($callback = static::convertToCallable($path, $callback)) {
-            static::$_collector->addRoute($method, $path, $callback);
+            static::$_collector->addRoute($method, $path, ['callback' => $callback, 'route' => $route]);
+        }
+        if (static::$_instance) {
+            static::$_instance->collect($route);
         }
         return $route;
     }
@@ -348,4 +298,5 @@ class Route
     public static function getFallback() {
         return is_callable(static::$_fallback) ? static::$_fallback : null;
     }
+
 }
