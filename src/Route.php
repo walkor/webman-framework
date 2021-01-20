@@ -60,6 +60,11 @@ class Route
     protected static $_groupPrefix = '';
 
     /**
+     * @var bool
+     */
+    protected static $_disableDefaultRoute = false;
+
+    /**
      * @var RouteObject[]
      */
     protected $_routes = [];
@@ -168,6 +173,22 @@ class Route
         static::$_instance = null;
         static::$_groupPrefix = '';
         return $instance;
+    }
+
+    /**
+     * disableDefaultRoute.
+     */
+    public static function disableDefaultRoute()
+    {
+        static::$_disableDefaultRoute = true;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function hasDisableDefaultRoute()
+    {
+        return static::$_disableDefaultRoute === true;
     }
 
     /**

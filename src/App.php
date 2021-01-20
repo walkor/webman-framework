@@ -150,7 +150,7 @@ class App
             }
 
             $controller_and_action = static::parseControllerAction($path);
-            if (!$controller_and_action) {
+            if (!$controller_and_action || Route::hasDisableDefaultRoute()) {
                 // when route, controller and action not found, try to use Route::fallback
                 $callback = Route::getFallback() ?: function () {
                     static $response_404;
