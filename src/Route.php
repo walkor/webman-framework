@@ -254,6 +254,9 @@ class Route
                 return [App::container()->get($callback[0]), $callback[1]];
             }
             return $callback;
+        } else if (\is_array($callback)) {
+            echo "Route set to $path is not callable\n";
+            return false;
         }
         $callback = \explode('@', $callback);
         if (isset($callback[1]) && \class_exists($callback[0]) && \is_callable([App::container()->get($callback[0]), $callback[1]])) {
