@@ -67,6 +67,11 @@ class App
     /**
      * @var string
      */
+    protected static $_appPath = '';
+
+    /**
+     * @var string
+     */
     protected static $_publicPath = '';
 
     /**
@@ -108,6 +113,7 @@ class App
         static::$_container = $container;
         static::$_logger = $logger;
         static::$_publicPath = $public_path;
+        static::$_appPath = \realpath($app_path);
 
         $max_requst_count = (int)Config::get('server.max_request');
         if ($max_requst_count > 0) {
@@ -177,6 +183,11 @@ class App
         return null;
     }
 
+    /**
+     * @param \Throwable $e
+     * @param $request
+     * @return string|Response
+     */
     protected static function exceptionResponse(\Throwable $e, $request)
     {
         try {
@@ -412,7 +423,7 @@ class App
             $action = $explode[1];
         }
         $controller_class = "app\\controller\\$controller";
-        if (\class_exists($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+        if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => '',
                 'controller' => \get_class($instance),
@@ -430,13 +441,53 @@ class App
             }
         }
         $controller_class = "app\\$app\\controller\\$controller";
-        if (\class_exists($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+        if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => $app,
                 'controller' => \get_class($instance),
                 'action'     => static::getRealMethod($controller_class, $action),
                 'instance'   => $instance,
             ];
+        }
+        return false;
+    }
+
+    /**
+     * @param $controller_class
+     * @return bool
+     */
+    protected static function loadController($controller_class)
+    {
+        static $controller_files = [];
+        if (empty($controller_files)) {
+            $app_path = static::$_appPath;
+            $dir_iterator = new \RecursiveDirectoryIterator($app_path);
+            $iterator = new \RecursiveIteratorIterator($dir_iterator);
+            $app_base_path_length = \strrpos($app_path, DIRECTORY_SEPARATOR) + 1;
+            foreach ($iterator as $spl_file) {
+                $file = (string)$spl_file;
+                if (\is_dir($file) || false === \strpos($file, '/controller/') || $spl_file->getExtension() !== 'php') {
+                    continue;
+                }
+                $controller_files[$file] = \str_replace(DIRECTORY_SEPARATOR, "\\", \strtolower(\substr(\substr($file, $app_base_path_length), 0, -4)));
+            }
+        }
+
+        if (\class_exists($controller_class)) {
+            return true;
+        }
+
+        $controller_class = \strtolower($controller_class);
+        if ($controller_class[0] === "\\") {
+            $controller_class = \substr($controller_class, 1);
+        }
+        foreach ($controller_files as $real_path => $class_name) {
+            if ($class_name === $controller_class) {
+                require_once $real_path;
+                if (\class_exists($controller_class, false)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
