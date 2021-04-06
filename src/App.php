@@ -92,6 +92,11 @@ class App
     /**
      * @var int
      */
+    protected static $_requestCount = 0;
+
+    /**
+     * @var int
+     */
     protected static $_maxRequestCount = 1000000;
 
     /**
@@ -130,8 +135,7 @@ class App
      */
     public function onMessage(TcpConnection $connection, $request)
     {
-        static $request_count = 0;
-        if (++$request_count > static::$_maxRequestCount) {
+        if (++static::$_requestCount > static::$_maxRequestCount) {
             static::tryToGracefulExit();
         }
 
@@ -371,12 +375,14 @@ class App
      */
     protected static function send(TcpConnection $connection, $response, Request $request)
     {
-        $keep_alive = $request->header('connection');
-        if (($keep_alive === null && $request->protocolVersion() === '1.1')
-            || $keep_alive === 'keep-alive' || $keep_alive === 'Keep-Alive'
-        ) {
-            $connection->send($response);
-            return;
+        if( static::$_requestCount <= static::$_maxRequestCount) {
+            $keep_alive = $request->header('connection');
+            if (($keep_alive === null && $request->protocolVersion() === '1.1')
+                || $keep_alive === 'keep-alive' || $keep_alive === 'Keep-Alive'
+            ) {
+                $connection->send($response);
+                return;
+            }
         }
         $connection->close($response);
     }
