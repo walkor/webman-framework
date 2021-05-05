@@ -249,7 +249,7 @@ class Route
         if (\is_array($callback)) {
             $callback = \array_values($callback);
         }
-        if (\is_callable($callback)) {
+        if (\is_callable($callback, true)) {
             if (\is_array($callback) && \is_string($callback[0])) {
                 return [App::container()->get($callback[0]), $callback[1]];
             }
