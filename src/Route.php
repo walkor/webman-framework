@@ -246,24 +246,23 @@ class Route
      */
     public static function convertToCallable($path, $callback)
     {
+        if (\is_string($callback) && \strpos($callback, '@')) {
+            $callback = \explode('@', $callback, 2);
+        }
+
         if (\is_array($callback)) {
             $callback = \array_values($callback);
-        }
-        if (\is_callable($callback, true)) {
-            if (\is_array($callback) && \is_string($callback[0])) {
-                return [App::container()->get($callback[0]), $callback[1]];
+            if (isset($callback[1]) && \is_string($callback[0]) && \class_exists($callback[0])) {
+                $callback = [App::container()->get($callback[0]), $callback[1]];
             }
-            return $callback;
-        } else if (\is_array($callback)) {
+        }
+
+        if (!\is_callable($callback)) {
             echo "Route set to $path is not callable\n";
             return false;
         }
-        $callback = \explode('@', $callback);
-        if (isset($callback[1]) && \class_exists($callback[0]) && \is_callable([App::container()->get($callback[0]), $callback[1]])) {
-            return [App::container()->get($callback[0]), $callback[1]];
-        }
-        echo "Route set to $path is not callable\n";
-        return false;
+
+        return $callback;
     }
 
     /**
