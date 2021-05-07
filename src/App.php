@@ -92,6 +92,21 @@ class App
     /**
      * @var int
      */
+    protected static $_current_handle_quantity = 0;
+
+    /**
+     * @var int
+     */
+    protected static $_upper_lower_float_value = 100;
+
+    /**
+     * @var int
+     */
+    protected static $_request_count = 0;
+
+    /**
+     * @var int
+     */
     protected static $_maxRequestCount = 1000000;
 
     /**
@@ -115,9 +130,12 @@ class App
         static::$_publicPath = $public_path;
         static::$_appPath = \realpath($app_path);
 
-        $max_requst_count = (int)Config::get('server.max_request');
-        if ($max_requst_count > 0) {
-            static::$_maxRequestCount = $max_requst_count;
+        $max_request_count = (int)Config::get('server.max_request');
+        if ($max_request_count > 0) {
+            $float_value = static::$_upper_lower_float_value;
+            $lower_limit_request_count = $max_request_count - $float_value > 0 ? $max_request_count - $float_value : $max_request_count;
+            $upper_limit_request_count = $max_request_count + $float_value;
+            static::$_maxRequestCount = rand($lower_limit_request_count, $upper_limit_request_count);
         }
         static::$_supportStaticFiles = Config::get('static.enable', true);
         static::$_supportPHPFiles = Config::get('app.support_php_files', false);
@@ -130,8 +148,8 @@ class App
      */
     public function onMessage(TcpConnection $connection, $request)
     {
-        static $request_count = 0;
-        if (++$request_count > static::$_maxRequestCount) {
+        static::$_current_handle_quantity++;
+        if (++static::$_request_count > static::$_maxRequestCount) {
             static::tryToGracefulExit();
         }
 
@@ -371,6 +389,11 @@ class App
      */
     protected static function send(TcpConnection $connection, $response, Request $request)
     {
+        static::$_current_handle_quantity--;
+        if (static::$_request_count > static::$_maxRequestCount && static::$_current_handle_quantity === 0) {
+            $connection->close($response);
+            return;
+        }
         $keep_alive = $request->header('connection');
         if (($keep_alive === null && $request->protocolVersion() === '1.1')
             || $keep_alive === 'keep-alive' || $keep_alive === 'Keep-Alive'
@@ -555,8 +578,9 @@ class App
     protected static function tryToGracefulExit()
     {
         if (static::$_gracefulStopTimer === null) {
-            static::$_gracefulStopTimer = Timer::add(rand(1, 10), function () {
-                if (\count(static::$_worker->connections) === 0) {
+            static::$_gracefulStopTimer = Timer::add(1, function () {
+                //static::$_worker->pauseAccept();
+                if (static::$_current_handle_quantity === 0 && \count(static::$_worker->connections) === 0) {
                     Worker::stopAll();
                 }
             });
