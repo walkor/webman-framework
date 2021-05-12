@@ -173,7 +173,8 @@ class App
             $app = $controller_and_action['app'];
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
-            $callback = static::getCallback($app, [$controller_and_action['instance'], $action]);
+            $args = $controller_and_action['args'];
+            $callback = static::getCallback($app, [$controller_and_action['instance'], $action], $args);
             static::$_callbacks[$key] = [$callback, $app, $controller, $action];
             list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
@@ -432,6 +433,7 @@ class App
                 'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
                 'instance'   => static::$_container->get($controller_class),
+                'args'       => array_slice($explode, 2),
             ];
         }
 
@@ -451,6 +453,7 @@ class App
                 'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
                 'instance'   => static::$_container->get($controller_class),
+                'args'       => array_slice($explode, 3),
             ];
         }
         return false;
