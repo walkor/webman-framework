@@ -23,6 +23,7 @@ class Container implements ContainerInterface
      */
     public function get($name)
     {
+        $name = strtolower($name);
         if (!isset($this->_instances[$name])) {
             if (!class_exists($name)) {
                 throw new NotFoundException("Class '$name' not found");
