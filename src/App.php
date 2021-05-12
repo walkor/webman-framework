@@ -391,20 +391,22 @@ class App
             $controller_class = 'app\controller\Index';
             $action = 'index';
             if (\class_exists($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+                $controller_class = \app\controller\Index::class;
                 return [
                     'app'        => '',
-                    'controller' => \app\controller\Index::class,
+                    'controller' => $controller_class,
                     'action'     => static::getRealMethod($controller_class, $action),
-                    'instance'   => $instance,
+                    'instance'   => static::$_container->get($controller_class),
                 ];
             }
             $controller_class = 'app\index\controller\Index';
             if (\class_exists($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+                $controller_class = \app\index\controller\Index::class;
                 return [
                     'app'        => 'index',
-                    'controller' => \app\index\controller\Index::class,
+                    'controller' => $controller_class,
                     'action'     => static::getRealMethod($controller_class, $action),
-                    'instance'   => $instance,
+                    'instance'   => static::$_container->get($controller_class),
                 ];
             }
             return false;
@@ -424,11 +426,12 @@ class App
         }
         $controller_class = "app\\controller\\$controller";
         if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+            $controller_class = \get_class($instance);
             return [
                 'app'        => '',
-                'controller' => \get_class($instance),
+                'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
-                'instance'   => $instance,
+                'instance'   => static::$_container->get($controller_class),
             ];
         }
 
@@ -442,11 +445,12 @@ class App
         }
         $controller_class = "app\\$app\\controller\\$controller";
         if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+            $controller_class = \get_class($instance);
             return [
                 'app'        => $app,
-                'controller' => \get_class($instance),
+                'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
-                'instance'   => $instance,
+                'instance'   => static::$_container->get($controller_class),
             ];
         }
         return false;
