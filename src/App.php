@@ -147,11 +147,11 @@ class App
                 return null;
             }
 
-            if (static::findRoute($connection, $path, $key, $request)) {
+            if (static::findFile($connection, $path, $key, $request)) {
                 return null;
             }
-
-            if (static::findFile($connection, $path, $key, $request)) {
+            
+            if (static::findRoute($connection, $path, $key, $request)) {
                 return null;
             }
 
