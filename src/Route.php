@@ -278,9 +278,10 @@ class Route
         if ($callback = static::convertToCallable($path, $callback)) {
             static::$_collector->addRoute($method, $path, ['callback' => $callback, 'route' => $route]);
         }
-        if (static::$_instance) {
-            static::$_instance->collect($route);
+        if (!static::$_instance) {
+            static::$_instance = new static();
         }
+        static::$_instance->collect($route);
         return $route;
     }
 
