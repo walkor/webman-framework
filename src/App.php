@@ -359,7 +359,7 @@ class App
         }
 
         static::$_callbacks[$key] = [static::getCallback('__static__', function ($request) use ($file) {
-            \clearstatcache(null, $file);
+            \clearstatcache(true, $file);
             if (!\is_file($file)) {
                 $callback = static::getFallback();
                 return $callback($request);
