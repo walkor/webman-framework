@@ -134,8 +134,12 @@ class Request extends \Workerman\Protocols\Http\Request
     protected function parseFiles($files)
     {
         $upload_files = [];
-        foreach ($files as $file) {
-            $upload_files[$file['name']] = $this->parseFile($file);
+        foreach ($files as $key => $file) {
+            if (\is_array(\current($file))) {
+                $upload_files[$key] = $this->parseFiles($file);
+            } else {
+                $upload_files[$key] = $this->parseFile($file);
+            }
         }
         return $upload_files;
     }
