@@ -46,9 +46,9 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
-     * @param $name
-     * @param null $default
-     * @return null
+     * @param string $name
+     * @param string|null $default
+     * @return mixed|null
      */
     public function input($name, $default = null)
     {
@@ -90,8 +90,8 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
-     * @param null $name
-     * @return null| array | UploadFile
+     * @param string|null $name
+     * @return null|array|UploadFile
      */
     public function file($name = null)
     {
@@ -120,7 +120,7 @@ class Request extends \Workerman\Protocols\Http\Request
 
     /**
      * @param $file
-     * @return \Webman\Http\UploadFile
+     * @return UploadFile
      */
     protected function parseFile($file)
     {
@@ -128,7 +128,7 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
-     * @param $files
+     * @param array $files
      * @return array
      */
     protected function parseFiles($files)
