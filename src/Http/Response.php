@@ -22,7 +22,7 @@ use Webman\App;
 class Response extends \Workerman\Protocols\Http\Response
 {
     /**
-     * @param $file
+     * @param string $file
      * @return $this
      */
     public function file($file)
@@ -34,7 +34,7 @@ class Response extends \Workerman\Protocols\Http\Response
     }
 
     /**
-     * @param $file
+     * @param string $file
      * @param string $download_name
      * @return $this
      */
