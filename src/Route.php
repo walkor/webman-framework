@@ -287,12 +287,27 @@ class Route
     /**
      * @return bool
      */
-    public static function load($route_config_file)
+    public static function load($config_path)
     {
-        static::$_dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $route) use ($route_config_file) {
+        if (!is_dir($config_path)) {
+            $config_path = pathinfo($config_path, PATHINFO_DIRNAME);
+        }
+        static::$_dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $route) use ($config_path) {
             Route::setCollector($route);
+            $route_config_file = $config_path . '/route.php';
             if (\is_file($route_config_file)) {
                 require_once $route_config_file;
+            }
+            foreach (glob($config_path.'/ext/*/route.php') as $file) {
+                $app_config_file = pathinfo($file, PATHINFO_DIRNAME).'/app.php';
+                if (!is_file($app_config_file)) {
+                    continue;
+                }
+                $app_config = include $app_config_file;
+                if (empty($app_config['enable'])) {
+                    continue;
+                }
+                require_once $file;
             }
         });
         return static::$_hasRoute;

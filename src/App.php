@@ -92,11 +92,6 @@ class App
     /**
      * @var int
      */
-    protected static $_maxRequestCount = 1000000;
-
-    /**
-     * @var int
-     */
     protected static $_gracefulStopTimer = null;
 
     /**
@@ -115,10 +110,6 @@ class App
         static::$_publicPath = $public_path;
         static::$_appPath = \realpath($app_path);
 
-        $max_requst_count = (int)Config::get('server.max_request');
-        if ($max_requst_count > 0) {
-            static::$_maxRequestCount = $max_requst_count;
-        }
         static::$_supportStaticFiles = Config::get('static.enable', true);
         static::$_supportPHPFiles = Config::get('app.support_php_files', false);
     }
@@ -130,11 +121,6 @@ class App
      */
     public function onMessage(TcpConnection $connection, $request)
     {
-        static $request_count = 0;
-        if (++$request_count > static::$_maxRequestCount) {
-            static::tryToGracefulExit();
-        }
-
         try {
             static::$_request = $request;
             static::$_connection = $connection;
@@ -560,17 +546,4 @@ class App
         return $method;
     }
 
-    /**
-     * @return void
-     */
-    protected static function tryToGracefulExit()
-    {
-        if (static::$_gracefulStopTimer === null) {
-            static::$_gracefulStopTimer = Timer::add(rand(1, 10), function () {
-                if (\count(static::$_worker->connections) === 0) {
-                    Worker::stopAll();
-                }
-            });
-        }
-    }
 }

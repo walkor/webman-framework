@@ -13,6 +13,8 @@
  */
 namespace Webman;
 
+use function FastRoute\TestFixtures\empty_options_cached;
+
 class Config
 {
 
@@ -28,13 +30,58 @@ class Config
     public static function load($config_path, $exclude_file = [])
     {
         if (\strpos($config_path, 'phar://') === false) {
-            foreach (\glob($config_path . '/*.php') as $file) {
-                $basename = \basename($file, '.php');
-                if (\in_array($basename, $exclude_file)) {
+            $config_path = realpath($config_path);
+            if (!$config_path) {
+                return;
+            }
+            $dir_iterator = new \RecursiveDirectoryIterator($config_path);
+            $iterator = new \RecursiveIteratorIterator($dir_iterator);
+            foreach ($iterator as $file) {
+                /** var SplFileInfo $file */
+                if (is_dir($file) || $file->getExtension() != 'php' || \in_array($file->getBaseName('.php'), $exclude_file)) {
                     continue;
                 }
+                $app_config_file = $file->getPath().'/app.php';
+                if (!is_file($app_config_file)) {
+                    continue;
+                }
+                $relative_path = str_replace($config_path . DIRECTORY_SEPARATOR, '', substr($file, 0, -4));
+                $explode = array_reverse(explode(DIRECTORY_SEPARATOR, $relative_path));
+                if (count($explode) >= 2) {
+                    $app_config = include $app_config_file;
+                    if (empty($app_config['enable'])) {
+                        continue;
+                    }
+                }
                 $config = include $file;
-                static::$_config[$basename] = $config;
+                foreach ($explode as $section) {
+                    $tmp = [];
+                    $tmp[$section] = $config;
+                    $config = $tmp;
+                }
+                static::$_config = array_merge_recursive(static::$_config, $config);
+            }
+
+            // Merge database config
+            foreach (static::$_config['ext']??[] as $name => $project) {
+                foreach ($project['database']['connections']??[] as $key => $connection) {
+                    static::$_config['database']['connections']["ext.$name.$key"] = $connection;
+                }
+            }
+            // Merge thinkorm config
+            foreach (static::$_config['ext']??[] as $name => $project) {
+                foreach ($project['thinkorm']['connections']??[] as $key => $connection) {
+                    static::$_config['thinkorm']['connections']["ext.$name.$key"] = $connection;
+                }
+            }
+            if (!empty(static::$_config['thinkorm']['connections'])) {
+                static::$_config['thinkorm']['default'] = static::$_config['thinkorm']['default'] ?? key(static::$_config['thinkorm']['connections']);
+            }
+            // Merge redis config
+            foreach (static::$_config['ext']??[] as $name => $project) {
+                foreach ($project['redis']??[] as $key => $connection) {
+                    static::$_config['redis']["ext.$name.$key"] = $connection;
+                }
             }
         } else {
             $handler = \opendir($config_path);
