@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman;
 
 use function FastRoute\TestFixtures\empty_options_cached;
@@ -27,6 +28,11 @@ class Config
      * @var string
      */
     protected static $_configPath = '';
+
+    /**
+     * @var bool
+     */
+    protected static $_loaded = false;
 
     /**
      * @param $config_path
@@ -47,7 +53,7 @@ class Config
                 if (is_dir($file) || $file->getExtension() != 'php' || \in_array($file->getBaseName('.php'), $exclude_file)) {
                     continue;
                 }
-                $app_config_file = $file->getPath().'/app.php';
+                $app_config_file = $file->getPath() . '/app.php';
                 if (!is_file($app_config_file)) {
                     continue;
                 }
@@ -69,14 +75,14 @@ class Config
             }
 
             // Merge database config
-            foreach (static::$_config['ext']??[] as $name => $project) {
-                foreach ($project['database']['connections']??[] as $key => $connection) {
+            foreach (static::$_config['ext'] ?? [] as $name => $project) {
+                foreach ($project['database']['connections'] ?? [] as $key => $connection) {
                     static::$_config['database']['connections']["ext.$name.$key"] = $connection;
                 }
             }
             // Merge thinkorm config
-            foreach (static::$_config['ext']??[] as $name => $project) {
-                foreach ($project['thinkorm']['connections']??[] as $key => $connection) {
+            foreach (static::$_config['ext'] ?? [] as $name => $project) {
+                foreach ($project['thinkorm']['connections'] ?? [] as $key => $connection) {
                     static::$_config['thinkorm']['connections']["ext.$name.$key"] = $connection;
                 }
             }
@@ -84,8 +90,8 @@ class Config
                 static::$_config['thinkorm']['default'] = static::$_config['thinkorm']['default'] ?? key(static::$_config['thinkorm']['connections']);
             }
             // Merge redis config
-            foreach (static::$_config['ext']??[] as $name => $project) {
-                foreach ($project['redis']??[] as $key => $connection) {
+            foreach (static::$_config['ext'] ?? [] as $name => $project) {
+                foreach ($project['redis'] ?? [] as $key => $connection) {
                     static::$_config['redis']["ext.$name.$key"] = $connection;
                 }
             }
@@ -103,6 +109,7 @@ class Config
             }
             \closedir($handler);
         }
+        static::$_loaded = true;
     }
 
     /**
@@ -120,6 +127,9 @@ class Config
         $finded = true;
         foreach ($key_array as $index) {
             if (!isset($value[$index])) {
+                if (static::$_loaded) {
+                    return $default;
+                }
                 $finded = false;
                 break;
             }
@@ -184,8 +194,8 @@ class Config
      */
     public static function reload($config_path, $exclude_file = [])
     {
-        static::$_configPath = $config_path;
         static::$_config = [];
         static::load($config_path, $exclude_file);
     }
+
 }
