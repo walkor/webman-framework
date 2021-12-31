@@ -29,6 +29,9 @@ class Middleware
     public static function load($all_middlewares)
     {
         foreach ($all_middlewares as $app_name => $middlewares) {
+            if (!\is_array($middlewares)) {
+                throw new \RuntimeException('Bad middleware config');
+            }
             foreach ($middlewares as $class_name) {
                 if (\method_exists($class_name, 'process')) {
                     static::$_instances[$app_name][] = [App::container()->get($class_name), 'process'];
