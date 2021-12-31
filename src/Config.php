@@ -24,11 +24,17 @@ class Config
     protected static $_config = [];
 
     /**
+     * @var string
+     */
+    protected static $_configPath = '';
+
+    /**
      * @param $config_path
      * @param array $exclude_file
      */
     public static function load($config_path, $exclude_file = [])
     {
+        static::$_configPath = $config_path;
         if (\strpos($config_path, 'phar://') === false) {
             $config_path = realpath($config_path);
             if (!$config_path) {
@@ -111,6 +117,57 @@ class Config
         }
         $key_array = \explode('.', $key);
         $value = static::$_config;
+        $finded = true;
+        foreach ($key_array as $index) {
+            if (!isset($value[$index])) {
+                $finded = false;
+                break;
+            }
+            $value = $value[$index];
+        }
+        if ($finded) {
+            return $value;
+        }
+        return static::read($key, $default);
+    }
+
+    /**
+     * @param $key
+     * @param $default
+     * @return array|mixed|void|null
+     */
+    protected static function read($key, $default = null)
+    {
+        $path = static::$_configPath;
+        if ($path === '') {
+            return $default;
+        }
+        $key_array = \explode('.', $key);
+        foreach ($key_array as $index => $section) {
+            if (is_file($file = "$path/$section.php")) {
+                $config = include $file;
+                unset($key_array[$index]);
+                return static::find($key_array, $config, $default);
+            }
+            if (!is_dir($path = "$path/$section")) {
+                return $default;
+            }
+        }
+        return $default;
+    }
+
+    /**
+     * @param $key_array
+     * @param $stack
+     * @param $default
+     * @return array|mixed
+     */
+    protected static function find($key_array, $stack, $default)
+    {
+        if (!is_array($stack)) {
+            return $default;
+        }
+        $value = $stack;
         foreach ($key_array as $index) {
             if (!isset($value[$index])) {
                 return $default;
@@ -120,12 +177,14 @@ class Config
         return $value;
     }
 
+
     /**
      * @param $config_path
      * @param array $exclude_file
      */
     public static function reload($config_path, $exclude_file = [])
     {
+        static::$_configPath = $config_path;
         static::$_config = [];
         static::load($config_path, $exclude_file);
     }

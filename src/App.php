@@ -136,7 +136,7 @@ class App
             if (static::findFile($connection, $path, $key, $request)) {
                 return null;
             }
-            
+
             if (static::findRoute($connection, $path, $key, $request)) {
                 return null;
             }
@@ -208,10 +208,17 @@ class App
     protected static function getCallback($app, $call, $args = null, $with_global_middleware = true, $route = null)
     {
         $args = $args === null ? null : \array_values($args);
-        $middleware = Middleware::getMiddleware($app, $with_global_middleware);
-        $middleware = $route ? \array_merge($route->getMiddleware(), $middleware) : $middleware;
-        if ($middleware) {
-            $callback = array_reduce($middleware, function ($carry, $pipe) {
+        $middlewares = [];
+        if ($route) {
+            $route_middlewares = \array_reverse($route->getMiddleware());
+            foreach ($route_middlewares as $class_name) {
+                $middlewares[] = [App::container()->get($class_name), 'process'];
+            }
+        }
+        $middlewares = \array_merge($middlewares, Middleware::getMiddleware($app, $with_global_middleware));
+
+        if ($middlewares) {
+            $callback = array_reduce($middlewares, function ($carry, $pipe) {
                 return function ($request) use ($carry, $pipe) {
                     return $pipe($request, $carry);
                 };

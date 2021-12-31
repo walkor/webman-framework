@@ -67,6 +67,11 @@ class Route
     /**
      * @var RouteObject[]
      */
+    protected static $_allRoutes = [];
+
+    /**
+     * @var RouteObject[]
+     */
     protected $_routes = [];
 
     /**
@@ -118,7 +123,7 @@ class Route
     {
         return static::addRoute('DELETE', $path, $callback);
     }
-    
+
     /**
      * @param $path
      * @param $callback
@@ -167,12 +172,21 @@ class Route
      */
     public static function group($path, $callback)
     {
-        static::$_groupPrefix = $path;
+        $previous_group_prefix = static::$_groupPrefix;
+        static::$_groupPrefix = $previous_group_prefix . $path;
         $instance = static::$_instance = new static;
         static::$_collector->addGroup($path, $callback);
         static::$_instance = null;
-        static::$_groupPrefix = '';
+        static::$_groupPrefix = $previous_group_prefix;
         return $instance;
+    }
+
+    /**
+     * @return array
+     */
+    public static function getRoutes()
+    {
+        return static::$_allRoutes;
     }
 
     /**
@@ -266,17 +280,19 @@ class Route
     }
 
     /**
-     * @param $method
+     * @param $methods
      * @param $path
      * @param $callback
      * @return RouteObject
      */
-    protected static function addRoute($method, $path, $callback)
+    protected static function addRoute($methods, $path, $callback)
     {
         static::$_hasRoute = true;
-        $route = new RouteObject($method, static::$_groupPrefix . $path, $callback);
+        $route = new RouteObject($methods, static::$_groupPrefix . $path, $callback);
+        static::$_allRoutes[] = $route;
+
         if ($callback = static::convertToCallable($path, $callback)) {
-            static::$_collector->addRoute($method, $path, ['callback' => $callback, 'route' => $route]);
+            static::$_collector->addRoute($methods, $path, ['callback' => $callback, 'route' => $route]);
         }
         if (static::$_instance) {
             static::$_instance->collect($route);
