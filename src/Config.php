@@ -46,7 +46,7 @@ class Config
             if (!$config_path) {
                 return;
             }
-            $dir_iterator = new \RecursiveDirectoryIterator($config_path);
+            $dir_iterator = new \RecursiveDirectoryIterator($config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
             $iterator = new \RecursiveIteratorIterator($dir_iterator);
             foreach ($iterator as $file) {
                 /** var SplFileInfo $file */
