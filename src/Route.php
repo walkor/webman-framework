@@ -314,7 +314,7 @@ class Route
             if (\is_file($route_config_file)) {
                 require_once $route_config_file;
             }
-            foreach (glob($config_path.'/ext/*/route.php') as $file) {
+            foreach (glob($config_path.'/plugin/*/route.php') as $file) {
                 $app_config_file = pathinfo($file, PATHINFO_DIRNAME).'/app.php';
                 if (!is_file($app_config_file)) {
                     continue;
