@@ -14,8 +14,6 @@
 
 namespace Webman;
 
-use function FastRoute\TestFixtures\empty_options_cached;
-
 class Config
 {
 
