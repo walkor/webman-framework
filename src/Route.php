@@ -17,6 +17,7 @@ use FastRoute\Dispatcher\GroupCountBased;
 use FastRoute\RouteCollector;
 use Webman\App;
 use Webman\Route\Route as RouteObject;
+use function FastRoute\simpleDispatcher;
 
 /**
  * Class Route
@@ -308,13 +309,13 @@ class Route
         if (!is_dir($config_path)) {
             $config_path = pathinfo($config_path, PATHINFO_DIRNAME);
         }
-        static::$_dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $route) use ($config_path) {
+        static::$_dispatcher = simpleDispatcher(function (RouteCollector $route) use ($config_path) {
             Route::setCollector($route);
             $route_config_file = $config_path . '/route.php';
             if (\is_file($route_config_file)) {
                 require_once $route_config_file;
             }
-            foreach (glob($config_path.'/plugin/*/route.php') as $file) {
+            foreach (glob($config_path.'/plugin/*/*/route.php') as $file) {
                 $app_config_file = pathinfo($file, PATHINFO_DIRNAME).'/app.php';
                 if (!is_file($app_config_file)) {
                     continue;
