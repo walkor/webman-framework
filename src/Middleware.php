@@ -1,6 +1,7 @@
 <?php
 namespace Webman;
 
+use Psr\Container\ContainerInterface;
 use Webman\App;
 
 /**
@@ -19,6 +20,11 @@ use Webman\App;
 class Middleware
 {
     /**
+     * @var ContainerInterface
+     */
+    protected static $_container = null;
+
+    /**
      * @var array
      */
     protected static $_instances = [];
@@ -34,7 +40,7 @@ class Middleware
             }
             foreach ($middlewares as $class_name) {
                 if (\method_exists($class_name, 'process')) {
-                    static::$_instances[$app_name][] = [App::container()->get($class_name), 'process'];
+                    static::$_instances[$app_name][] = [static::container()->get($class_name), 'process'];
                 } else {
                     // @todo Log
                     echo "middleware $class_name::process not exsits\n";
@@ -66,4 +72,20 @@ class Middleware
     {
         return isset(static::$_instances[$app_name]);
     }
+
+    /**
+     * @param $container
+     * @return ContainerInterface
+     */
+    public static function container($container = null)
+    {
+        if ($container) {
+            static::$_container = $container;
+        }
+        if (!static::$_container) {
+            static::$_container = App::container();
+        }
+        return static::$_container;
+    }
+
 }

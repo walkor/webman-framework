@@ -15,7 +15,7 @@ namespace Webman;
 
 use FastRoute\Dispatcher\GroupCountBased;
 use FastRoute\RouteCollector;
-use Webman\App;
+use Psr\Container\ContainerInterface;
 use Webman\Route\Route as RouteObject;
 use function FastRoute\simpleDispatcher;
 
@@ -25,6 +25,11 @@ use function FastRoute\simpleDispatcher;
  */
 class Route
 {
+    /**
+     * @var ContainerInterface
+     */
+    protected static $_container = null;
+
     /**
      * @var Route
      */
@@ -268,7 +273,7 @@ class Route
         if (\is_array($callback)) {
             $callback = \array_values($callback);
             if (isset($callback[1]) && \is_string($callback[0]) && \class_exists($callback[0])) {
-                $callback = [App::container()->get($callback[0]), $callback[1]];
+                $callback = [static::container()->get($callback[0]), $callback[1]];
             }
         }
 
@@ -354,4 +359,18 @@ class Route
         return is_callable(static::$_fallback) ? static::$_fallback : null;
     }
 
+    /**
+     * @param $container
+     * @return ContainerInterface
+     */
+    public static function container($container = null)
+    {
+        if ($container) {
+            static::$_container = $container;
+        }
+        if (!static::$_container) {
+            static::$_container = App::container();
+        }
+        return static::$_container;
+    }
 }
