@@ -291,6 +291,8 @@ class App
      */
     protected static function findRoute($connection, $path, $key, Request $request)
     {
+        $path = Route::hasIgnoreCase() ? strtolower($path) : $path;
+        
         $ret = Route::dispatch($request->method(), $path);
         if ($ret[0] === Dispatcher::FOUND) {
             $ret[0] = 'route';

@@ -71,6 +71,11 @@ class Route
     protected static $_disableDefaultRoute = false;
 
     /**
+     * @var bool
+     */
+    protected static $_ignoreCase = false;
+
+    /**
      * @var RouteObject[]
      */
     protected static $_allRoutes = [];
@@ -193,6 +198,22 @@ class Route
     public static function getRoutes()
     {
         return static::$_allRoutes;
+    }
+
+     /**
+     * ignoreCase
+     */
+    public static function ignoreCase()
+    {
+        static::$_ignoreCase = true;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function hasIgnoreCase()
+    {
+        return static::$_ignoreCase === true;
     }
 
     /**
