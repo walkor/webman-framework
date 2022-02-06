@@ -159,12 +159,12 @@ class Config
         if ($path === '') {
             return $default;
         }
-        $key_array = \explode('.', $key);
+        $keys = $key_array = \explode('.', $key);
         foreach ($key_array as $index => $section) {
+            unset($keys[$index]);
             if (is_file($file = "$path/$section.php")) {
                 $config = include $file;
-                unset($key_array[$index]);
-                return static::find($key_array, $config, $default);
+                return static::find($keys, $config, $default);
             }
             if (!is_dir($path = "$path/$section")) {
                 return $default;
