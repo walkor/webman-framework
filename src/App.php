@@ -108,7 +108,12 @@ class App
         static::$_container = $container;
         static::$_logger = $logger;
         static::$_publicPath = $public_path;
-        static::$_appPath = \realpath($app_path);
+        // Phar support.
+        if (class_exists(\Phar::class, false) && \Phar::running()) {
+            static::$_appPath = $app_path;
+        } else {
+            static::$_appPath = \realpath($app_path);
+        }
 
         static::$_supportStaticFiles = Config::get('static.enable', true);
         static::$_supportPHPFiles = Config::get('app.support_php_files', false);
@@ -325,7 +330,14 @@ class App
     protected static function findFile($connection, $path, $key, $request)
     {
         $public_dir = static::$_publicPath;
-        $file = \realpath("$public_dir/$path");
+        
+        // Phar support.
+        if (class_exists(\Phar::class, false) && \Phar::running()) {
+            $file = "$public_dir/$path";
+        } else {
+            $file = \realpath("$public_dir/$path");
+        }
+        
         if (false === $file || false === \is_file($file)) {
             return false;
         }
