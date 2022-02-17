@@ -429,7 +429,7 @@ class App
         $explode = \explode('/', $path);
         $action = 'index';
 
-        $controller = $explode[0];
+        $controller = \ucfirst($explode[0]);
         if ($controller === '') {
             return false;
         }
@@ -455,6 +455,7 @@ class App
                 $action = $explode[2];
             }
         }
+        $controller = \ucfirst($controller);
         $controller_class = "app\\$app\\controller\\$controller";
         if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             $controller_class = \get_class($instance);
