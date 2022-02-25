@@ -429,7 +429,7 @@ class App
         $explode = \explode('/', $path);
         $action = 'index';
 
-        $controller = \ucfirst($explode[0]);
+        $controller = $explode[0];
         if ($controller === '') {
             return false;
         }
@@ -437,8 +437,8 @@ class App
             $action = $explode[1];
         }
         $controller_class = "app\\controller\\$controller";
-        if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-            $controller_class = \get_class($instance);
+        if (static::loadController($controller_class)) {
+            $controller_class = (new \ReflectionClass($controller_class))->name;
             return [
                 'app'        => '',
                 'controller' => $controller_class,
@@ -455,10 +455,9 @@ class App
                 $action = $explode[2];
             }
         }
-        $controller = \ucfirst($controller);
         $controller_class = "app\\$app\\controller\\$controller";
-        if (static::loadController($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-            $controller_class = \get_class($instance);
+        if (static::loadController($controller_class)) {
+            $controller_class = (new \ReflectionClass($controller_class))->name;
             return [
                 'app'        => $app,
                 'controller' => $controller_class,
