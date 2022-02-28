@@ -15,7 +15,6 @@
 namespace Webman;
 
 use Workerman\Worker;
-use Workerman\Timer;
 use Workerman\Connection\TcpConnection;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -330,14 +329,14 @@ class App
     protected static function findFile($connection, $path, $key, $request)
     {
         $public_dir = static::$_publicPath;
-        
+
         // Phar support.
         if (class_exists(\Phar::class, false) && \Phar::running()) {
             $file = "$public_dir/$path";
         } else {
             $file = \realpath("$public_dir/$path");
         }
-        
+
         if (false === $file || false === \is_file($file)) {
             return false;
         }
@@ -408,7 +407,7 @@ class App
                     'app'        => '',
                     'controller' => $controller_class,
                     'action'     => static::getRealMethod($controller_class, $action),
-                    'instance'   => static::$_container->get($controller_class),
+                    'instance'   => $instance,
                 ];
             }
             $controller_class = 'app\index\controller\Index';
@@ -418,7 +417,7 @@ class App
                     'app'        => 'index',
                     'controller' => $controller_class,
                     'action'     => static::getRealMethod($controller_class, $action),
-                    'instance'   => static::$_container->get($controller_class),
+                    'instance'   => $instance,
                 ];
             }
             return false;
@@ -437,8 +436,7 @@ class App
             $action = $explode[1];
         }
         $controller_class = "app\\controller\\$controller";
-        if (static::loadController($controller_class) && $controller_class = (new \ReflectionClass($controller_class))->name && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-
+        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => '',
                 'controller' => $controller_class,
@@ -456,7 +454,7 @@ class App
             }
         }
         $controller_class = "app\\$app\\controller\\$controller";
-        if (static::loadController($controller_class) && $controller_class = (new \ReflectionClass($controller_class))->name && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => $app,
                 'controller' => $controller_class,
