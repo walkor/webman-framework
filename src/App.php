@@ -437,13 +437,13 @@ class App
             $action = $explode[1];
         }
         $controller_class = "app\\controller\\$controller";
-        if (static::loadController($controller_class)) {
-            $controller_class = (new \ReflectionClass($controller_class))->name;
+        if (static::loadController($controller_class) && $controller_class = (new \ReflectionClass($controller_class))->name && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+
             return [
                 'app'        => '',
                 'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
-                'instance'   => static::$_container->get($controller_class),
+                'instance'   => $instance,
             ];
         }
 
@@ -456,13 +456,12 @@ class App
             }
         }
         $controller_class = "app\\$app\\controller\\$controller";
-        if (static::loadController($controller_class)) {
-            $controller_class = (new \ReflectionClass($controller_class))->name;
+        if (static::loadController($controller_class) && $controller_class = (new \ReflectionClass($controller_class))->name && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => $app,
                 'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
-                'instance'   => static::$_container->get($controller_class),
+                'instance'   => $instance,
             ];
         }
         return false;
