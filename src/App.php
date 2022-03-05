@@ -123,7 +123,7 @@ class App
      * @param Request $request
      * @return null
      */
-    public function onMessage(TcpConnection $connection, $request)
+    public function onMessage(TcpConnection $connection, Request $request)
     {
         try {
             static::$_request = $request;
@@ -177,10 +177,10 @@ class App
 
     /**
      * @param \Throwable $e
-     * @param $request
+     * @param Request $request
      * @return string|Response
      */
-    protected static function exceptionResponse(\Throwable $e, $request)
+    protected static function exceptionResponse(\Throwable $e, Request $request)
     {
         try {
             $app = $request->app ?: '';
@@ -209,7 +209,7 @@ class App
      * @param RouteObject $route
      * @return \Closure|mixed
      */
-    protected static function getCallback($app, $call, $args = null, $with_global_middleware = true, $route = null)
+    protected static function getCallback($app, $call, $args = null, bool $with_global_middleware = true, $route = null)
     {
         $args = $args === null ? null : \array_values($args);
         $middlewares = [];
@@ -323,10 +323,10 @@ class App
      * @param $connection
      * @param $path
      * @param $key
-     * @param $request
+     * @param Request $request
      * @return bool
      */
-    protected static function findFile($connection, $path, $key, $request)
+    protected static function findFile($connection, $path, $key, Request $request)
     {
         $public_dir = static::$_publicPath;
 
