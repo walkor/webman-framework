@@ -123,7 +123,7 @@ class App
      * @param Request $request
      * @return null
      */
-    public function onMessage(TcpConnection $connection, Request $request)
+    public function onMessage(TcpConnection $connection, $request)
     {
         try {
             static::$_request = $request;
@@ -177,10 +177,10 @@ class App
 
     /**
      * @param \Throwable $e
-     * @param Request $request
+     * @param $request
      * @return string|Response
      */
-    protected static function exceptionResponse(\Throwable $e, Request $request)
+    protected static function exceptionResponse(\Throwable $e, $request)
     {
         try {
             $app = $request->app ?: '';
@@ -209,7 +209,7 @@ class App
      * @param RouteObject $route
      * @return \Closure|mixed
      */
-    protected static function getCallback($app, $call, $args = null, bool $with_global_middleware = true, $route = null)
+    protected static function getCallback($app, $call, $args = null, $with_global_middleware = true, $route = null)
     {
         $args = $args === null ? null : \array_values($args);
         $middlewares = [];
@@ -323,13 +323,12 @@ class App
      * @param $connection
      * @param $path
      * @param $key
-     * @param Request $request
+     * @param $request
      * @return bool
      */
-    protected static function findFile($connection, $path, $key, Request $request)
+    protected static function findFile($connection, $path, $key, $request)
     {
         $public_dir = static::$_publicPath;
-
         // Phar support.
         if (class_exists(\Phar::class, false) && \Phar::running()) {
             $file = "$public_dir/$path";
@@ -398,27 +397,17 @@ class App
      */
     protected static function parseControllerAction($path)
     {
+        $suffix = config('app.controller_suffix', '');
+        $app = '';
         if ($path === '/' || $path === '') {
-            $controller_class = 'app\controller\Index';
+            $controller_class = 'app\controller\Index' . $suffix;
             $action = 'index';
-            if (\class_exists($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-                $controller_class = \app\controller\Index::class;
-                return [
-                    'app'        => '',
-                    'controller' => $controller_class,
-                    'action'     => static::getRealMethod($controller_class, $action),
-                    'instance'   => $instance,
-                ];
+            if ($controller_action = static::getControllerAction($controller_class, $action)) {
+                return $controller_action;
             }
-            $controller_class = 'app\index\controller\Index';
-            if (\class_exists($controller_class) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-                $controller_class = \app\index\controller\Index::class;
-                return [
-                    'app'        => 'index',
-                    'controller' => $controller_class,
-                    'action'     => static::getRealMethod($controller_class, $action),
-                    'instance'   => $instance,
-                ];
+            $controller_class = 'app\index\controller\Index' . $suffix;
+            if ($controller_action = static::getControllerAction($controller_class, $action)) {
+                return $controller_action;
             }
             return false;
         }
@@ -435,14 +424,9 @@ class App
         if (!empty($explode[1])) {
             $action = $explode[1];
         }
-        $controller_class = "app\\controller\\$controller";
-        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-            return [
-                'app'        => '',
-                'controller' => $controller_class,
-                'action'     => static::getRealMethod($controller_class, $action),
-                'instance'   => $instance,
-            ];
+        $controller_class = "app\\controller\\$controller$suffix";
+        if ($controller_action = static::getControllerAction($controller_class, $action)) {
+            return $controller_action;
         }
 
         $app = $explode[0];
@@ -453,10 +437,28 @@ class App
                 $action = $explode[2];
             }
         }
-        $controller_class = "app\\$app\\controller\\$controller";
+        $controller_class = "app\\$app\\controller\\$controller$suffix";
+        if ($controller_action = static::getControllerAction($controller_class, $action)) {
+            return $controller_action;
+        }
+        return false;
+    }
+
+    /**
+     * @param $controller_class
+     * @param $action
+     * @return array|false
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    protected static function getControllerAction($controller_class, $action)
+    {
         if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+            $controller_str = substr($controller_class, 4);
+            $app = substr($controller_str, 0, strpos($controller_str, '\\'));
             return [
-                'app'        => $app,
+                'app'        => strtolower($app) === 'controller' ? '' : $app,
                 'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
                 'instance'   => $instance,
@@ -483,6 +485,7 @@ class App
                     continue;
                 }
                 $controller_files[$file] = \str_replace(DIRECTORY_SEPARATOR, "\\", \strtolower(\substr(\substr($file, $app_base_path_length), 0, -4)));
+
             }
         }
 
