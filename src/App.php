@@ -455,10 +455,8 @@ class App
     protected static function getControllerAction($controller_class, $action)
     {
         if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
-            $controller_str = substr($controller_class, 4);
-            $app = substr($controller_str, 0, strpos($controller_str, '\\'));
             return [
-                'app'        => strtolower($app) === 'controller' ? '' : $app,
+                'app'        => static::getAppByController($controller_class),
                 'controller' => $controller_class,
                 'action'     => static::getRealMethod($controller_class, $action),
                 'instance'   => $instance,
@@ -481,7 +479,7 @@ class App
             $app_base_path_length = \strrpos($app_path, DIRECTORY_SEPARATOR) + 1;
             foreach ($iterator as $spl_file) {
                 $file = (string)$spl_file;
-                if (\is_dir($file) || false === \strpos($file, '/controller/') || $spl_file->getExtension() !== 'php') {
+                if (\is_dir($file) || false === \strpos(strtolower($file), '/controller/') || $spl_file->getExtension() !== 'php') {
                     continue;
                 }
                 $controller_files[$file] = \str_replace(DIRECTORY_SEPARATOR, "\\", \strtolower(\substr(\substr($file, $app_base_path_length), 0, -4)));
@@ -521,7 +519,7 @@ class App
         if (!isset($tmp[1])) {
             return '';
         }
-        return $tmp[1] === 'controller' ? '' : $tmp[1];
+        return strtolower($tmp[1]) === 'controller' ? '' : $tmp[1];
     }
 
     /**
