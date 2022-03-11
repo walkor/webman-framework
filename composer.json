@@ -34,7 +34,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Webman\\": "./src"
+      "Webman\\": "./src",
+      "support\\": "./support",
+      "Support\\": "./support",
+      "Support\\Bootstrap\\": "./support/bootstrap",
+      "Support\\Exception\\": "./support/exception",
+      "Support\\View\\": "./support/view"
     }
   },
   "minimum-stability": "dev"
