@@ -13,8 +13,9 @@
  */
 namespace Webman\Http;
 
-use Webman\Http\UploadFile;
 use Webman\App;
+use Webman\Route\Route;
+use Webman\Http\UploadFile;
 
 /**
  * Class Request
@@ -36,6 +37,11 @@ class Request extends \Workerman\Protocols\Http\Request
      * @var string
      */
     public $action = null;
+
+    /**
+     * @var Route
+     */
+    public $route = null;
 
     /**
      * @return mixed|null
