@@ -207,8 +207,8 @@ class Route
             if (in_array('recovery',$options)) static::put( "/{$name}/{id}/recovery", [$controller,'recovery'])->name("{$name}.recovery");
             $diffOptions = array_diff($options,['index','create','store','update','show','edit','destroy','recovery']);
             if(!empty($diffOptions)){
-                foreach ($options as $action) {
-                    static::any("/{$name}/{$action}[/{id}]", [$controller,$action]);
+                foreach ($diffOptions as $action) {
+                    static::any("/{$name}/{$action}[/{id}]", [$controller,$action])->name("{$name}.{$action}");
                 }
             }
         }else{
