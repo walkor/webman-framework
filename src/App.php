@@ -132,7 +132,7 @@ class App
             $key = $request->method() . $path;
 
             if (isset(static::$_callbacks[$key])) {
-                list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
+                [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
                 static::send($connection, $callback($request), $request);
                 return null;
             }
@@ -156,8 +156,8 @@ class App
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
             $callback = static::getCallback($app, [$controller_and_action['instance'], $action]);
-            static::$_callbacks[$key] = [$callback, $app, $controller, $action];
-            list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
+            static::$_callbacks[$key] = [$callback, $app, $controller, $action, null];
+            [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
         } catch (\Throwable $e) {
             static::send($connection, static::exceptionResponse($e, $request), $request);
@@ -307,8 +307,8 @@ class App
                 $action = static::getRealMethod($controller, $callback[1]) ?? '';
             }
             $callback = static::getCallback($app, $callback, $args, true, $route);
-            static::$_callbacks[$key] = [$callback, $app, $controller ? $controller : '', $action];
-            list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
+            static::$_callbacks[$key] = [$callback, $app, $controller ? $controller : '', $action, $route];
+            [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
             if (\count(static::$_callbacks) > 1024) {
                 static::clearCache();
@@ -351,8 +351,8 @@ class App
             }
             static::$_callbacks[$key] = [function ($request) use ($file) {
                 return static::execPhpFile($file);
-            }, '', '', ''];
-            list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
+            }, '', '', '', null];
+            [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, static::execPhpFile($file), $request);
             return true;
         }
@@ -368,8 +368,8 @@ class App
                 return $callback($request);
             }
             return (new Response())->file($file);
-        }, null, false), '', '', ''];
-        list($callback, $request->app, $request->controller, $request->action) = static::$_callbacks[$key];
+        }, null, false), '', '', '', null];
+        [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
         static::send($connection, $callback($request), $request);
         return true;
     }
