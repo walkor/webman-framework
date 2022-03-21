@@ -130,10 +130,13 @@ class App
             static::$_connection = $connection;
             $path = $request->path();
             $key = $request->method() . $path;
-
             if (isset(static::$_callbacks[$key])) {
                 [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
                 static::send($connection, $callback($request), $request);
+                return null;
+            }
+
+            if (static::unsafeUri($path)) {
                 return null;
             }
 
@@ -163,6 +166,21 @@ class App
             static::send($connection, static::exceptionResponse($e, $request), $request);
         }
         return null;
+    }
+
+    /**
+     * @param $path
+     * @return bool
+     */
+    protected static function unsafeUri($path)
+    {
+        if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
+            $callback = static::getFallback();
+            $request->app = $request->controller = $request->action = '';
+            static::send($connection, $callback($request), $request);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -329,22 +347,12 @@ class App
     protected static function findFile($connection, $path, $key, $request)
     {
         $public_dir = static::$_publicPath;
-        // Phar support.
-        if (class_exists(\Phar::class, false) && \Phar::running()) {
-            $file = "$public_dir/$path";
-        } else {
-            $file = \realpath("$public_dir/$path");
-        }
+        $file = "$public_dir/$path";
 
-        if (false === $file || false === \is_file($file)) {
+        if (!\is_file($file)) {
             return false;
         }
 
-        // Security check
-        if (strpos($file, $public_dir) !== 0) {
-            static::send($connection, new Response(400), $request);
-            return true;
-        }
         if (\pathinfo($file, PATHINFO_EXTENSION) === 'php') {
             if (!static::$_supportPHPFiles) {
                 return false;
