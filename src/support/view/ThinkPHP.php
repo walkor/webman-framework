@@ -45,7 +45,7 @@ class ThinkPHP implements View
      */
     public static function render($template, $vars, $app = null)
     {
-        $app = $app == null ? \request()->app : $app;
+        $app = $app === null ? \request()->app : $app;
         $view_path = $app === '' ? \app_path() . '/view/' : \app_path() . "/$app/view/";
         $default_options = [
             'view_path' => $view_path,
