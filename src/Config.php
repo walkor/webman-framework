@@ -67,7 +67,7 @@ class Config
                 $tmp[$section] = $config;
                 $config = $tmp;
             }
-            static::$_config = array_merge_recursive(static::$_config, $config);
+            static::$_config = array_replace_recursive(static::$_config, $config);
         }
 
         // Merge database config
