@@ -224,7 +224,14 @@ class Redis
      */
     public static function connection($name = 'default')
     {
-        return static::instance()->connection($name);
+        static $timers = [];
+        $connection = static::instance()->connection($name);
+        if (!isset($timers[$name])) {
+            $timers[$name] = Timer::add(55, function() use ($connection) {
+                $connection->get('ping');
+            });
+        }
+        return $connection;
     }
 
     /**
@@ -234,6 +241,6 @@ class Redis
      */
     public static function __callStatic($name, $arguments)
     {
-        return static::instance()->connection('default')->{$name}(... $arguments);
+        return static::connection('default')->{$name}(... $arguments);
     }
 }
