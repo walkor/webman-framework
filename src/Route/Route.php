@@ -133,12 +133,24 @@ class Route
         if (empty($parameters)) {
             return $this->_path;
         }
-        return preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use ($parameters) {
+        $path = str_replace(['[', ']'], '', $this->_path);
+        return preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
+            if (!$parameters) {
+                return $matches[0];
+            }
             if (isset($parameters[$matches[1]])) {
-                return $parameters[$matches[1]];
+                $value = $parameters[$matches[1]];
+                unset($parameters[$matches[1]]);
+                return $value;
+            }
+            $key = key($parameters);
+            if (is_int($key)) {
+                $value = $parameters[$key];
+                unset($parameters[$key]);
+                return $value;
             }
             return $matches[0];
-        }, $this->_path);
+        }, $path);
     }
 
 }
