@@ -178,6 +178,9 @@ class Route
      */
     public static function group($path, $callback)
     {
+        if ($path === '' || $path[0] !== '/') {
+            $path = "/$path";
+        }
         $previous_group_prefix = static::$_groupPrefix;
         static::$_groupPrefix = $previous_group_prefix . $path;
         $instance = static::$_instance = new static;
@@ -193,7 +196,7 @@ class Route
      * @param array $options
      * @return void
      */
-    public static function resource(string $name,string $controller, array $options = [])
+    public static function resource(string $name, string $controller, array $options = [])
     {
         if(is_array($options) && !empty($options)){
             $diffOptions = array_diff($options,['index','create','store','update','show','edit','destroy','recovery']);
