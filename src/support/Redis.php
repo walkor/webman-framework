@@ -14,6 +14,7 @@
 
 namespace support;
 
+use Workerman\Timer;
 use Illuminate\Redis\RedisManager;
 
 /**
