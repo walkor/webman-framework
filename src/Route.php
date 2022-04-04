@@ -178,9 +178,6 @@ class Route
      */
     public static function group($path, $callback)
     {
-        if ($path === '' || $path[0] !== '/') {
-            $path = "/$path";
-        }
         $previous_group_prefix = static::$_groupPrefix;
         static::$_groupPrefix = $previous_group_prefix . $path;
         $instance = static::$_instance = new static;
@@ -333,9 +330,6 @@ class Route
      */
     protected static function addRoute($methods, $path, $callback)
     {
-        if ($path === '' || $path[0] !== '/') {
-            $path = "/$path";
-        }
         static::$_hasRoute = true;
         $route = new RouteObject($methods, static::$_groupPrefix . $path, $callback);
         static::$_allRoutes[] = $route;
