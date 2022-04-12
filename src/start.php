@@ -66,6 +66,9 @@ TcpConnection::$defaultMaxPackageSize = $config['max_package_size'] ?? 10 * 1024
 if (property_exists(Worker::class, 'statusFile')) {
     Worker::$statusFile = $config['status_file'] ?? '';
 }
+if (property_exists(Worker::class, 'stopTimeout')) {
+    Worker::$stopTimeout = $config['stop_timeout'] ?? '';
+}
 
 if ($config['listen']) {
     $worker = new Worker($config['listen'], $config['context']);
