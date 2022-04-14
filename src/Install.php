@@ -20,10 +20,6 @@ class Install
      */
     public static function install()
     {
-        $support_dir = __DIR__ . '/../../../../support';
-        if (is_dir($support_dir)) {
-            //remove_dir($support_dir);
-        }
         static::installByRelation();
     }
 
