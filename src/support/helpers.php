@@ -25,83 +25,6 @@ use Webman\App;
 use Webman\Config;
 use Webman\Route;
 
-if (!defined('BASE_PATH')) {
-    // Phar support.
-    if (is_phar()) {
-        define('BASE_PATH', dirname(__DIR__));
-    } else {
-        define('BASE_PATH', realpath(__DIR__ . '/../'));
-    }
-}
-if (!defined('WEBMAN_VERSION')) {
-    define('WEBMAN_VERSION', '1.3.0');
-}
-
-if (!function_exists('base_path')) {
-    /**
-     * @param $return_phar
-     * @return false|string
-     */
-    function base_path($return_phar = true)
-    {
-        static $real_path = '';
-        if (!$real_path) {
-            $real_path = is_phar() ? dirname(Phar::running(false)) : BASE_PATH;
-        }
-        return $return_phar ? BASE_PATH : $real_path;
-    }
-}
-
-if (!function_exists('app_path')) {
-    /**
-     * @return string
-     */
-    function app_path()
-    {
-        return BASE_PATH . DIRECTORY_SEPARATOR . 'app';
-    }
-}
-
-if (!function_exists('public_path')) {
-    /**
-     * @return string
-     */
-    function public_path()
-    {
-        static $path = '';
-        if (!$path) {
-            $path = get_realpath(config('app.public_path', BASE_PATH . DIRECTORY_SEPARATOR . 'public'));
-        }
-        return $path;
-    }
-}
-
-if (!function_exists('config_path')) {
-    /**
-     * @return string
-     */
-    function config_path()
-    {
-        return BASE_PATH . DIRECTORY_SEPARATOR . 'config';
-    }
-}
-
-if (!function_exists('runtime_path')) {
-    /**
-     * Phar support.
-     * Compatible with the 'realpath' function in the phar file.
-     *
-     * @return string
-     */
-    function runtime_path()
-    {
-        static $path = '';
-        if (!$path) {
-            $path = get_realpath(config('app.runtime_path', BASE_PATH . DIRECTORY_SEPARATOR . 'runtime'));
-        }
-        return $path;
-    }
-}
 
 if (!function_exists('response')) {
     /**
@@ -362,51 +285,6 @@ if (!function_exists('not_found')) {
     }
 }
 
-if (!function_exists('copy_dir')) {
-    /**
-     * Copy dir.
-     * @param $source
-     * @param $dest
-     * @param bool $overwrite
-     * @return void
-     */
-    function copy_dir($source, $dest, $overwrite = false)
-    {
-        if (is_dir($source)) {
-            if (!is_dir($dest)) {
-                mkdir($dest);
-            }
-            $files = scandir($source);
-            foreach ($files as $file) {
-                if ($file !== "." && $file !== "..") {
-                    copy_dir("$source/$file", "$dest/$file");
-                }
-            }
-        } else if (file_exists($source) && ($overwrite || !file_exists($dest))) {
-            copy($source, $dest);
-        }
-    }
-}
-
-if (!function_exists('remove_dir')) {
-    /**
-     * Remove dir.
-     * @param $dir
-     * @return bool
-     */
-    function remove_dir($dir)
-    {
-        if (is_link($dir) || is_file($dir)) {
-            return unlink($dir);
-        }
-        $files = array_diff(scandir($dir), array('.', '..'));
-        foreach ($files as $file) {
-            (is_dir("$dir/$file") && !is_link($dir)) ? remove_dir("$dir/$file") : unlink("$dir/$file");
-        }
-        return rmdir($dir);
-    }
-}
-
 if (!function_exists('worker_bind')) {
     /**
      * @param $worker
@@ -506,16 +384,6 @@ if (!function_exists('get_realpath')) {
         } else {
             return realpath($file_path);
         }
-    }
-}
-
-if (!function_exists('is_phar')) {
-    /**
-     * @return bool
-     */
-    function is_phar()
-    {
-        return class_exists(\Phar::class, false) && Phar::running();
     }
 }
 
