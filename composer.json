@@ -40,7 +40,10 @@
       "Support\\Bootstrap\\": "./src/support/bootstrap",
       "Support\\Exception\\": "./src/support/exception",
       "Support\\View\\": "./src/support/view"
-    }
+    },
+    "files": [
+      "./src/support/helpers.php"
+    ]
   },
   "minimum-stability": "dev"
 }
