@@ -462,11 +462,6 @@ class App
      */
     protected static function getControllerAction($controller_class, $action)
     {
- 
-        /**
-         * url中controller、action部分兼容兼容中划线
-         * 例如 /security/update-password 将访问 securityController 控制器的 updatePassword 方法
-         */
         $controller_class = str_replace(' ', '', ucwords(str_replace('-', ' ', $controller_class)));
         $action = str_replace(' ', '', ucwords(str_replace('-', ' ', $action)));
         
