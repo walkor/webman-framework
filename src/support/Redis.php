@@ -16,6 +16,7 @@ namespace support;
 
 use Workerman\Timer;
 use Illuminate\Redis\RedisManager;
+use Workerman\Worker;
 
 /**
  * Class Redis
@@ -228,9 +229,11 @@ class Redis
         static $timers = [];
         $connection = static::instance()->connection($name);
         if (!isset($timers[$name])) {
-            $timers[$name] = Timer::add(55, function() use ($connection) {
-                $connection->get('ping');
-            });
+            if (Worker::getAllWorkers()) {
+                $timers[$name] = Timer::add(55, function () use ($connection) {
+                    $connection->get('ping');
+                });
+            }
         }
         return $connection;
     }
