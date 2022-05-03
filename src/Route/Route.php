@@ -134,7 +134,7 @@ class Route
             return $this->_path;
         }
         $path = str_replace(['[', ']'], '', $this->_path);
-        return preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
+        $path = preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
             if (!$parameters) {
                 return $matches[0];
             }
@@ -151,6 +151,7 @@ class Route
             }
             return $matches[0];
         }, $path);
+        return count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
     }
 
 }
