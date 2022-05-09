@@ -462,6 +462,9 @@ class App
      */
     protected static function getControllerAction($controller_class, $action)
     {
+        $controller_class = str_replace(' ', '', ucwords(str_replace('-', ' ', $controller_class)));
+        $action = str_replace(' ', '', ucwords(str_replace('-', ' ', $action)));
+        
         if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => static::getAppByController($controller_class),
