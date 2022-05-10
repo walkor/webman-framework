@@ -38,6 +38,7 @@ class Config
      */
     public static function load($config_path, $exclude_file = [])
     {
+        static::$_loaded = false;
         static::$_configPath = $config_path;
         if (!$config_path) {
             return;
