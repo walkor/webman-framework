@@ -245,6 +245,14 @@ class Redis
      */
     public static function __callStatic($name, $arguments)
     {
+        if(isset(request()->tracer) && isset(request()->rootSpan)){
+            $redisSpan = request()->tracer->newChild(request()->rootSpan->getContext());
+            $redisSpan->setName('redis:' . $name);
+            $redisSpan->start();
+            $redisSpan->tag('command', $name);
+            $redisSpan->annotate(json_encode($arguments));
+            $redisSpan->finish();
+        }
         return static::connection('default')->{$name}(... $arguments);
     }
 }
