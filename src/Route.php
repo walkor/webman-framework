@@ -358,7 +358,12 @@ class Route
             if (\is_file($route_config_file)) {
                 require_once $route_config_file;
             }
-            foreach (glob($config_path.'/plugin/*/*/route.php') as $file) {
+            $dir_iterator = new \RecursiveDirectoryIterator($config_path . '/plugin', \FilesystemIterator::FOLLOW_SYMLINKS);
+            $iterator = new \RecursiveIteratorIterator($dir_iterator);
+            foreach ($iterator as $file) {
+                if ($file->getBaseName('.php') !== 'route') {
+                    continue;
+                }
                 $app_config_file = pathinfo($file, PATHINFO_DIRNAME).'/app.php';
                 if (!is_file($app_config_file)) {
                     continue;
