@@ -482,7 +482,7 @@ class App
         static $controller_files = [];
         if (empty($controller_files)) {
             $app_path = static::$_appPath;
-            $dir_iterator = new \RecursiveDirectoryIterator($app_path);
+            $dir_iterator = new \RecursiveDirectoryIterator($app_path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS);
             $iterator = new \RecursiveIteratorIterator($dir_iterator);
             $app_base_path_length = \strrpos($app_path, DIRECTORY_SEPARATOR) + 1;
             foreach ($iterator as $spl_file) {
@@ -491,7 +491,6 @@ class App
                     continue;
                 }
                 $controller_files[$file] = \str_replace(DIRECTORY_SEPARATOR, "\\", \strtolower(\substr(\substr($file, $app_base_path_length), 0, -4)));
-
             }
         }
 
