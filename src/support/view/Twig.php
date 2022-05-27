@@ -47,7 +47,7 @@ class Twig implements View
     public static function render($template, $vars, $app = null)
     {
         static $views = [], $view_suffix;
-        $view_suffix = $view_suffix ?: \config('view.view_suffix', 'html');
+        $view_suffix = $view_suffix ?: \config('view.options.view_suffix', \config('view.view_suffix', 'html'));
         $app = $app === null ? \request()->app : $app;
         if (!isset($views[$app])) {
             $view_path = $app === '' ? \app_path() . '/view/' : \app_path() . "/$app/view/";
