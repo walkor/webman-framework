@@ -49,6 +49,11 @@ class Route
     protected $_middlewares = [];
 
     /**
+     * @var array
+     */
+    protected $_params = [];
+
+    /**
      * Route constructor.
      * @param $methods
      * @param $path
@@ -122,6 +127,31 @@ class Route
     public function getMiddleware()
     {
         return $this->_middlewares;
+    }
+
+    /**
+     * @param string|null $name
+     * @param $default
+     * @return array|mixed|null
+     */
+    public function param(string $name = null, $default = null)
+    {
+        if ($name === null) {
+            return $this->_params;
+        }
+        return $this->_params[$name] ?? $default;
+    }
+
+    /**
+     * @param array $params
+     * @return void
+     */
+    public function setParams(array $params)
+    {
+        if (!empty($this->_params)) {
+            throw new \RuntimeException('The routing params are read-only and cannot be changed');
+        }
+        $this->_params = $params;
     }
 
     /**
