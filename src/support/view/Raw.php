@@ -52,8 +52,8 @@ class Raw implements View
         } else {
             $view_path = \app_path() . "/$app/view/$template.$view_suffix";
         }
-        \extract(static::$_vars);
-        \extract($vars);
+        \extract(static::$_vars, \EXTR_SKIP);
+        \extract($vars, \EXTR_SKIP);
         \ob_start();
         // Try to include php file.
         try {
