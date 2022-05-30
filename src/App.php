@@ -320,6 +320,9 @@ class App
             $route = $ret[1]['route'];
             $app = $controller = $action = '';
             $args = !empty($ret[2]) ? $ret[2] : null;
+            if ($args) {
+                $route->setParams($args);
+            }
             if (\is_array($callback) && isset($callback[0]) && $controller = \get_class($callback[0])) {
                 $app = static::getAppByController($controller);
                 $action = static::getRealMethod($controller, $callback[1]) ?? '';
