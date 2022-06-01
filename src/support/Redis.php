@@ -209,13 +209,39 @@ class Redis
     protected static $_instance = null;
 
     /**
+     * need to install phpredis extension
+     */
+    const PHPREDIS_CLIENT = 'phpredis';
+
+    /**
+     * need to install the 'predis/predis' packgage.
+     * cmd: composer install predis/predis
+     * c
+     */
+    const PREDIS_CLIENT = 'predis';
+
+    /**
+     * Support client collection
+     */
+    static $_allowClient = [
+        self::PHPREDIS_CLIENT,
+        self::PREDIS_CLIENT
+    ];
+
+    /**
      * @return RedisManager
      */
     public static function instance()
     {
         if (!static::$_instance) {
             $config = config('redis');
-            static::$_instance = new RedisManager('', 'phpredis', $config);
+            $client = $config['client'] ?? self::PHPREDIS_CLIENT;
+
+            if (!in_array($client, static::$_allowClient)) {
+                $client = self::PHPREDIS_CLIENT;
+            }
+
+            static::$_instance = new RedisManager('', $client, $config);
         }
         return static::$_instance;
     }
