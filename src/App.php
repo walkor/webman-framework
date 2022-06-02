@@ -248,7 +248,6 @@ class App
                     return $pipe($request, $carry);
                 };
             }, function ($request) use ($call, $args) {
-
                 try {
                     if ($args === null) {
                         $response = $call($request);
@@ -258,7 +257,10 @@ class App
                 } catch (\Throwable $e) {
                     return static::exceptionResponse($e, $request);
                 }
-                if (\is_scalar($response) || null === $response) {
+                if (!$response instanceof Response) {
+                    if (\is_array($response)) {
+                        $response = 'Array';
+                    }
                     $response = new Response(200, [], $response);
                 }
                 return $response;
