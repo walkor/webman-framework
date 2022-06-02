@@ -22,6 +22,11 @@ use Webman\App;
 class Response extends \Workerman\Protocols\Http\Response
 {
     /**
+     * @var \Throwable
+     */
+    protected $_exception = null;
+
+    /**
      * @param string $file
      * @return $this
      */
@@ -58,5 +63,17 @@ class Response extends \Workerman\Protocols\Http\Response
             return false;
         }
         return $if_modified_since === \gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+    }
+
+    /**
+     * @param \Throwable $exception
+     * @return \Throwable
+     */
+    public function exception($exception = null)
+    {
+        if ($exception) {
+            $this->_exception = $exception;
+        }
+        return $this->_exception;
     }
 }
