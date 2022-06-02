@@ -216,7 +216,9 @@ class App
             $response->exception($e);
             return $response;
         } catch (\Throwable $e) {
-            return new Response(500, [], Config::get('app.debug') ? (string)$e : $e->getMessage());
+            $response = new Response(500, [], Config::get('app.debug') ? (string)$e : $e->getMessage());
+            $response->exception($e);
+            return $response;
         }
     }
 
