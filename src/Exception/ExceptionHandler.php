@@ -61,8 +61,12 @@ class ExceptionHandler implements ExceptionHandlerInterface
         if ($this->shouldntReport($exception)) {
             return;
         }
-
-        $this->_logger->error($exception->getMessage(), ['exception' => (string)$exception]);
+        $logs = '';
+        $request = \request();
+        if ($request) {
+            $logs = $request->getRealIp() . ' ' . $request->method() . ' ' . trim($request->fullUrl(), '/');
+        }
+        $this->_logger->error($logs . "\n" . $exception);
     }
 
     /**
