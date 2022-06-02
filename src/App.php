@@ -213,9 +213,10 @@ class App
             ]);
             $exception_handler->report($e);
             $response = $exception_handler->render($request, $e);
+            $response->exception($e);
             return $response;
         } catch (\Throwable $e) {
-            return Config::get('app.debug') ? (string)$e : $e->getMessage();
+            return new Response(500, [], Config::get('app.debug') ? (string)$e : $e->getMessage());
         }
     }
 
