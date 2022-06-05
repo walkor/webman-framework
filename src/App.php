@@ -136,7 +136,7 @@ class App
                 return null;
             }
 
-            if (static::unsafeUri($path)) {
+            if (static::unsafeUri($connection, $path, $request)) {
                 return null;
             }
 
@@ -169,10 +169,12 @@ class App
     }
 
     /**
+     * @param $connection
      * @param $path
+     * @param $request
      * @return bool
      */
-    protected static function unsafeUri($path)
+    protected static function unsafeUri($connection, $path, $request)
     {
         if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
             $callback = static::getFallback();
