@@ -59,7 +59,9 @@ class Raw implements View
         try {
             include $view_path;
         } catch (\Throwable $e) {
-            echo $e;
+            static::$_vars = [];
+            \ob_end_clean();
+            throw $e;
         }
         static::$_vars = [];
         return \ob_get_clean();
