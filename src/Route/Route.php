@@ -148,9 +148,6 @@ class Route
      */
     public function setParams(array $params)
     {
-        if (!empty($this->_params)) {
-            throw new \RuntimeException('The routing params are read-only and cannot be changed');
-        }
         $this->_params = $params;
     }
 
