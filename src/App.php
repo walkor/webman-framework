@@ -325,6 +325,7 @@ class App
             $ret[0] = 'route';
             $callback = $ret[1]['callback'];
             $route = $ret[1]['route'];
+            $route = clone $route;
             $app = $controller = $action = '';
             $args = !empty($ret[2]) ? $ret[2] : null;
             if ($args) {
