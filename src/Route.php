@@ -358,10 +358,10 @@ class Route
             if (\is_file($route_config_file)) {
                 require_once $route_config_file;
             }
-            if (!is_dir($plugin_config_paht = $config_path . '/plugin')) {
+            if (!is_dir($plugin_config_path = $config_path . '/plugin')) {
                 return;
             }
-            $dir_iterator = new \RecursiveDirectoryIterator($plugin_config_paht, \FilesystemIterator::FOLLOW_SYMLINKS);
+            $dir_iterator = new \RecursiveDirectoryIterator($plugin_config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
             $iterator = new \RecursiveIteratorIterator($dir_iterator);
             foreach ($iterator as $file) {
                 if ($file->getBaseName('.php') !== 'route') {
