@@ -23,7 +23,7 @@ use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Exception\ExceptionHandler;
 use Webman\Config;
 use FastRoute\Dispatcher;
-use Psr\Container\ContainerInterface;
+use Webman\Container;
 use Monolog\Logger;
 
 /**
@@ -54,7 +54,7 @@ class App
     protected static $_worker = null;
 
     /**
-     * @var ContainerInterface
+     * @var Container
      */
     protected static $_container = null;
 
@@ -280,7 +280,7 @@ class App
     }
 
     /**
-     * @return ContainerInterface
+     * @return Container
      */
     public static function container()
     {
