@@ -441,8 +441,8 @@ class App
             return false;
         }
 
-        $explode[1] = $explode[1] ?? 'index';
-        $explode[2] = $explode[2] ?? 'index';
+        $explode[1] = isset($explode[1]) && !empty($explode[1]) ? $explode[1]: 'index';
+        $explode[2] = isset($explode[2]) && !empty($explode[2]) ? $explode[2]: 'index';
 
         $controller = $explode[1];
         $action = $explode[2];
