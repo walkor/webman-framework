@@ -15,8 +15,11 @@
 namespace support;
 
 use Workerman\Timer;
-use Illuminate\Redis\RedisManager;
 use Workerman\Worker;
+use Illuminate\Redis\RedisManager;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Redis\Events\CommandExecuted;
+
 
 /**
  * Class Redis
@@ -216,7 +219,6 @@ class Redis
     /**
      * need to install the 'predis/predis' packgage.
      * cmd: composer install predis/predis
-     * c
      */
     const PREDIS_CLIENT = 'predis';
 
@@ -260,6 +262,7 @@ class Redis
                     $connection->get('ping');
                 });
             }
+            $connection->setEventDispatcher(new Dispatcher());
         }
         return $connection;
     }
