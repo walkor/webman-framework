@@ -434,32 +434,32 @@ class App
             $path = \substr($path, 1);
         }
         $explode = \explode('/', $path);
-        $action = 'index';
 
-        $controller = $explode[0];
-        if ($controller === '') {
+        $app = $explode[0];
+
+        if ($app === '') {
             return false;
         }
-        if (!empty($explode[1])) {
-            $action = $explode[1];
+
+        $explode[1] = !empty($explode[1]) ? $explode[1]: 'index';
+        $explode[2] = !empty($explode[2]) ? $explode[2]: 'index';
+
+        $controller = $explode[1];
+        $action = $explode[2];
+
+        $controller_class = "app\\$app\\controller\\$controller$suffix";
+        if ($controller_action = static::getControllerAction($controller_class, $action)) {
+            return $controller_action;
         }
+
+        $controller = $explode[0];
+        $action = $explode[1];
+
         $controller_class = "app\\controller\\$controller$suffix";
         if ($controller_action = static::getControllerAction($controller_class, $action)) {
             return $controller_action;
         }
 
-        $app = $explode[0];
-        $controller = $action = 'index';
-        if (!empty($explode[1])) {
-            $controller = $explode[1];
-            if (!empty($explode[2])) {
-                $action = $explode[2];
-            }
-        }
-        $controller_class = "app\\$app\\controller\\$controller$suffix";
-        if ($controller_action = static::getControllerAction($controller_class, $action)) {
-            return $controller_action;
-        }
         return false;
     }
 
