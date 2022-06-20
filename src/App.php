@@ -417,49 +417,32 @@ class App
     protected static function parseControllerAction($path)
     {
         $suffix = config('app.controller_suffix', '');
-        $app = '';
-        if ($path === '/' || $path === '') {
-            $controller_class = 'app\controller\Index' . $suffix;
-            $action = 'index';
+        $path_explode = explode('/', trim($path, '/'));
+        $app = !empty($path_explode[0]) ? $path_explode[0] : 'index';
+        $controller = $path_explode[1] ?? 'index';
+        $action = $path_explode[2] ?? 'index';
+
+        if (isset($path_explode[2])) {
+            $controller_class = "app\\$app\\controller\\$controller$suffix";
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
                 return $controller_action;
             }
-            $controller_class = 'app\index\controller\Index' . $suffix;
-            if ($controller_action = static::getControllerAction($controller_class, $action)) {
-                return $controller_action;
-            }
-            return false;
-        }
-        if ($path && $path[0] === '/') {
-            $path = \substr($path, 1);
-        }
-        $explode = \explode('/', $path);
-
-        $app = $explode[0];
-
-        if ($app === '') {
-            return false;
         }
 
-        $explode[1] = !empty($explode[1]) ? $explode[1]: 'index';
-        $explode[2] = !empty($explode[2]) ? $explode[2]: 'index';
-
-        $controller = $explode[1];
-        $action = $explode[2];
-
-        $controller_class = "app\\$app\\controller\\$controller$suffix";
-        if ($controller_action = static::getControllerAction($controller_class, $action)) {
-            return $controller_action;
-        }
-
-        $controller = $explode[0];
-        $action = $explode[1];
+        $controller = $app;
+        $action = $path_explode[1] ?? 'index';
 
         $controller_class = "app\\controller\\$controller$suffix";
         if ($controller_action = static::getControllerAction($controller_class, $action)) {
             return $controller_action;
         }
 
+        $controller = $path_explode[1] ?? 'index';
+        $action = $path_explode[2] ?? 'index';
+        $controller_class = "app\\$app\\controller\\$controller$suffix";
+        if ($controller_action = static::getControllerAction($controller_class, $action)) {
+            return $controller_action;
+        }
         return false;
     }
 
