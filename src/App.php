@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of webman.
  *
@@ -131,8 +132,14 @@ class App
             $path = $request->path();
             $key = $request->method() . $path;
             if (isset(static::$_callbacks[$key])) {
-                [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+                [$callback, $request->app, $request->controller, $request->action, $request->route, $hasInit, $hasDeInit] = static::$_callbacks[$key];
+                if ($hasInit) {
+                    $callback[0]->_init();
+                }
                 static::send($connection, $callback($request), $request);
+                if ($hasDeInit) {
+                    $callback[0]->_deinit();
+                }
                 return null;
             }
 
@@ -147,9 +154,9 @@ class App
             if (static::findRoute($connection, $path, $key, $request)) {
                 return null;
             }
-
+            
             $controller_and_action = static::parseControllerAction($path);
-            if (!$controller_and_action || Route::hasDisableDefaultRoute()) {
+            if (!$controller_and_action || in_array(strtolower($controller_and_action['action']), ['_init', '_deinit']) || Route::hasDisableDefaultRoute()) {
                 $callback = static::getFallback();
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
@@ -159,9 +166,17 @@ class App
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
             $callback = static::getCallback($app, [$controller_and_action['instance'], $action]);
-            static::$_callbacks[$key] = [$callback, $app, $controller, $action, null];
+            $hasInit = method_exists($controller_and_action['instance'], '_init');
+            $hasDeInit = method_exists($controller_and_action['instance'], '_deinit');
+            static::$_callbacks[$key] = [$callback, $app, $controller, $action, null, $hasInit, $hasDeInit];
             [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            if ($hasInit) {
+                $controller_and_action['instance']->_init();
+            }
             static::send($connection, $callback($request), $request);
+            if ($hasDeInit) {
+                $controller_and_action['instance']->_deinit();
+            }
         } catch (\Throwable $e) {
             static::send($connection, static::exceptionResponse($e, $request), $request);
         }
@@ -176,7 +191,7 @@ class App
      */
     protected static function unsafeUri($connection, $path, $request)
     {
-        if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
+        if (strpos($path, '/../') !== false || strpos($path, "\\") !== false || strpos($path, "\0") !== false) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
@@ -188,7 +203,8 @@ class App
     /**
      * @return \Closure
      */
-    protected static function getFallback() {
+    protected static function getFallback()
+    {
         // when route, controller and action not found, try to use Route::fallback
         return Route::getFallback() ?: function () {
             return new Response(404, [], \file_get_contents(static::$_publicPath . '/404.html'));
@@ -331,14 +347,28 @@ class App
             if ($args) {
                 $route->setParams($args);
             }
+
+            $hasInit = false;
+            $hasDeInit = false;
             if (\is_array($callback) && isset($callback[0]) && $controller = \get_class($callback[0])) {
                 $app = static::getAppByController($controller);
                 $action = static::getRealMethod($controller, $callback[1]) ?? '';
+                if (in_array(strtolower($action), ['_init', '_deinit'])) {
+                    return false;
+                }
+                $hasInit = method_exists($callback[0], '_init');
+                $hasDeInit = method_exists($callback[0], '_deinit');
             }
             $callback = static::getCallback($app, $callback, $args, true, $route);
-            static::$_callbacks[$key] = [$callback, $app, $controller ? $controller : '', $action, $route];
+            static::$_callbacks[$key] = [$callback, $app, $controller ? $controller : '', $action, $route, $hasInit, $hasDeInit];
             [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            if ($hasInit) {
+                $callback[0]->_init();
+            }
             static::send($connection, $callback($request), $request);
+            if ($hasDeInit) {
+                $callback[0]->_deinit();
+            }
             if (\count(static::$_callbacks) > 1024) {
                 static::clearCache();
             }
@@ -370,7 +400,7 @@ class App
             }
             static::$_callbacks[$key] = [function ($request) use ($file) {
                 return static::execPhpFile($file);
-            }, '', '', '', null];
+            }, '', '', '', null, false, false];
             [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, static::execPhpFile($file), $request);
             return true;
@@ -387,7 +417,7 @@ class App
                 return $callback($request);
             }
             return (new Response())->file($file);
-        }, null, false), '', '', '', null];
+        }, null, false), '', '', '', null, false, false];
         [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
         static::send($connection, $callback($request), $request);
         return true;
@@ -473,6 +503,10 @@ class App
      */
     protected static function getControllerAction($controller_class, $action)
     {
+        if (in_array(strtolower($action), ['_init', '_deinit'])) {
+            return false;
+        }
+
         if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
             return [
                 'app'        => static::getAppByController($controller_class),
