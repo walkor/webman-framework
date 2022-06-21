@@ -144,11 +144,12 @@ class Route
 
     /**
      * @param array $params
-     * @return void
+     * @return $this
      */
     public function setParams(array $params)
     {
         $this->_params = array_merge($this->_params, $params);
+        return $this;
     }
 
     /**
