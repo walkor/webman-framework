@@ -172,12 +172,16 @@ class Route
     }
 
     /**
-     * @param $path
-     * @param $callback
-     * @return Route
+     * @param string|callable $path
+     * @param callable|null $callback
+     * @return static
      */
-    public static function group($path, $callback)
+    public static function group($path, callable $callback = null)
     {
+        if ($callback === null) {
+            $callback = $path;
+            $path = '';
+        }
         $previous_group_prefix = static::$_groupPrefix;
         static::$_groupPrefix = $previous_group_prefix . $path;
         $instance = static::$_instance = new static;
