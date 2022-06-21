@@ -148,7 +148,7 @@ class Route
      */
     public function setParams(array $params)
     {
-        $this->_params = $params;
+        $this->_params = array_merge($this->_params, $params);
     }
 
     /**
