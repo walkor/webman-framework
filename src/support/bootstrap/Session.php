@@ -33,7 +33,11 @@ class Session implements Bootstrap
     public static function start($worker)
     {
         $config = config('session');
-        Http::sessionName($config['session_name']);
+        if (property_exists(SessionBase::class, 'name')) {
+            SessionBase::$name = $config['session_name'];
+        } else {
+            Http::sessionName($config['session_name']);
+        }
         SessionBase::handlerClass($config['handler'], $config['config'][$config['type']]);
         $map = [
             'auto_update_timestamp' => 'autoUpdateTimestamp',
