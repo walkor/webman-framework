@@ -401,6 +401,7 @@ class App
     protected static function send(TcpConnection $connection, $response, Request $request)
     {
         $keep_alive = $request->header('connection');
+        static::$_request = static::$_connection = null;
         if (($keep_alive === null && $request->protocolVersion() === '1.1')
             || $keep_alive === 'keep-alive' || $keep_alive === 'Keep-Alive'
         ) {
