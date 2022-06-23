@@ -513,14 +513,13 @@ class App
      */
     protected static function getAppByController($controller_calss)
     {
-        if ($controller_calss[0] === '\\') {
-            $controller_calss = \substr($controller_calss, 1);
+        $explode = \explode('\\', strtolower($controller_calss));
+        foreach ($explode as $index => $path) {
+            if ($path == 'controller') {
+                return $explode[$index - 1] ?? '';
+            }
         }
-        $tmp = \explode('\\', $controller_calss, 3);
-        if (!isset($tmp[1])) {
-            return '';
-        }
-        return strtolower($tmp[1]) === 'controller' ? '' : $tmp[1];
+        return '';
     }
 
     /**
