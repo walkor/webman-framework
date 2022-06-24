@@ -46,15 +46,19 @@ class Twig implements View
      */
     public static function render($template, $vars, $app = null)
     {
-        static $views = [], $view_suffix;
-        $view_suffix = $view_suffix ?: \config('view.options.view_suffix', \config('view.view_suffix', 'html'));
-        $app = $app === null ? \request()->app : $app;
-        if (!isset($views[$app])) {
-            $view_path = $app === '' ? \app_path() . '/view/' : \app_path() . "/$app/view/";
-            $views[$app] = new Environment(new FilesystemLoader($view_path), \config('view.options', []));
+        static $views = [];
+        $request = request();
+        $app = $app === null ? $request->app : $app;
+        $config_prefix = $request->plugin ? "plugin.{$request->plugin}." : '';
+        $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
+        $key = "{$request->plugin}-{$request->app}";
+        if (!isset($views[$key])) {
+            $base_view_path = $request->plugin ? \base_path() . "/plugin/{$request->plugin}/app" : \app_path();
+            $view_path = $app === '' ? "$base_view_path/view/" : "$base_view_path/$app/view/";
+            $views[$key] = new Environment(new FilesystemLoader($view_path), \config("{$config_prefix}view.options", []));
         }
         $vars = \array_merge(static::$_vars, $vars);
-        $content = $views[$app]->render("$template.$view_suffix", $vars);
+        $content = $views[$key]->render("$template.$view_suffix", $vars);
         static::$_vars = [];
         return $content;
     }

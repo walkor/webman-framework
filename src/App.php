@@ -131,7 +131,7 @@ class App
             $path = $request->path();
             $key = $request->method() . $path;
             if (isset(static::$_callbacks[$key])) {
-                [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+                [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
                 static::send($connection, $callback($request), $request);
                 return null;
             }
@@ -155,12 +155,13 @@ class App
                 static::send($connection, $callback($request), $request);
                 return null;
             }
+            $plugin = $controller_and_action['plugin'];
             $app = $controller_and_action['app'];
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
-            $callback = static::getCallback($app, [$controller_and_action['instance'], $action]);
-            static::$_callbacks[$key] = [$callback, $app, $controller, $action, null];
-            [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            $callback = static::getCallback($plugin, $app, [$controller, $action]);
+            static::$_callbacks[$key] = [$callback, $plugin, $app, $controller, $action, null];
+            [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
         } catch (\Throwable $e) {
             static::send($connection, static::exceptionResponse($e, $request), $request);
@@ -176,7 +177,7 @@ class App
      */
     protected static function unsafeUri($connection, $path, $request)
     {
-        if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
+        if (strpos($path, '..') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
@@ -232,7 +233,7 @@ class App
      * @param RouteObject $route
      * @return \Closure|mixed
      */
-    protected static function getCallback($app, $call, $args = null, $with_global_middleware = true, $route = null)
+    protected static function getCallback($plugin, $app, $call, $args = null, bool $with_global_middleware = true, $route = null)
     {
         $args = $args === null ? null : \array_values($args);
         $middlewares = [];
@@ -242,7 +243,17 @@ class App
                 $middlewares[] = [App::container()->get($class_name), 'process'];
             }
         }
-        $middlewares = \array_merge($middlewares, Middleware::getMiddleware($app, $with_global_middleware));
+        $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $with_global_middleware));
+
+        $controller_reuse = $plugin ? \config("plugin.$plugin.app.controller_reuse", true) : \config("app.controller_reuse", true);
+        if (!$controller_reuse && \is_array($call) && is_string($call[0])) {
+            $call = function ($request, ...$args) use ($call) {
+                $call[0] = static::container()->make($call[0]);
+                return $call($request, ...$args);
+            };
+        } else {
+            $call[0] = static::container()->get($call[0]);
+        }
 
         if ($middlewares) {
             $callback = array_reduce($middlewares, function ($carry, $pipe) {
@@ -324,20 +335,21 @@ class App
         if ($ret[0] === Dispatcher::FOUND) {
             $ret[0] = 'route';
             $callback = $ret[1]['callback'];
-            $route = $ret[1]['route'];
-            $route = clone $route;
-            $app = $controller = $action = '';
+            $route = clone $ret[1]['route'];
+            $plugin = $app = $controller = $action = '';
             $args = !empty($ret[2]) ? $ret[2] : null;
             if ($args) {
                 $route->setParams($args);
             }
-            if (\is_array($callback) && isset($callback[0]) && $controller = \get_class($callback[0])) {
+            if (\is_array($callback)) {
+                $controller = $callback[0];
+                $plugin = static::getPluginByController($controller);
                 $app = static::getAppByController($controller);
                 $action = static::getRealMethod($controller, $callback[1]) ?? '';
             }
-            $callback = static::getCallback($app, $callback, $args, true, $route);
-            static::$_callbacks[$key] = [$callback, $app, $controller ? $controller : '', $action, $route];
-            [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            $callback = static::getCallback($plugin, $app, $callback, $args, true, $route);
+            static::$_callbacks[$key] = [$callback, $plugin, $app, $controller ?: '', $action, $route];
+            [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
             if (\count(static::$_callbacks) > 1024) {
                 static::clearCache();
@@ -346,7 +358,6 @@ class App
         }
         return false;
     }
-
 
     /**
      * @param $connection
@@ -368,10 +379,10 @@ class App
             if (!static::$_supportPHPFiles) {
                 return false;
             }
-            static::$_callbacks[$key] = [function ($request) use ($file) {
+            static::$_callbacks[$key] = [function () use ($file) {
                 return static::execPhpFile($file);
-            }, '', '', '', null];
-            [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            }, '', '', '', '', null];
+            [, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, static::execPhpFile($file), $request);
             return true;
         }
@@ -380,15 +391,15 @@ class App
             return false;
         }
 
-        static::$_callbacks[$key] = [static::getCallback('__static__', function ($request) use ($file) {
+        static::$_callbacks[$key] = [static::getCallback('','__static__', function ($request) use ($file) {
             \clearstatcache(true, $file);
             if (!\is_file($file)) {
                 $callback = static::getFallback();
                 return $callback($request);
             }
             return (new Response())->file($file);
-        }, null, false), '', '', '', null];
-        [$callback, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+        }, null, false), '', '', '', '', null];
+        [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
         static::send($connection, $callback($request), $request);
         return true;
     }
@@ -417,14 +428,19 @@ class App
      */
     protected static function parseControllerAction($path)
     {
-        $suffix = config('app.controller_suffix', '');
-        $path_explode = explode('/', trim($path, '/'));
+        $path_explode = \explode('/', trim($path, '/'));
+        $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'plugin';
+        $config_prefix = $is_plugin ? "{$path_explode[0]}.{$path_explode[1]}." : '';
+        $path_prefix = $is_plugin ? "/{$path_explode[0]}/{$path_explode[1]}" : '';
+        $class_prefix = $is_plugin ? "{$path_explode[0]}\\{$path_explode[1]}\\" : '';
+        $suffix = config("{$config_prefix}app.controller_suffix", '');
+        $path_explode = explode('/', trim(substr($path, strlen($path_prefix)), '/'));
         $app = !empty($path_explode[0]) ? $path_explode[0] : 'index';
         $controller = $path_explode[1] ?? 'index';
         $action = $path_explode[2] ?? 'index';
 
         if (isset($path_explode[2])) {
-            $controller_class = "app\\$app\\controller\\$controller$suffix";
+            $controller_class = "{$class_prefix}app\\$app\\controller\\$controller$suffix";
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
                 return $controller_action;
             }
@@ -433,14 +449,14 @@ class App
         $controller = $app;
         $action = $path_explode[1] ?? 'index';
 
-        $controller_class = "app\\controller\\$controller$suffix";
+        $controller_class = "{$class_prefix}app\\controller\\$controller$suffix";
         if ($controller_action = static::getControllerAction($controller_class, $action)) {
             return $controller_action;
         }
 
         $controller = $path_explode[1] ?? 'index';
         $action = $path_explode[2] ?? 'index';
-        $controller_class = "app\\$app\\controller\\$controller$suffix";
+        $controller_class = "{$class_prefix}app\\$app\\controller\\$controller$suffix";
         if ($controller_action = static::getControllerAction($controller_class, $action)) {
             return $controller_action;
         }
@@ -457,12 +473,12 @@ class App
      */
     protected static function getControllerAction($controller_class, $action)
     {
-        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$instance = static::$_container->get($controller_class), $action])) {
+        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$controller_class, $action])) {
             return [
+                'plugin'     => static::getPluginByController($controller_class),
                 'app'        => static::getAppByController($controller_class),
                 'controller' => $controller_class,
-                'action'     => static::getRealMethod($controller_class, $action),
-                'instance'   => $instance,
+                'action'     => static::getRealMethod($controller_class, $action)
             ];
         }
         return false;
@@ -509,19 +525,29 @@ class App
     }
 
     /**
-     * @param $controller_calss
+     * @param $controller_class
+     * @return mixed|string
+     */
+    public static function getPluginByController($controller_class)
+    {
+        $controller_class = trim($controller_class, '\\');
+        $tmp = \explode('\\', $controller_class, 3);
+        return $tmp[1] ?? '';
+    }
+
+    /**
+     * @param $controller_class
      * @return string
      */
-    protected static function getAppByController($controller_calss)
+    protected static function getAppByController($controller_class)
     {
-        if ($controller_calss[0] === '\\') {
-            $controller_calss = \substr($controller_calss, 1);
-        }
-        $tmp = \explode('\\', $controller_calss, 3);
-        if (!isset($tmp[1])) {
+        $controller_class = trim($controller_class, '\\');
+        $tmp = \explode('\\', $controller_class, 5);
+        $pos = $tmp[0] === 'plugin' ? 3 : 1;
+        if (!isset($tmp[$pos])) {
             return '';
         }
-        return strtolower($tmp[1]) === 'controller' ? '' : $tmp[1];
+        return strtolower($tmp[$pos]) === 'controller' ? '' : $tmp[$pos];
     }
 
     /**

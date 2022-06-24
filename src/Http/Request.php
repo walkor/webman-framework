@@ -24,6 +24,11 @@ use Webman\Http\UploadFile;
 class Request extends \Workerman\Protocols\Http\Request
 {
     /**
+     * @var null
+     */
+    public $plugin = null;
+
+    /**
      * @var string
      */
     public $app = null;

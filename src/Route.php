@@ -312,13 +312,6 @@ class Route
             $callback = \explode('@', $callback, 2);
         }
 
-        if (\is_array($callback)) {
-            $callback = \array_values($callback);
-            if (isset($callback[1]) && \is_string($callback[0]) && \class_exists($callback[0])) {
-                $callback = [static::container()->get($callback[0]), $callback[1]];
-            }
-        }
-
         if (!\is_callable($callback)) {
             echo "Route set to $path is not callable\n";
             return false;
