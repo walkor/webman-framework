@@ -252,7 +252,13 @@ class App
             }, function ($request) use ($call, $args) {
                 try {
                     if ($args === null) {
-                        $response = $call($request);
+                        $vars = $request->get();
+                        if (\is_array($call) && isset($call[0]) && !empty($vars)) {
+                            $args = static::bindParams($request, $call, $vars);
+                            $response = $call(...$args);
+                        } else {
+                            $response = $call($request);
+                        }
                     } else {
                         $response = $call($request, ...$args);
                     }
@@ -269,7 +275,15 @@ class App
             });
         } else {
             if ($args === null) {
-                $callback = $call;
+                $vars = static::$_request->get();
+                if (\is_array($call) && isset($call[0]) && !empty($vars)) {
+                    $args = static::bindParams(static::$_request, $call, $vars);
+                    $callback = function () use ($call, $args) {
+                        return $call(...$args);
+                    };
+                } else {
+                    $callback = $call;
+                }
             } else {
                 $callback = function ($request) use ($call, $args) {
                     return $call($request, ...$args);
@@ -277,6 +291,55 @@ class App
             }
         }
         return $callback;
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @param Request $request
+     * @param array $call
+     * @param array $vars query params
+     * @return array
+     */
+    protected static function bindParams($request, $call, $vars)
+    {
+        $reflect = new \ReflectionMethod($call[0], $call[1]);
+        $params = $reflect->getParameters();
+        $args = [];
+        foreach ($params as $param) {
+            $name = $param->getName();
+            // if param name is request, for exemple : function index($request){...} (ps:不强制在方法第一个参数注入$request，有这个参数的时候才注入，不一定放第一个)
+            if ($name == 'request') {
+                $args[] = $request;
+            }
+            // if find in query params, for exemple : function view(id = 0){...}
+            else if (isset($vars[$name]) && $vars[$name] !== '') {
+                $args[] = $vars[$name];
+            }
+            //
+            else if (($reflectionType = $param->getType()) && !$reflectionType->isBuiltin()) {
+                $class = $reflectionType->getName();
+                // if param is not named `request` but instanceof Request, for exemple : function index(Request $req){...}
+                if (
+                    in_array($class, [\support\Request::class, \Webman\Http\Request::class, \Workerman\Protocols\Http\Request::class])
+                    || $class == \get_class($request)
+                ) {
+                    $args[] = $request;
+                }
+                //others, for exemple : function index(\app\service\Order $order){...}
+                else if ($instance = static::$_container->get($class)) {
+                    $args[] = $instance;
+                } else {
+                    $args[] = null;
+                }
+            } elseif ($param->isDefaultValueAvailable()) {
+                $args[] = $param->getDefaultValue();
+            } else {
+                $args[] = null; //fill in a default value
+            }
+        }
+
+        return $args;
     }
 
     /**
