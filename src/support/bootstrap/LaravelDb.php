@@ -18,7 +18,8 @@ use Webman\Bootstrap;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Container\Container;
-use Jenssegers\Mongodb\Connection;
+use Illuminate\Database\Connection;
+use Jenssegers\Mongodb\Connection as MongodbConnection;
 use Workerman\Worker;
 use Workerman\Timer;
 use support\Db;
@@ -36,7 +37,7 @@ class LaravelDb implements Bootstrap
      */
     public static function start($worker)
     {
-        if (!class_exists('\Illuminate\Database\Capsule\Manager')) {
+        if (!class_exists(Capsule::class)) {
             return;
         }
 
@@ -51,7 +52,7 @@ class LaravelDb implements Bootstrap
         $capsule->getDatabaseManager()->extend('mongodb', function ($config, $name) {
             $config['name'] = $name;
 
-            return new Connection($config);
+            return new MongodbConnection($config);
         });
 
         if (isset($configs['default'])) {
@@ -63,7 +64,7 @@ class LaravelDb implements Bootstrap
             $capsule->addConnection($config, $name);
         }
 
-        if (class_exists('\Illuminate\Events\Dispatcher')) {
+        if (class_exists(Dispatcher::class)) {
             $capsule->setEventDispatcher(new Dispatcher(new Container));
         }
 
@@ -74,6 +75,9 @@ class LaravelDb implements Bootstrap
         // Heartbeat
         if ($worker) {
             Timer::add(55, function () use ($connections) {
+                if (!class_exists(Connection::class, false)) {
+                    return;
+                }
                 foreach ($connections as $key => $item) {
                     if ($item['driver'] == 'mysql') {
                         try {
