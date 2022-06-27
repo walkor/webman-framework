@@ -10,8 +10,8 @@ class Install
      */
     protected static $pathRelation = [
         'start.php' => 'start.php',
-        'support/bootstrap.php' => 'support/bootstrap.php',
-        'support/Plugin.php' => 'support/Plugin.php',
+        'Support/bootstrap.php' => 'support/bootstrap.php',
+        'Support/Plugin.php' => 'support/Plugin.php',
     ];
 
     /**

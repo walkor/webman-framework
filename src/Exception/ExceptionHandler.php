@@ -20,7 +20,7 @@ use Webman\Http\Response;
 
 /**
  * Class Handler
- * @package support\exception
+ * @package Support\Exception
  */
 class ExceptionHandler implements ExceptionHandlerInterface
 {

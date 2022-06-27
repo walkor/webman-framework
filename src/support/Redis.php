@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Support;
 
 use Workerman\Timer;
 use Workerman\Worker;
@@ -23,7 +23,7 @@ use Illuminate\Redis\Events\CommandExecuted;
 
 /**
  * Class Redis
- * @package support
+ * @package Support
  *
  * Strings methods
  * @method static int append($key, $value)

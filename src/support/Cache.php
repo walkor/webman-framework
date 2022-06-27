@@ -1,13 +1,13 @@
 <?php
 
-namespace support;
+namespace Support;
 
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 
 /**
  * Class Cache
- * @package support\bootstrap
+ * @package Support\Bootstrap
  *
  * Strings methods
  * @method static mixed get($key, $default = null)

@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Support;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
 

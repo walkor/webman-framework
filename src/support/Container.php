@@ -12,13 +12,14 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Support;
 
 use Psr\Container\ContainerInterface;
+use Webman\Config;
 
 /**
  * Class Container
- * @package support
+ * @package Support
  * @method static mixed get($name)
  * @method static mixed make($name, array $parameters)
  * @method static bool has($name)
@@ -26,24 +27,11 @@ use Psr\Container\ContainerInterface;
 class Container
 {
     /**
-     * @var ContainerInterface[]
-     */
-    protected static $_instance = [];
-
-    /**
      * @return ContainerInterface
      */
     public static function instance($plugin = null)
     {
-        $plugin = $plugin ?? '';
-        if (!isset(static::$_instance[$plugin])) {
-            if ($plugin === '') {
-                static::$_instance[$plugin] = include config_path() . '/container.php';
-            } else {
-                static::$_instance[$plugin] =  base_path() . "/plugin/$plugin/config/container.php";
-            }
-        }
-        return static::$_instance[$plugin];
+        return Config::get($plugin ? "plugin.$plugin.container" : 'container');
     }
 
     /**
@@ -53,6 +41,7 @@ class Container
      */
     public static function __callStatic($name, $arguments)
     {
-        return static::instance()->{$name}(... $arguments);
+        $plugin = \Webman\App::getPluginByClass($name);
+        return static::instance($plugin)->{$name}(... $arguments);
     }
 }

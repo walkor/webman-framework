@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Support;
 
 use Monolog\Formatter\FormatterInterface;
 use Monolog\Handler\FormattableHandlerInterface;
@@ -21,7 +21,7 @@ use Monolog\Logger;
 
 /**
  * Class Log
- * @package support
+ * @package Support
  *
  * @method static void log($level, $message, array $context = [])
  * @method static void debug($message, array $context = [])

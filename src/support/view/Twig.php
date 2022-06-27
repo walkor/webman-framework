@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\view;
+namespace Support\View;
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
@@ -20,7 +20,7 @@ use Webman\View;
 
 /**
  * Class Blade
- * @package support\view
+ * @package Support\View
  */
 class Twig implements View
 {

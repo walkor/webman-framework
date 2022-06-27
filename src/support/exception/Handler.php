@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\exception;
+namespace Support\Exception;
 
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -21,7 +21,7 @@ use Webman\Exception\ExceptionHandler;
 
 /**
  * Class Handler
- * @package support\exception
+ * @package Support\Exception
  */
 class Handler extends ExceptionHandler
 {

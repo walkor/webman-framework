@@ -35,11 +35,11 @@
   "autoload": {
     "psr-4": {
       "Webman\\": "./src",
-      "support\\": "./src/support",
-      "Support\\": "./src/support",
-      "Support\\Bootstrap\\": "./src/support/bootstrap",
-      "Support\\Exception\\": "./src/support/exception",
-      "Support\\View\\": "./src/support/view"
+      "Support\\": "./src/Support",
+      "support\\": "./src/Support",
+      "support\\bootstrap\\": "./src/Support/Bootstrap",
+      "support\\exception\\": "./src/Support/Exception",
+      "support\\view\\": "./src/Support/View"
     }
   },
   "minimum-stability": "dev"

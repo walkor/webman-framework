@@ -12,11 +12,11 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Support;
 
 /**
  * Class Response
- * @package support
+ * @package Support
  */
 class Response extends \Webman\Http\Response
 {

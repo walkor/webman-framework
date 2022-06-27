@@ -13,7 +13,6 @@
  */
 
 use Dotenv\Dotenv;
-use support\Container;
 use Webman\Config;
 use Webman\Route;
 use Webman\Middleware;
@@ -46,47 +45,24 @@ if (class_exists('Dotenv\Dotenv') && file_exists(base_path() . '/.env')) {
     }
 }
 
-Config::load(config_path(), ['route', 'container']);
-
-$directory = base_path() . '/plugin';
-if (is_dir($directory)) {
-    $handle = opendir($directory);
-    while (FALSE !== ($entry = readdir($handle))) {
-        if ($entry == '.' || $entry == '..') {
-            continue;
-        }
-        $dir = $directory . '/' . $entry . '/config';
-        Config::load($dir, ['route', 'container'], "plugin.$entry");
-    }
-    closedir($handle);
-}
-
-foreach (config('plugin', []) as $firm => $projects) {
-    foreach ($projects as $name => $project) {
-        foreach ($project['autoload']['files'] ?? [] as $file) {
-            include_once $file;
-        }
-    }
-    foreach ($projects['autoload']['files'] ?? [] as $file) {
-        include_once $file;
-    }
-}
+Support\App::loadAllConfig(['route']);
 
 foreach (config('autoload.files', []) as $file) {
     include_once $file;
 }
 
-$container = Container::instance();
-Route::container($container);
-Middleware::container($container);
-
 Middleware::load(config('middleware', []), '');
 foreach (config('plugin', []) as $firm => $projects) {
     foreach ($projects as $name => $project) {
+        if (!is_array($project) || $name === 'static') {
+            continue;
+        }
         Middleware::load($project['middleware'] ?? [], '');
     }
     Middleware::load($projects['middleware'] ?? [], $firm);
-    Middleware::load(['__static__' => config("$firm.static.middleware", [])], $firm);
+    if ($static_middlewares = config("plugin.$firm.static.middleware")) {
+        Middleware::load(['__static__' => $static_middlewares], $firm);
+    }
 }
 Middleware::load(['__static__' => config('static.middleware', [])], '');
 
@@ -97,6 +73,9 @@ foreach (config('bootstrap', []) as $class_name) {
 
 foreach (config('plugin', []) as $firm => $projects) {
     foreach ($projects as $name => $project) {
+        if (!is_array($project)) {
+            continue;
+        }
         foreach ($project['bootstrap'] ?? [] as $class_name) {
             /** @var \Webman\Bootstrap $class_name */
             $class_name::start($worker);

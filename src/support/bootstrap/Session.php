@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\bootstrap;
+namespace Support\Bootstrap;
 
 use Webman\Bootstrap;
 use Workerman\Protocols\Http;
@@ -21,7 +21,7 @@ use Workerman\Worker;
 
 /**
  * Class Session
- * @package support
+ * @package Support
  */
 class Session implements Bootstrap
 {

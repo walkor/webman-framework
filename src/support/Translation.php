@@ -12,14 +12,14 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Support;
 
 use Symfony\Component\Translation\Translator;
 use Webman\Exception\NotFoundException;
 
 /**
  * Class Translation
- * @package support
+ * @package Support
  * @method static string trans(?string $id, array $parameters = [], string $domain = null, string $locale = null)
  * @method static void setLocale(string $locale)
  * @method static string getLocale()

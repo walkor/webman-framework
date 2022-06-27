@@ -1,6 +1,6 @@
 <?php
 
-namespace support;
+namespace Support;
 
 class Plugin
 {

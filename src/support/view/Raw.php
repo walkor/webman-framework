@@ -12,13 +12,13 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\view;
+namespace Support\View;
 
 use Webman\View;
 
 /**
  * Class Raw
- * @package support\view
+ * @package Support\View
  */
 class Raw implements View
 {
