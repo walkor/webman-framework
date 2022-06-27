@@ -245,7 +245,7 @@ class App
         }
         $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $with_global_middleware));
 
-        $controller_reuse = $plugin ? \config("plugin.$plugin.app.controller_reuse", true) : \config("app.controller_reuse", true);
+        $controller_reuse = $plugin ? Config::get("plugin.$plugin.app.controller_reuse", true) : Config::get("app.controller_reuse", true);
         if (!$controller_reuse && \is_array($call) && is_string($call[0])) {
             $call = function ($request, ...$args) use ($call) {
                 $call[0] = static::container()->make($call[0]);
@@ -433,7 +433,7 @@ class App
         $config_prefix = $is_plugin ? "{$path_explode[0]}.{$path_explode[1]}." : '';
         $path_prefix = $is_plugin ? "/{$path_explode[0]}/{$path_explode[1]}" : '';
         $class_prefix = $is_plugin ? "{$path_explode[0]}\\{$path_explode[1]}\\" : '';
-        $suffix = config("{$config_prefix}app.controller_suffix", '');
+        $suffix = Config::get("{$config_prefix}app.controller_suffix", '');
         $path_explode = explode('/', trim(substr($path, strlen($path_prefix)), '/'));
         $app = !empty($path_explode[0]) ? $path_explode[0] : 'index';
         $controller = $path_explode[1] ?? 'index';

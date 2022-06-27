@@ -46,13 +46,29 @@ if (class_exists('Dotenv\Dotenv') && file_exists(base_path() . '/.env')) {
     }
 }
 
-Config::reload(config_path(), ['route', 'container']);
+Config::load(config_path(), ['route', 'container']);
+
+$directory = base_path() . '/plugin';
+if (is_dir($directory)) {
+    $handle = opendir($directory);
+    while (FALSE !== ($entry = readdir($handle))) {
+        if ($entry == '.' || $entry == '..') {
+            continue;
+        }
+        $dir = $directory . '/' . $entry . '/config';
+        Config::load($dir, ['route', 'container'], "plugin.$entry");
+    }
+    closedir($handle);
+}
 
 foreach (config('plugin', []) as $firm => $projects) {
     foreach ($projects as $name => $project) {
         foreach ($project['autoload']['files'] ?? [] as $file) {
             include_once $file;
         }
+    }
+    foreach ($projects['autoload']['files'] ?? [] as $file) {
+        include_once $file;
     }
 }
 
@@ -64,13 +80,15 @@ $container = Container::instance();
 Route::container($container);
 Middleware::container($container);
 
-Middleware::load(config('middleware', []));
+Middleware::load(config('middleware', []), '');
 foreach (config('plugin', []) as $firm => $projects) {
     foreach ($projects as $name => $project) {
-        Middleware::load($project['middleware'] ?? []);
+        Middleware::load($project['middleware'] ?? [], '');
     }
+    Middleware::load($projects['middleware'] ?? [], $firm);
+    Middleware::load(['__static__' => config("$firm.static.middleware", [])], $firm);
 }
-Middleware::load(['__static__' => config('static.middleware', [])]);
+Middleware::load(['__static__' => config('static.middleware', [])], '');
 
 foreach (config('bootstrap', []) as $class_name) {
     /** @var \Webman\Bootstrap $class_name */
@@ -83,6 +101,10 @@ foreach (config('plugin', []) as $firm => $projects) {
             /** @var \Webman\Bootstrap $class_name */
             $class_name::start($worker);
         }
+    }
+    foreach ($projects['bootstrap'] ?? [] as $class_name) {
+        /** @var \Webman\Bootstrap $class_name */
+        $class_name::start($worker);
     }
 }
 

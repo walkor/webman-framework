@@ -26,19 +26,24 @@ use Psr\Container\ContainerInterface;
 class Container
 {
     /**
-     * @var ContainerInterface
+     * @var ContainerInterface[]
      */
-    protected static $_instance = null;
+    protected static $_instance = [];
 
     /**
      * @return ContainerInterface
      */
-    public static function instance()
+    public static function instance($plugin = null)
     {
-        if (!static::$_instance) {
-            static::$_instance = include config_path() . '/container.php';
+        $plugin = $plugin ?? '';
+        if (!isset(static::$_instance[$plugin])) {
+            if ($plugin === '') {
+                static::$_instance[$plugin] = include config_path() . '/container.php';
+            } else {
+                static::$_instance[$plugin] =  base_path() . "/plugin/$plugin/config/container.php";
+            }
         }
-        return static::$_instance;
+        return static::$_instance[$plugin];
     }
 
     /**
