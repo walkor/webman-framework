@@ -91,9 +91,9 @@ class App
 
             $worker->onWorkerStart = function ($worker) {
                 require_once base_path() . '/Support/bootstrap.php';
-                $app = new \Webman\App($worker, Log::channel('default'), app_path(), public_path());
-                Http::requestClass(config('app.request_class', config('server.request_class', Request::class)));
+                $app = new \Webman\App(config('app.request_class', Request::class), Log::channel('default'), app_path(), public_path(), );
                 $worker->onMessage = [$app, 'onMessage'];
+                [$app, 'onWorkerStart']($worker);
             };
         }
 

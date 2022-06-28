@@ -28,24 +28,24 @@ class Translation
 {
 
     /**
-     * @var Translator
+     * @var Translator[]
      */
-    protected static $_instance;
+    protected static $_instance = [];
 
     /**
      * @return Translator
      * @throws NotFoundException
      */
-    public static function instance()
+    public static function instance($plugin = '')
     {
-        if (!static::$_instance) {
-            $config = config('translation', []);
+        if (!isset(static::$_instance[$plugin])) {
+            $config = config($plugin ? "plugin.$plugin.translation" : 'translation', []);
             // Phar support. Compatible with the 'realpath' function in the phar file.
             if (!$translations_path = \get_realpath($config['path'])) {
                 throw new NotFoundException("File {$config['path']} not found");
             }
 
-            static::$_instance = $translator = new Translator($config['locale']);
+            static::$_instance[$plugin] = $translator = new Translator($config['locale']);
             $translator->setFallbackLocales($config['fallback_locale']);
 
             $classes = [
@@ -71,7 +71,7 @@ class Translation
                 }
             }
         }
-        return static::$_instance;
+        return static::$_instance[$plugin];
     }
 
     /**
@@ -81,6 +81,8 @@ class Translation
      */
     public static function __callStatic($name, $arguments)
     {
-        return static::instance()->{$name}(... $arguments);
+        $request = \request();
+        $plugin = $request->plugin ?? '';
+        return static::instance($plugin)->{$name}(... $arguments);
     }
 }

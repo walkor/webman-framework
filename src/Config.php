@@ -47,7 +47,89 @@ class Config
             }
         }
         static::$_config = array_replace_recursive(static::$_config, $config);
+        static::formatConfig();
+
         static::$_loaded = true;
+    }
+
+    /**
+     * @return void
+     */
+    protected static function formatConfig()
+    {
+        $config = static::$_config;
+        // Merge log config
+        foreach ($config['plugin'] ?? [] as $firm => $projects) {
+            if (isset($projects['app'])) {
+                foreach ($projects['log'] ?? [] as $key => $item) {
+                    $config['log']["plugin.$firm.$key"] = $item;
+                }
+            }
+            foreach ($projects as $name => $project) {
+                if (!is_array($project)) {
+                    continue;
+                }
+                foreach ($project['log'] ?? [] as $key => $item) {
+                    $config['log']["plugin.$firm.$name.$key"] = $item;
+                }
+            }
+        }
+
+        // Merge database config
+        foreach ($config['plugin'] ?? [] as $firm => $projects) {
+            if (isset($projects['app'])) {
+                foreach ($projects['database']['connections'] ?? [] as $key => $connection) {
+                    $config['database']['connections']["plugin.$firm.$key"] = $connection;
+                }
+            }
+            foreach ($projects as $name => $project) {
+                if (!is_array($project)) {
+                    continue;
+                }
+                foreach ($project['database']['connections'] ?? [] as $key => $connection) {
+                    $config['database']['connections']["plugin.$firm.$name.$key"] = $connection;
+                }
+            }
+        }
+        if (!empty($config['database']['connections'])) {
+            $config['database']['default'] = $config['database']['default'] ?? key($config['database']['connections']);
+        }
+        // Merge thinkorm config
+        foreach ($config['plugin'] ?? [] as $firm => $projects) {
+            if (isset($projects['app'])) {
+                foreach ($projects['thinkorm']['connections'] ?? [] as $key => $connection) {
+                    $config['thinkorm']['connections']["plugin.$firm.$key"] = $connection;
+                }
+            }
+            foreach ($projects as $name => $project) {
+                if (!is_array($project)) {
+                    continue;
+                }
+                foreach ($project['thinkorm']['connections'] ?? [] as $key => $connection) {
+                    $config['thinkorm']['connections']["plugin.$firm.$name.$key"] = $connection;
+                }
+            }
+        }
+        if (!empty($config['thinkorm']['connections'])) {
+            $config['thinkorm']['default'] = $config['thinkorm']['default'] ?? key($config['thinkorm']['connections']);
+        }
+        // Merge redis config
+        foreach ($config['plugin'] ?? [] as $firm => $projects) {
+            if (isset($projects['app'])) {
+                foreach ($projects['redis'] ?? [] as $key => $connection) {
+                    $config['redis']["plugin.$firm.$key"] = $connection;
+                }
+            }
+            foreach ($projects as $name => $project) {
+                if (!is_array($project)) {
+                    continue;
+                }
+                foreach ($project['redis'] ?? [] as $key => $connection) {
+                    $config['redis']["plugin.$firm.$name.$key"] = $connection;
+                }
+            }
+        }
+        static::$_config = $config;
     }
 
     /**
@@ -87,56 +169,9 @@ class Config
             $all_config = array_replace_recursive($all_config, $config);
         }
 
-        // Merge database config
-        foreach ($config['plugin'] ?? [] as $firm => $projects) {
-            if (isset($projects['app'])) {
-                foreach ($projects['database']['connections'] ?? [] as $key => $connection) {
-                    $config['database']['connections']["plugin.$firm.$key"] = $connection;
-                }
-            } else {
-                foreach ($projects as $name => $project) {
-                    foreach ($project['database']['connections'] ?? [] as $key => $connection) {
-                        $config['database']['connections']["plugin.$firm.$name.$key"] = $connection;
-                    }
-                }
-            }
-        }
-        if (!empty($config['database']['connections'])) {
-            $config['database']['default'] = $config['database']['default'] ?? key($config['database']['connections']);
-        }
-        // Merge thinkorm config
-        foreach ($config['plugin'] ?? [] as $firm => $projects) {
-            if (isset($projects['app'])) {
-                foreach ($projects['thinkorm']['connections'] ?? [] as $key => $connection) {
-                    $config['thinkorm']['connections']["plugin.$firm.$key"] = $connection;
-                }
-            } else {
-                foreach ($projects as $name => $project) {
-                    foreach ($project['thinkorm']['connections'] ?? [] as $key => $connection) {
-                        $config['thinkorm']['connections']["plugin.$firm.$name.$key"] = $connection;
-                    }
-                }
-            }
-        }
-        if (!empty($config['thinkorm']['connections'])) {
-            $config['thinkorm']['default'] = $config['thinkorm']['default'] ?? key($config['thinkorm']['connections']);
-        }
-        // Merge redis config
-        foreach ($config['plugin'] ?? [] as $firm => $projects) {
-            if (isset($projects['app'])) {
-                foreach ($projects['redis'] ?? [] as $key => $connection) {
-                    $config['redis']["plugin.$firm.$key"] = $connection;
-                }
-            } else {
-                foreach ($projects as $name => $project) {
-                    foreach ($project['redis'] ?? [] as $key => $connection) {
-                        $config['redis']["plugin.$firm.$name.$key"] = $connection;
-                    }
-                }
-            }
-        }
+        $config = $all_config;
 
-        return $all_config;
+        return $config;
     }
 
     /**

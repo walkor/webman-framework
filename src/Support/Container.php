@@ -29,7 +29,7 @@ class Container
     /**
      * @return ContainerInterface
      */
-    public static function instance($plugin = null)
+    public static function instance($plugin = '')
     {
         return Config::get($plugin ? "plugin.$plugin.container" : 'container');
     }

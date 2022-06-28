@@ -46,10 +46,11 @@ class ThinkPHP implements View
     public static function render($template, $vars, $app = null)
     {
         $request = request();
+        $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
-        $config_prefix = $request->plugin ? "plugin.{$request->plugin}." : '';
+        $config_prefix = $plugin ? "plugin.$plugin." : '';
         $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
-        $base_view_path = $request->plugin ? \base_path() . "/plugin/{$request->plugin}/app" : \app_path();
+        $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
         $view_path = $app === '' ? "$base_view_path/view/" : "$base_view_path/$app/view/";
         $default_options = [
             'view_path' => $view_path,

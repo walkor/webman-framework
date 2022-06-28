@@ -14,6 +14,7 @@
 
 namespace Webman;
 
+use Workerman\Protocols\Http;
 use Workerman\Worker;
 use Workerman\Connection\TcpConnection;
 use Webman\Http\Request;
@@ -79,9 +80,9 @@ class App
     protected static $_request = null;
 
     /**
-     * @var int
+     * @var string
      */
-    protected static $_gracefulStopTimer = null;
+    protected static $_requestClass = '';
 
     /**
      * App constructor.
@@ -90,9 +91,9 @@ class App
      * @param $app_path
      * @param $public_path
      */
-    public function __construct(Worker $worker, $logger, $app_path, $public_path)
+    public function __construct($request_class, $logger, $app_path, $public_path)
     {
-        static::$_worker = $worker;
+        static::$_requestClass = $request_class;
         static::$_logger = $logger;
         static::$_publicPath = $public_path;
         static::$_appPath = $app_path;
@@ -147,6 +148,12 @@ class App
             static::send($connection, static::exceptionResponse($e, $request), $request);
         }
         return null;
+    }
+
+    public function onWorkerStart($worker)
+    {
+        static::$_worker = $worker;
+        Http::requestClass(static::$_requestClass);
     }
 
     /**
@@ -280,7 +287,7 @@ class App
     /**
      * @return ContainerInterface
      */
-    public static function container($plugin = null)
+    public static function container($plugin = '')
     {
         return static::config($plugin, 'container');
     }
@@ -356,7 +363,7 @@ class App
     protected static function findFile($connection, $path, $key, $request)
     {
         $path_explodes = \explode('/', trim($path, '/'));
-        $plugin = null;
+        $plugin = '';
         if (isset($path_explodes[2]) && $path_explodes[0] === 'plugin') {
             $public_dir = BASE_PATH . "/{$path_explodes[0]}/{$path_explodes[1]}/public";
             $plugin = $path_explodes[1];

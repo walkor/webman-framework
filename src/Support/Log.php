@@ -46,13 +46,11 @@ class Log
      */
     public static function channel($name = 'default')
     {
-        if (!static::$_instance) {
-            $configs = config('log', []);
-            foreach ($configs as $channel => $config) {
-                $handlers = self::handlers($config);
-                $processors = self::processors($config);
-                static::$_instance[$channel] = new Logger($channel,$handlers,$processors);
-            }
+        if (!isset(static::$_instance[$name])) {
+            $config = config('log', [])[$name];
+            $handlers = self::handlers($config);
+            $processors = self::processors($config);
+            static::$_instance[$name] = new Logger($name,$handlers,$processors);
         }
         return static::$_instance[$name];
     }

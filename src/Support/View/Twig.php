@@ -48,12 +48,13 @@ class Twig implements View
     {
         static $views = [];
         $request = request();
+        $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
-        $config_prefix = $request->plugin ? "plugin.{$request->plugin}." : '';
+        $config_prefix = $plugin ? "plugin.$plugin." : '';
         $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
-        $key = "{$request->plugin}-{$request->app}";
+        $key = "{$plugin}-{$request->app}";
         if (!isset($views[$key])) {
-            $base_view_path = $request->plugin ? \base_path() . "/plugin/{$request->plugin}/app" : \app_path();
+            $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
             $view_path = $app === '' ? "$base_view_path/view/" : "$base_view_path/$app/view/";
             $views[$key] = new Environment(new FilesystemLoader($view_path), \config("{$config_prefix}view.options", []));
         }
