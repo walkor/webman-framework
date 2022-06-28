@@ -338,35 +338,34 @@ class Route
     /**
      * @return bool
      */
-    public static function load($config_path)
+    public static function load($paths)
     {
-        if (!is_dir($config_path)) {
-            $config_path = pathinfo($config_path, PATHINFO_DIRNAME);
-        }
-        static::$_dispatcher = simpleDispatcher(function (RouteCollector $route) use ($config_path) {
+        static::$_dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
             Route::setCollector($route);
-            $route_config_file = $config_path . '/route.php';
-            if (\is_file($route_config_file)) {
-                require_once $route_config_file;
-            }
-            if (!is_dir($plugin_config_path = $config_path . '/plugin')) {
-                return;
-            }
-            $dir_iterator = new \RecursiveDirectoryIterator($plugin_config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
-            $iterator = new \RecursiveIteratorIterator($dir_iterator);
-            foreach ($iterator as $file) {
-                if ($file->getBaseName('.php') !== 'route') {
-                    continue;
+            foreach ($paths as $config_path) {
+                $route_config_file = $config_path . '/route.php';
+                if (\is_file($route_config_file)) {
+                    require_once $route_config_file;
                 }
-                $app_config_file = pathinfo($file, PATHINFO_DIRNAME).'/app.php';
-                if (!is_file($app_config_file)) {
-                    continue;
+                if (!is_dir($plugin_config_path = $config_path . '/plugin')) {
+                    return;
                 }
-                $app_config = include $app_config_file;
-                if (empty($app_config['enable'])) {
-                    continue;
+                $dir_iterator = new \RecursiveDirectoryIterator($plugin_config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
+                $iterator = new \RecursiveIteratorIterator($dir_iterator);
+                foreach ($iterator as $file) {
+                    if ($file->getBaseName('.php') !== 'route') {
+                        continue;
+                    }
+                    $app_config_file = pathinfo($file, PATHINFO_DIRNAME) . '/app.php';
+                    if (!is_file($app_config_file)) {
+                        continue;
+                    }
+                    $app_config = include $app_config_file;
+                    if (empty($app_config['enable'])) {
+                        continue;
+                    }
+                    require_once $file;
                 }
-                require_once $file;
             }
         });
         return static::$_hasRoute;

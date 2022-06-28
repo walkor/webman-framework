@@ -87,5 +87,18 @@ foreach (config('plugin', []) as $firm => $projects) {
     }
 }
 
-Route::load(config_path());
+$paths = [config_path()];
+$directory = base_path() . '/plugin';
+if (is_dir($directory)) {
+    $handle = opendir($directory);
+    while (false !== ($entry = readdir($handle))) {
+        if ($entry == '.' || $entry == '..') {
+            continue;
+        }
+        $paths[] = $directory . '/' . $entry . '/config';
+    }
+    closedir($handle);
+}
+
+Route::load($paths);
 
