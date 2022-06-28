@@ -14,15 +14,15 @@
 
 namespace Support\Bootstrap;
 
-use Webman\Bootstrap;
-use Illuminate\Database\Capsule\Manager as Capsule;
-use Illuminate\Events\Dispatcher;
 use Illuminate\Container\Container;
+use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Connection;
+use Illuminate\Events\Dispatcher;
 use Jenssegers\Mongodb\Connection as MongodbConnection;
-use Workerman\Worker;
-use Workerman\Timer;
 use support\Db;
+use Webman\Bootstrap;
+use Workerman\Timer;
+use Workerman\Worker;
 
 /**
  * Class Laravel
@@ -82,7 +82,8 @@ class LaravelDb implements Bootstrap
                     if ($item['driver'] == 'mysql') {
                         try {
                             Db::connection($key)->select('select 1');
-                        } catch (\Throwable $e) {}
+                        } catch (\Throwable $e) {
+                        }
                     }
                 }
             });

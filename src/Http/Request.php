@@ -16,7 +16,6 @@ namespace Webman\Http;
 
 use Webman\App;
 use Webman\Route\Route;
-use Webman\Http\UploadFile;
 
 /**
  * Class Request

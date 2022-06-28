@@ -14,8 +14,8 @@
 
 namespace Webman\Exception;
 
-use Throwable;
 use Psr\Log\LoggerInterface;
+use Throwable;
 use Webman\Http\Request;
 use Webman\Http\Response;
 

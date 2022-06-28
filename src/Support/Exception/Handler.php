@@ -14,10 +14,10 @@
 
 namespace Support\Exception;
 
-use Webman\Http\Request;
-use Webman\Http\Response;
 use Throwable;
 use Webman\Exception\ExceptionHandler;
+use Webman\Http\Request;
+use Webman\Http\Response;
 
 /**
  * Class Handler

@@ -13,9 +13,8 @@
  */
 
 use Dotenv\Dotenv;
-use Webman\Config;
-use Webman\Route;
 use Webman\Middleware;
+use Webman\Route;
 
 $worker = $worker ?? null;
 

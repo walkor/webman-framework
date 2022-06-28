@@ -2,8 +2,6 @@
 
 namespace Webman;
 
-use Webman\App;
-
 /**
  * This file is part of webman.
  *

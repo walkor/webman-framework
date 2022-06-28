@@ -14,7 +14,7 @@
 
 namespace Webman\Session;
 
-use \Workerman\Protocols\Http\Session\RedisClusterSessionHandler as RedisClusterHandler;
+use Workerman\Protocols\Http\Session\RedisClusterSessionHandler as RedisClusterHandler;
 
 class RedisClusterSessionHandler extends RedisClusterHandler
 {

@@ -14,11 +14,11 @@
 
 namespace Support;
 
-use Workerman\Timer;
-use Workerman\Worker;
-use Illuminate\Redis\RedisManager;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Redis\Events\CommandExecuted;
+use Illuminate\Redis\RedisManager;
+use Workerman\Timer;
+use Workerman\Worker;
 
 
 /**
