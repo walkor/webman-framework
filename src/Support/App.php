@@ -34,15 +34,15 @@ class App
         }
 
         $runtime_logs_path = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
-        if ( !file_exists($runtime_logs_path) || !is_dir($runtime_logs_path) ) {
-            if (!mkdir($runtime_logs_path,0777,true)) {
+        if (!file_exists($runtime_logs_path) || !is_dir($runtime_logs_path)) {
+            if (!mkdir($runtime_logs_path, 0777, true)) {
                 throw new \RuntimeException("Failed to create runtime logs directory. Please check the permission.");
             }
         }
 
         $runtime_views_path = runtime_path() . DIRECTORY_SEPARATOR . 'views';
-        if ( !file_exists($runtime_views_path) || !is_dir($runtime_views_path) ) {
-            if (!mkdir($runtime_views_path,0777,true)) {
+        if (!file_exists($runtime_views_path) || !is_dir($runtime_views_path)) {
+            if (!mkdir($runtime_views_path, 0777, true)) {
                 throw new \RuntimeException("Failed to create runtime views directory. Please check the permission.");
             }
         }

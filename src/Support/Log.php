@@ -50,13 +50,13 @@ class Log
             $config = config('log', [])[$name];
             $handlers = self::handlers($config);
             $processors = self::processors($config);
-            static::$_instance[$name] = new Logger($name,$handlers,$processors);
+            static::$_instance[$name] = new Logger($name, $handlers, $processors);
         }
         return static::$_instance[$name];
     }
 
 
-    protected  static function handlers(array $config): array
+    protected static function handlers(array $config): array
     {
         $handlerConfigs = $config['handlers'] ?? [[]];
         $handlers = [];
@@ -93,7 +93,7 @@ class Log
     protected static function processors(array $config): array
     {
         $result = [];
-        if (! isset($config['processors']) && isset($config['processor'])) {
+        if (!isset($config['processors']) && isset($config['processor'])) {
             $config['processors'] = [$config['processor']];
         }
 
@@ -107,6 +107,7 @@ class Log
 
         return $result;
     }
+
     /**
      * @param $name
      * @param $arguments

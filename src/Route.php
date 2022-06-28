@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman;
 
 use FastRoute\Dispatcher\GroupCountBased;
@@ -382,7 +383,8 @@ class Route
     /**
      * @param callable $callback
      */
-    public static function fallback(callable $callback) {
+    public static function fallback(callable $callback)
+    {
         if (is_callable($callback)) {
             static::$_fallback = $callback;
         }
@@ -391,7 +393,8 @@ class Route
     /**
      * @return callable|null
      */
-    public static function getFallback() {
+    public static function getFallback()
+    {
         return is_callable(static::$_fallback) ? static::$_fallback : null;
     }
 

@@ -164,7 +164,7 @@ class App
      */
     protected static function unsafeUri($connection, $path, $request)
     {
-        if (strpos($path, '..') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
+        if (strpos($path, '..') !== false || strpos($path, "\\") !== false || strpos($path, "\0") !== false) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
@@ -176,7 +176,8 @@ class App
     /**
      * @return \Closure
      */
-    protected static function getFallback() {
+    protected static function getFallback()
+    {
         // when route, controller and action not found, try to use Route::fallback
         return Route::getFallback() ?: function () {
             return new Response(404, [], \file_get_contents(static::$_publicPath . '/404.html'));
@@ -192,7 +193,7 @@ class App
     {
         try {
             $app = $request->app ?: '';
-            $plugin = $request->plugin ? : '';
+            $plugin = $request->plugin ?: '';
             $exception_config = static::config($plugin, 'exception');
             $default_exception = $exception_config[''] ?? ExceptionHandler::class;
             $exception_handler_class = $exception_config[$app] ?? $default_exception;
@@ -233,11 +234,10 @@ class App
         }
         $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $with_global_middleware));
 
-        foreach ($middlewares as $key => $item)
-        {
+        foreach ($middlewares as $key => $item) {
             $middlewares[$key][0] = static::container($plugin)->get($item[0]);
         }
-        $controller_reuse = static::config($plugin, 'app.controller_reuse',  true);
+        $controller_reuse = static::config($plugin, 'app.controller_reuse', true);
         if (\is_array($call) && is_string($call[0])) {
             if (!$controller_reuse) {
                 $call = function ($request, ...$args) use ($call, $plugin) {
@@ -393,7 +393,7 @@ class App
             return false;
         }
 
-        static::$_callbacks[$key] = [static::getCallback($plugin,'__static__', function ($request) use ($file) {
+        static::$_callbacks[$key] = [static::getCallback($plugin, '__static__', function ($request) use ($file) {
             \clearstatcache(true, $file);
             if (!\is_file($file)) {
                 $callback = static::getFallback();
@@ -477,10 +477,10 @@ class App
     {
         if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$controller_class, $action])) {
             return [
-                'plugin'     => static::getPluginByClass($controller_class),
-                'app'        => static::getAppByController($controller_class),
+                'plugin' => static::getPluginByClass($controller_class),
+                'app' => static::getAppByController($controller_class),
                 'controller' => $controller_class,
-                'action'     => static::getRealMethod($controller_class, $action)
+                'action' => static::getRealMethod($controller_class, $action)
             ];
         }
         return false;

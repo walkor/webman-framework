@@ -1,4 +1,5 @@
 <?php
+
 namespace Webman;
 
 use Webman\App;
@@ -15,7 +16,6 @@ use Webman\App;
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
-
 class Middleware
 {
 

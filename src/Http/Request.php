@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman\Http;
 
 use Webman\App;
@@ -198,8 +199,8 @@ class Request extends \Workerman\Protocols\Http\Request
             return $remote_ip;
         }
         return $this->header('client-ip', $this->header('x-forwarded-for',
-                   $this->header('x-real-ip', $this->header('x-client-ip',
-                   $this->header('via', $remote_ip)))));
+            $this->header('x-real-ip', $this->header('x-client-ip',
+                $this->header('via', $remote_ip)))));
     }
 
     /**
@@ -287,5 +288,5 @@ class Request extends \Workerman\Protocols\Http\Request
         }
         return false;
     }
-    
+
 }

@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman\Exception;
 
 use Throwable;
@@ -74,7 +75,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
      * @param Throwable $exception
      * @return Response
      */
-    public function render(Request $request, Throwable $exception) : Response
+    public function render(Request $request, Throwable $exception): Response
     {
         $code = $exception->getCode();
         if ($request->expectsJson()) {
@@ -91,7 +92,8 @@ class ExceptionHandler implements ExceptionHandlerInterface
      * @param Throwable $e
      * @return bool
      */
-    protected function shouldntReport(Throwable $e) {
+    protected function shouldntReport(Throwable $e)
+    {
         foreach ($this->dontReport as $type) {
             if ($e instanceof $type) {
                 return true;

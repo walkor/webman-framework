@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman\Route;
 
 use FastRoute\Dispatcher\GroupCountBased;
@@ -60,7 +61,7 @@ class Route
      */
     public function __construct($methods, $path, $callback)
     {
-        $this->_methods = (array) $methods;
+        $this->_methods = (array)$methods;
         $this->_path = $path;
         $this->_callback = $callback;
     }
