@@ -29,17 +29,17 @@ class Container
     /**
      * @return ContainerInterface
      */
-    public static function instance($plugin = '')
+    public static function instance(string $plugin = '')
     {
         return Config::get($plugin ? "plugin.$plugin.container" : 'container');
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         $plugin = \Webman\App::getPluginByClass($name);
         return static::instance($plugin)->{$name}(... $arguments);

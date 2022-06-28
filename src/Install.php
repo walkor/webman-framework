@@ -11,8 +11,7 @@ class Install
      */
     protected static $pathRelation = [
         'start.php' => 'start.php',
-        'Support/bootstrap.php' => 'support/bootstrap.php',
-        'Support/Plugin.php' => 'support/Plugin.php',
+        'Support/bootstrap.php' => 'support/bootstrap.php'
     ];
 
     /**
@@ -47,8 +46,7 @@ class Install
                 }
             }
             copy_dir(__DIR__ . "/$source", base_path() . "/$dest", true);
-            echo "Create $dest
-";
+            echo "Create $dest\r\n";
         }
     }
 

@@ -130,10 +130,10 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
-     * @param $file
+     * @param array $file
      * @return UploadFile
      */
-    protected function parseFile($file)
+    protected function parseFile(array $file)
     {
         return new UploadFile($file['tmp_name'], $file['name'], $file['type'], $file['error']);
     }
@@ -142,7 +142,7 @@ class Request extends \Workerman\Protocols\Http\Request
      * @param array $files
      * @return array
      */
-    protected function parseFiles($files)
+    protected function parseFiles(array $files)
     {
         $upload_files = [];
         foreach ($files as $key => $file) {
@@ -191,7 +191,7 @@ class Request extends \Workerman\Protocols\Http\Request
      * @param bool $safe_mode
      * @return string
      */
-    public function getRealIp($safe_mode = true)
+    public function getRealIp(bool $safe_mode = true)
     {
         $remote_ip = $this->getRemoteIp();
         if ($safe_mode && !static::isIntranetIp($remote_ip)) {
@@ -254,7 +254,7 @@ class Request extends \Workerman\Protocols\Http\Request
      * @param string $ip
      * @return bool
      */
-    public static function isIntranetIp($ip)
+    public static function isIntranetIp(string $ip)
     {
         // Not validate ip .
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {

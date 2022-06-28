@@ -20,10 +20,10 @@ class File extends \SplFileInfo
 {
 
     /**
-     * @param $destination
+     * @param string $destination
      * @return File
      */
-    public function move($destination)
+    public function move(string $destination)
     {
         set_error_handler(function ($type, $msg) use (&$error) {
             $error = $msg;

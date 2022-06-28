@@ -4,6 +4,10 @@ namespace Support;
 
 class Plugin
 {
+    /**
+     * @param $event
+     * @return void
+     */
     public static function install($event)
     {
         static::findHepler();
@@ -20,11 +24,19 @@ class Plugin
         }
     }
 
+    /**
+     * @param $event
+     * @return void
+     */
     public static function update($event)
     {
         static::install($event);
     }
 
+    /**
+     * @param $event
+     * @return void
+     */
     public static function uninstall($event)
     {
         static::findHepler();
@@ -40,6 +52,9 @@ class Plugin
         }
     }
 
+    /**
+     * @return void
+     */
     protected static function findHepler()
     {
         // Plugin.php in vendor

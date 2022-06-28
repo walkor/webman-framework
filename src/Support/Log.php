@@ -44,7 +44,7 @@ class Log
      * @param string $name
      * @return Logger
      */
-    public static function channel($name = 'default')
+    public static function channel(string $name = 'default')
     {
         if (!isset(static::$_instance[$name])) {
             $config = config('log', [])[$name];
@@ -55,7 +55,10 @@ class Log
         return static::$_instance[$name];
     }
 
-
+    /**
+     * @param array $config
+     * @return array
+     */
     protected static function handlers(array $config): array
     {
         $handlerConfigs = $config['handlers'] ?? [[]];
@@ -72,7 +75,13 @@ class Log
         return $handlers;
     }
 
-    protected static function handler($class, $constructor, $formatterConfig): HandlerInterface
+    /**
+     * @param string $class
+     * @param array $constructor
+     * @param array $formatterConfig
+     * @return HandlerInterface
+     */
+    protected static function handler(string $class, array $constructor, array $formatterConfig): HandlerInterface
     {
         /** @var HandlerInterface $handler */
         $handler = new $class(... \array_values($constructor));
@@ -90,6 +99,10 @@ class Log
         return $handler;
     }
 
+    /**
+     * @param array $config
+     * @return array
+     */
     protected static function processors(array $config): array
     {
         $result = [];
@@ -101,7 +114,6 @@ class Log
             if (is_array($value) && isset($value['class'])) {
                 $value = new $value['class'](... \array_values($value['constructor'] ?? []));;
             }
-
             $result[] = $value;
         }
 
@@ -109,11 +121,11 @@ class Log
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         return static::channel('default')->{$name}(... $arguments);
     }

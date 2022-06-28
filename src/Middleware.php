@@ -23,9 +23,11 @@ class Middleware
     protected static $_instances = [];
 
     /**
-     * @param $all_middlewares
+     * @param array $all_middlewares
+     * @param string $plugin
+     * @return void
      */
-    public static function load($all_middlewares, $plugin)
+    public static function load(array $all_middlewares, string $plugin)
     {
         foreach ($all_middlewares as $app_name => $middlewares) {
             if (!\is_array($middlewares)) {
@@ -43,11 +45,12 @@ class Middleware
     }
 
     /**
-     * @param $app_name
+     * @param string $plugin
+     * @param string $app_name
      * @param bool $with_global_middleware
-     * @return array
+     * @return array|mixed
      */
-    public static function getMiddleware($plugin, $app_name, $with_global_middleware = true)
+    public static function getMiddleware(string $plugin, string $app_name, bool $with_global_middleware = true)
     {
         $global_middleware = $with_global_middleware && isset(static::$_instances[$plugin]['']) ? static::$_instances[$plugin][''] : [];
         if ($app_name === '') {

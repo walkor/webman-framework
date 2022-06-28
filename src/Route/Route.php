@@ -56,10 +56,12 @@ class Route
 
     /**
      * Route constructor.
-     * @param $methods
-     * @param $path
+     *
+     * @param array $methods
+     * @param string $path
+     * @param callable $callback
      */
-    public function __construct($methods, $path, $callback)
+    public function __construct($methods, string $path, $callback)
     {
         $this->_methods = (array)$methods;
         $this->_path = $path;
@@ -75,10 +77,10 @@ class Route
     }
 
     /**
-     * @param $name
+     * @param string $name
      * @return $this
      */
-    public function name($name)
+    public function name(string $name)
     {
         $this->_name = $name;
         Router::setByName($name, $this);
@@ -86,7 +88,7 @@ class Route
     }
 
     /**
-     * @param null $middleware
+     * @param mixed $middleware
      * @return $this|array
      */
     public function middleware($middleware = null)

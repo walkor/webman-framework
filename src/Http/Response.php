@@ -15,6 +15,7 @@
 namespace Webman\Http;
 
 use Webman\App;
+use Throwable;
 
 /**
  * Class Response
@@ -23,7 +24,7 @@ use Webman\App;
 class Response extends \Workerman\Protocols\Http\Response
 {
     /**
-     * @var \Throwable
+     * @var Throwable
      */
     protected $_exception = null;
 
@@ -31,7 +32,7 @@ class Response extends \Workerman\Protocols\Http\Response
      * @param string $file
      * @return $this
      */
-    public function file($file)
+    public function file(string $file)
     {
         if ($this->notModifiedSince($file)) {
             return $this->withStatus(304);
@@ -44,7 +45,7 @@ class Response extends \Workerman\Protocols\Http\Response
      * @param string $download_name
      * @return $this
      */
-    public function download($file, $download_name = '')
+    public function download(string $file, string $download_name = '')
     {
         $this->withFile($file);
         if ($download_name) {
@@ -54,10 +55,10 @@ class Response extends \Workerman\Protocols\Http\Response
     }
 
     /**
-     * @param $file
+     * @param string $file
      * @return bool
      */
-    protected function notModifiedSince($file)
+    protected function notModifiedSince(string $file)
     {
         $if_modified_since = App::request()->header('if-modified-since');
         if ($if_modified_since === null || !($mtime = \filemtime($file))) {
@@ -67,8 +68,8 @@ class Response extends \Workerman\Protocols\Http\Response
     }
 
     /**
-     * @param \Throwable $exception
-     * @return \Throwable
+     * @param Throwable $exception
+     * @return Throwable
      */
     public function exception($exception = null)
     {

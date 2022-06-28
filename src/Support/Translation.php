@@ -36,7 +36,7 @@ class Translation
      * @return Translator
      * @throws NotFoundException
      */
-    public static function instance($plugin = '')
+    public static function instance(string $plugin = '')
     {
         if (!isset(static::$_instance[$plugin])) {
             $config = config($plugin ? "plugin.$plugin.translation" : 'translation', []);
@@ -75,11 +75,12 @@ class Translation
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
+     * @throws NotFoundException
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         $request = \request();
         $plugin = $request->plugin ?? '';

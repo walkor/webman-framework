@@ -252,7 +252,7 @@ class Redis
      * @param string $name
      * @return \Illuminate\Redis\Connections\Connection
      */
-    public static function connection($name = 'default')
+    public static function connection(string $name = 'default')
     {
         static $timers = [];
         $connection = static::instance()->connection($name);
@@ -268,11 +268,11 @@ class Redis
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         return static::connection('default')->{$name}(... $arguments);
     }

@@ -30,21 +30,21 @@ class Blade implements View
     protected static $_vars = [];
 
     /**
-     * @param $name
-     * @param null $value
+     * @param string $name
+     * @param mixed $value
      */
-    public static function assign($name, $value = null)
+    public static function assign(string $name, $value = null)
     {
         static::$_vars = \array_merge(static::$_vars, \is_array($name) ? $name : [$name => $value]);
     }
 
     /**
-     * @param $template
-     * @param $vars
-     * @param string $app
-     * @return mixed
+     * @param string $template
+     * @param array $vars
+     * @param string|null $app
+     * @return string
      */
-    public static function render($template, $vars, $app = null)
+    public static function render(string $template, array $vars, string $app = null)
     {
         static $views = [];
         $request = request();

@@ -10,6 +10,9 @@ use Workerman\Worker;
 
 class App
 {
+    /**
+     * @return void
+     */
     public static function run()
     {
         ini_set('display_errors', 'on');
@@ -120,7 +123,11 @@ class App
         Worker::runAll();
     }
 
-    public static function loadAllConfig($excludes = [])
+    /**
+     * @param $excludes
+     * @return void
+     */
+    public static function loadAllConfig(array $excludes = [])
     {
         Config::load(config_path(), $excludes);
 

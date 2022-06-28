@@ -32,8 +32,13 @@ class Config
      */
     protected static $_loaded = false;
 
-
-    public static function load($config_path, $exclude_file = [], $key = null)
+    /**
+     * @param string $config_path
+     * @param array $exclude_file
+     * @param string|null $key
+     * @return void
+     */
+    public static function load(string $config_path, array $exclude_file = [], string $key = null)
     {
         static::$_loaded = false;
         static::$_configPath = $config_path;
@@ -74,7 +79,6 @@ class Config
                 }
             }
         }
-
         // Merge database config
         foreach ($config['plugin'] ?? [] as $firm => $projects) {
             if (isset($projects['app'])) {
@@ -133,12 +137,11 @@ class Config
     }
 
     /**
-     * @param $config_path
+     * @param string $config_path
      * @param array $exclude_file
-     *
      * @return array
      */
-    public static function loadFromDir($config_path, $exclude_file = [])
+    public static function loadFromDir(string $config_path, array $exclude_file = [])
     {
         $all_config = [];
         $dir_iterator = new \RecursiveDirectoryIterator($config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
@@ -175,11 +178,11 @@ class Config
     }
 
     /**
-     * @param null $key
-     * @param null $default
-     * @return array|mixed|null
+     * @param string|null $key
+     * @param mixed $default
+     * @return array|mixed|void|null
      */
-    public static function get($key = null, $default = null)
+    public static function get(string $key = null, $default = null)
     {
         if ($key === null) {
             return static::$_config;
@@ -204,11 +207,11 @@ class Config
     }
 
     /**
-     * @param $key
-     * @param $default
-     * @return array|mixed|void|null
+     * @param string $key
+     * @param mixed $default
+     * @return array|mixed|null
      */
-    protected static function read($key, $default = null)
+    protected static function read(string $key, $default = null)
     {
         $path = static::$_configPath;
         if ($path === '') {
@@ -229,12 +232,12 @@ class Config
     }
 
     /**
-     * @param $key_array
-     * @param $stack
-     * @param $default
+     * @param array $key_array
+     * @param mixed $stack
+     * @param mixed $default
      * @return array|mixed
      */
-    protected static function find($key_array, $stack, $default)
+    protected static function find(array $key_array, $stack, $default)
     {
         if (!is_array($stack)) {
             return $default;
@@ -247,17 +250,6 @@ class Config
             $value = $value[$index];
         }
         return $value;
-    }
-
-
-    /**
-     * @param $config_path
-     * @param array $exclude_file
-     */
-    public static function reload($config_path, $exclude_file = [])
-    {
-        static::$_config = [];
-        static::load($config_path, $exclude_file);
     }
 
 }

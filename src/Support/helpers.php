@@ -12,18 +12,18 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-use support\Container;
 use support\Request;
 use support\Response;
 use support\Translation;
-use support\view\Blade;
+use support\Container;
 use support\view\Raw;
+use support\view\Blade;
 use support\view\ThinkPHP;
 use support\view\Twig;
+use Workerman\Worker;
 use Webman\App;
 use Webman\Config;
 use Webman\Route;
-use Workerman\Worker;
 
 // Phar support.
 if (is_phar()) {
@@ -37,7 +37,7 @@ define('WEBMAN_VERSION', '1.3.0');
  * @param $return_phar
  * @return false|string
  */
-function base_path($return_phar = true)
+function base_path(bool $return_phar = true)
 {
     static $real_path = '';
     if (!$real_path) {
@@ -136,12 +136,12 @@ function jsonp($data, $callback_name = 'callback')
 }
 
 /**
- * @param $location
+ * @param string $location
  * @param int $status
  * @param array $headers
  * @return Response
  */
-function redirect($location, $status = 302, $headers = [])
+function redirect(string $location, int $status = 302, array $headers = [])
 {
     $response = new Response($status, ['Location' => $location]);
     if (!empty($headers)) {
@@ -156,55 +156,55 @@ function redirect($location, $status = 302, $headers = [])
  * @param null $app
  * @return Response
  */
-function view($template, $vars = [], $app = null)
+function view(string $template, array $vars = [], string $app = null)
 {
-    static $handler;
-    if (null === $handler) {
-        $handler = config('view.handler');
-    }
+    $request = \request();
+    $plugin =  $request->plugin ?? '';
+    $handler = config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
     return new Response(200, [], $handler::render($template, $vars, $app));
 }
 
 /**
- * @param $template
+ * @param string $template
  * @param array $vars
- * @param null $app
+ * @param string|null $app
  * @return Response
+ * @throws Throwable
  */
-function raw_view($template, $vars = [], $app = null)
+function raw_view(string $template, array $vars = [], string $app = null)
 {
     return new Response(200, [], Raw::render($template, $vars, $app));
 }
 
 /**
- * @param $template
+ * @param string $template
  * @param array $vars
- * @param null $app
+ * @param string|null $app
  * @return Response
  */
-function blade_view($template, $vars = [], $app = null)
+function blade_view(string $template, array $vars = [], string $app = null)
 {
     return new Response(200, [], Blade::render($template, $vars, $app));
 }
 
 /**
- * @param $template
+ * @param string $template
  * @param array $vars
- * @param null $app
+ * @param string|null $app
  * @return Response
  */
-function think_view($template, $vars = [], $app = null)
+function think_view(string $template, array $vars = [], string $app = null)
 {
     return new Response(200, [], ThinkPHP::render($template, $vars, $app));
 }
 
 /**
- * @param $template
+ * @param string $template
  * @param array $vars
- * @param null $app
+ * @param string|null $app
  * @return Response
  */
-function twig_view($template, $vars = [], $app = null)
+function twig_view(string $template, array $vars = [], string $app = null)
 {
     return new Response(200, [], Twig::render($template, $vars, $app));
 }
@@ -218,21 +218,21 @@ function request()
 }
 
 /**
- * @param $key
- * @param null $default
- * @return mixed
+ * @param string|null $key
+ * @param $default
+ * @return array|mixed|null
  */
-function config($key = null, $default = null)
+function config(string $key = null, $default = null)
 {
     return Config::get($key, $default);
 }
 
 /**
- * @param $name
+ * @param string $name
  * @param ...$parameters
  * @return string
  */
-function route($name, ...$parameters)
+function route(string $name, ...$parameters)
 {
     $route = Route::getByName($name);
     if (!$route) {
@@ -280,7 +280,7 @@ function session($key = null, $default = null)
 }
 
 /**
- * @param null|string $id
+ * @param string $id
  * @param array $parameters
  * @param string|null $domain
  * @param string|null $locale
@@ -316,12 +316,13 @@ function not_found()
 
 /**
  * Copy dir.
- * @param $source
- * @param $dest
+ *
+ * @param string $source
+ * @param string $dest
  * @param bool $overwrite
  * @return void
  */
-function copy_dir($source, $dest, $overwrite = false)
+function copy_dir(string $source, string $dest, bool $overwrite = false)
 {
     if (is_dir($source)) {
         if (!is_dir($dest)) {
@@ -340,10 +341,11 @@ function copy_dir($source, $dest, $overwrite = false)
 
 /**
  * Remove dir.
- * @param $dir
+ *
+ * @param string $dir
  * @return bool
  */
-function remove_dir($dir)
+function remove_dir(string $dir)
 {
     if (is_link($dir) || is_file($dir)) {
         return unlink($dir);
