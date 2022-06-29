@@ -252,17 +252,17 @@ class Redis
      * @param string $name
      * @return \Illuminate\Redis\Connections\Connection
      */
-    public static function connection($name = 'default')
+    public static function connection(string $name = 'default')
     {
         static $timers = [];
         $connection = static::instance()->connection($name);
         if (!isset($timers[$name])) {
-            if (Worker::getAllWorkers()) {
-                $timers[$name] = Timer::add(55, function () use ($connection) {
-                    $connection->get('ping');
-                });
+            $timers[$name] = Worker::getAllWorkers() ? Timer::add(55, function () use ($connection) {
+                $connection->get('ping');
+            }) : 1;
+            if (\class_exists(Dispatcher::class)) {
+                $connection->setEventDispatcher(new Dispatcher());
             }
-            $connection->setEventDispatcher(new Dispatcher());
         }
         return $connection;
     }
