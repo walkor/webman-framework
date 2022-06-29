@@ -257,12 +257,12 @@ class Redis
         static $timers = [];
         $connection = static::instance()->connection($name);
         if (!isset($timers[$name])) {
-            if (Worker::getAllWorkers()) {
-                $timers[$name] = Timer::add(55, function () use ($connection) {
-                    $connection->get('ping');
-                });
+            $timers[$name] = Worker::getAllWorkers() ? Timer::add(55, function () use ($connection) {
+                $connection->get('ping');
+            }) : 1;
+            if (\class_exists(Dispatcher::class)) {
+                $connection->setEventDispatcher(new Dispatcher());
             }
-            $connection->setEventDispatcher(new Dispatcher());
         }
         return $connection;
     }
