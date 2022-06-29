@@ -14,9 +14,11 @@
 
 namespace Webman;
 
+use Closure;
 use FastRoute\Dispatcher;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
+use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
@@ -25,8 +27,6 @@ use Webman\Route\Route as RouteObject;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
-use Closure;
-use Throwable;
 
 /**
  * Class App
@@ -501,33 +501,35 @@ class App
      */
     protected static function loadController(string $controller_class)
     {
-        static $controller_files = [];
-        if (empty($controller_files)) {
-            $app_path = strpos($controller_class, '\plugin') === 0 ? BASE_PATH : static::$_appPath;
-            $dir_iterator = new \RecursiveDirectoryIterator($app_path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS);
-            $iterator = new \RecursiveIteratorIterator($dir_iterator);
-            $app_base_path_length = \strrpos($app_path, DIRECTORY_SEPARATOR) + 1;
-            foreach ($iterator as $spl_file) {
-                $file = (string)$spl_file;
-                if (\is_dir($file) || false === \strpos(strtolower($file), '/controller/') || $spl_file->getExtension() !== 'php') {
-                    continue;
-                }
-                $controller_files[$file] = \str_replace(DIRECTORY_SEPARATOR, "\\", \strtolower(\substr(\substr($file, $app_base_path_length), 0, -4)));
-            }
-        }
-
-        if (\class_exists($controller_class)) {
+        if (class_exists($controller_class)) {
             return true;
         }
-
-        $controller_class = \strtolower($controller_class);
-        if ($controller_class[0] === "\\") {
-            $controller_class = \substr($controller_class, 1);
+        $explodes = \explode('\\', strtolower(ltrim($controller_class, '\\')));
+        $base_path = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$_appPath;
+        unset($explodes[0]);
+        $file_name = array_pop($explodes) . '.php';
+        $finded = true;
+        foreach ($explodes as $path_section) {
+            if (!$finded) {
+                break;
+            }
+            $dirs = Util::scanDir($base_path, false);
+            $finded = false;
+            foreach ($dirs as $name) {
+                if (strtolower($name) === $path_section) {
+                    $base_path = "$base_path/$name";
+                    $finded = true;
+                    break;
+                }
+            }
         }
-        foreach ($controller_files as $real_path => $class_name) {
-            if ($class_name === $controller_class) {
-                require_once $real_path;
-                if (\class_exists($controller_class, false)) {
+        if (!$finded) {
+            return false;
+        }
+        foreach (scandir($base_path) ?: [] as $name) {
+            if (strtolower($name) === $file_name) {
+                require_once "$base_path/$name";
+                if (class_exists($controller_class, false)) {
                     return true;
                 }
             }
