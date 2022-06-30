@@ -23,6 +23,7 @@ use support\Db;
 use Webman\Bootstrap;
 use Workerman\Timer;
 use Workerman\Worker;
+use Throwable;
 
 /**
  * Class Laravel
@@ -41,13 +42,13 @@ class LaravelDb implements Bootstrap
             return;
         }
 
-        $connections = config('database.connections');
+        $connections = \config('database.connections');
         if (!$connections) {
             return;
         }
 
         $capsule = new Capsule;
-        $configs = config('database');
+        $configs = \config('database');
 
         $capsule->getDatabaseManager()->extend('mongodb', function ($config, $name) {
             $config['name'] = $name;
@@ -64,7 +65,7 @@ class LaravelDb implements Bootstrap
             $capsule->addConnection($config, $name);
         }
 
-        if (class_exists(Dispatcher::class)) {
+        if (\class_exists(Dispatcher::class)) {
             $capsule->setEventDispatcher(new Dispatcher(new Container));
         }
 
@@ -82,7 +83,7 @@ class LaravelDb implements Bootstrap
                     if ($item['driver'] == 'mysql') {
                         try {
                             Db::connection($key)->select('select 1');
-                        } catch (\Throwable $e) {
+                        } catch (Throwable $e) {
                         }
                     }
                 }

@@ -45,7 +45,7 @@ class ThinkPHP implements View
      */
     public static function render(string $template, array $vars, string $app = null)
     {
-        $request = request();
+        $request = \request();
         $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
         $config_prefix = $plugin ? "plugin.$plugin." : '';

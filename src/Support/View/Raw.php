@@ -15,6 +15,7 @@
 namespace Support\View;
 
 use Webman\View;
+use Throwable;
 
 /**
  * Class Raw
@@ -44,7 +45,7 @@ class Raw implements View
      */
     public static function render(string $template, array $vars, string $app = null)
     {
-        $request = request();
+        $request = \request();
         $plugin = $request->plugin ?? '';
         $config_prefix = $plugin ? "plugin.$plugin." : '';
         $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
@@ -58,7 +59,7 @@ class Raw implements View
         // Try to include php file.
         try {
             include $view_path;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             static::$_vars = [];
             \ob_end_clean();
             throw $e;

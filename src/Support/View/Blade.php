@@ -47,7 +47,7 @@ class Blade implements View
     public static function render(string $template, array $vars, string $app = null)
     {
         static $views = [];
-        $request = request();
+        $request = \request();
         $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
         $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();

@@ -15,10 +15,10 @@
 namespace Webman;
 
 use Closure;
+use Throwable;
 use FastRoute\Dispatcher;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
-use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
@@ -140,7 +140,7 @@ class App
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             static::send($connection, static::exceptionResponse($e, $request), $request);
         }
         return null;
@@ -164,7 +164,7 @@ class App
     protected static function collectCallbacks(string $key, array $data)
     {
         static::$_callbacks[$key] = $data;
-        if (count(static::$_callbacks) >= 1024) {
+        if (\count(static::$_callbacks) >= 1024) {
             unset(static::$_callbacks[\key(static::$_callbacks)]);
         }
     }
@@ -177,7 +177,7 @@ class App
      */
     protected static function unsafeUri(TcpConnection $connection, string $path, $request)
     {
-        if (strpos($path, '..') !== false || strpos($path, "\\") !== false || strpos($path, "\0") !== false) {
+        if (\strpos($path, '..') !== false || \strpos($path, "\\") !== false || \strpos($path, "\0") !== false) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
@@ -251,7 +251,7 @@ class App
             $middlewares[$key][0] = static::container($plugin)->get($item[0]);
         }
         $controller_reuse = static::config($plugin, 'app.controller_reuse', true);
-        if (\is_array($call) && is_string($call[0])) {
+        if (\is_array($call) && \is_string($call[0])) {
             if (!$controller_reuse) {
                 $call = function ($request, ...$args) use ($call, $plugin) {
                     $call[0] = static::container($plugin)->make($call[0]);
@@ -263,7 +263,7 @@ class App
         }
 
         if ($middlewares) {
-            $callback = array_reduce($middlewares, function ($carry, $pipe) {
+            $callback = \array_reduce($middlewares, function ($carry, $pipe) {
                 return function ($request) use ($carry, $pipe) {
                     return $pipe($request, $carry);
                 };
@@ -378,7 +378,7 @@ class App
         if (isset($path_explodes[2]) && $path_explodes[0] === 'plugin') {
             $public_dir = BASE_PATH . "/{$path_explodes[0]}/{$path_explodes[1]}/public";
             $plugin = $path_explodes[1];
-            $path = substr($path, strlen("/{$path_explodes[0]}/{$path_explodes[1]}/"));
+            $path = \substr($path, strlen("/{$path_explodes[0]}/{$path_explodes[1]}/"));
         } else {
             $public_dir = static::$_publicPath;
         }
@@ -451,7 +451,7 @@ class App
         $path_prefix = $is_plugin ? "/{$path_explode[0]}/{$path_explode[1]}" : '';
         $class_prefix = $is_plugin ? "{$path_explode[0]}\\{$path_explode[1]}\\" : '';
         $suffix = Config::get("{$config_prefix}app.controller_suffix", '');
-        $path_explode = explode('/', trim(substr($path, strlen($path_prefix)), '/'));
+        $path_explode = \explode('/', trim(substr($path, strlen($path_prefix)), '/'));
         $app = !empty($path_explode[0]) ? $path_explode[0] : 'index';
         $controller = $path_explode[1] ?? 'index';
         $action = $path_explode[2] ?? 'index';
@@ -505,13 +505,13 @@ class App
      */
     protected static function loadController(string $controller_class)
     {
-        if (class_exists($controller_class)) {
+        if (\class_exists($controller_class)) {
             return true;
         }
         $explodes = \explode('\\', strtolower(ltrim($controller_class, '\\')));
         $base_path = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$_appPath;
         unset($explodes[0]);
-        $file_name = array_pop($explodes) . '.php';
+        $file_name = \array_pop($explodes) . '.php';
         $finded = true;
         foreach ($explodes as $path_section) {
             if (!$finded) {
@@ -520,7 +520,7 @@ class App
             $dirs = Util::scanDir($base_path, false);
             $finded = false;
             foreach ($dirs as $name) {
-                if (strtolower($name) === $path_section) {
+                if (\strtolower($name) === $path_section) {
                     $base_path = "$base_path/$name";
                     $finded = true;
                     break;
@@ -530,10 +530,10 @@ class App
         if (!$finded) {
             return false;
         }
-        foreach (scandir($base_path) ?: [] as $name) {
-            if (strtolower($name) === $file_name) {
+        foreach (\scandir($base_path) ?: [] as $name) {
+            if (\strtolower($name) === $file_name) {
                 require_once "$base_path/$name";
-                if (class_exists($controller_class, false)) {
+                if (\class_exists($controller_class, false)) {
                     return true;
                 }
             }
@@ -547,7 +547,7 @@ class App
      */
     public static function getPluginByClass(string $controller_class)
     {
-        $controller_class = trim($controller_class, '\\');
+        $controller_class = \trim($controller_class, '\\');
         $tmp = \explode('\\', $controller_class, 3);
         if ($tmp[0] !== 'plugin') {
             return '';
@@ -561,13 +561,13 @@ class App
      */
     protected static function getAppByController(string $controller_class)
     {
-        $controller_class = trim($controller_class, '\\');
+        $controller_class = \trim($controller_class, '\\');
         $tmp = \explode('\\', $controller_class, 5);
         $pos = $tmp[0] === 'plugin' ? 3 : 1;
         if (!isset($tmp[$pos])) {
             return '';
         }
-        return strtolower($tmp[$pos]) === 'controller' ? '' : $tmp[$pos];
+        return \strtolower($tmp[$pos]) === 'controller' ? '' : $tmp[$pos];
     }
 
     /**

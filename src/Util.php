@@ -29,8 +29,8 @@ class Util
         if (!is_dir($base_path)) {
             return [];
         }
-        $paths = array_diff(scandir($base_path), array('.', '..')) ?: [];
-        return $with_base_path ? array_map(function($path) use ($base_path) {
+        $paths = \array_diff(\scandir($base_path), array('.', '..')) ?: [];
+        return $with_base_path ? \array_map(function($path) use ($base_path) {
             return $base_path . DIRECTORY_SEPARATOR . $path;
         }, $paths) : $paths;
     }

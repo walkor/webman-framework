@@ -24,7 +24,7 @@ use Webman\Route\Route;
 class Request extends \Workerman\Protocols\Http\Request
 {
     /**
-     * @var null
+     * @var string
      */
     public $plugin = null;
 
@@ -247,7 +247,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function acceptJson()
     {
-        return false !== strpos($this->header('accept', ''), 'json');
+        return false !== \strpos($this->header('accept', ''), 'json');
     }
 
     /**
@@ -257,15 +257,15 @@ class Request extends \Workerman\Protocols\Http\Request
     public static function isIntranetIp(string $ip)
     {
         // Not validate ip .
-        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        if (!\filter_var($ip, \FILTER_VALIDATE_IP)) {
             return false;
         }
         // Is intranet ip ? For IPv4, the result of false may not be accurate, so we need to check it manually later .
-        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_NO_PRIV_RANGE | \FILTER_FLAG_NO_RES_RANGE)) {
             return true;
         }
         // Manual check only for IPv4 .
-        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4)) {
             return false;
         }
         // Manual check .
@@ -279,7 +279,7 @@ class Request extends \Workerman\Protocols\Http\Request
             3405803776 => 3405804031, // 203.0.113.0 - 203.0.113.255
             3758096384 => 4026531839, // 224.0.0.0 - 239.255.255.255
         ];
-        $ip_long = ip2long($ip);
+        $ip_long = \ip2long($ip);
         foreach ($reserved_ips as $ip_start => $ip_end) {
             if (($ip_long >= $ip_start) && ($ip_long <= $ip_end)) {
                 return true;

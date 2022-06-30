@@ -32,8 +32,8 @@ class Session implements Bootstrap
      */
     public static function start($worker)
     {
-        $config = config('session');
-        if (property_exists(SessionBase::class, 'name')) {
+        $config = \config('session');
+        if (\property_exists(SessionBase::class, 'name')) {
             SessionBase::$name = $config['session_name'];
         } else {
             Http::sessionName($config['session_name']);
@@ -51,7 +51,7 @@ class Session implements Bootstrap
             'secure' => 'secure',
         ];
         foreach ($map as $key => $name) {
-            if (isset($config[$key]) && property_exists(SessionBase::class, $name)) {
+            if (isset($config[$key]) && \property_exists(SessionBase::class, $name)) {
                 SessionBase::${$name} = $config[$key];
             }
         }

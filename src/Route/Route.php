@@ -96,7 +96,7 @@ class Route
         if ($middleware === null) {
             return $this->_middlewares;
         }
-        $this->_middlewares = array_merge($this->_middlewares, (array)$middleware);
+        $this->_middlewares = \array_merge($this->_middlewares, (array)$middleware);
         return $this;
     }
 
@@ -151,7 +151,7 @@ class Route
      */
     public function setParams(array $params)
     {
-        $this->_params = array_merge($this->_params, $params);
+        $this->_params = \array_merge($this->_params, $params);
         return $this;
     }
 
@@ -164,8 +164,8 @@ class Route
         if (empty($parameters)) {
             return $this->_path;
         }
-        $path = str_replace(['[', ']'], '', $this->_path);
-        $path = preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
+        $path = \str_replace(['[', ']'], '', $this->_path);
+        $path = \preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
             if (!$parameters) {
                 return $matches[0];
             }
@@ -182,7 +182,7 @@ class Route
             }
             return $matches[0];
         }, $path);
-        return count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
+        return \count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
     }
 
 }

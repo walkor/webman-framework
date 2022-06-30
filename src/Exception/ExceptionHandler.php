@@ -38,9 +38,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
     /**
      * @var array
      */
-    public $dontReport = [
-
-    ];
+    public $dontReport = [];
 
     /**
      * ExceptionHandler constructor.
@@ -63,11 +61,10 @@ class ExceptionHandler implements ExceptionHandlerInterface
             return;
         }
         $logs = '';
-        $request = \request();
-        if ($request) {
-            $logs = $request->getRealIp() . ' ' . $request->method() . ' ' . trim($request->fullUrl(), '/');
+        if ($request = \request()) {
+            $logs = $request->getRealIp() . ' ' . $request->method() . ' ' . \trim($request->fullUrl(), '/');
         }
-        $this->_logger->error($logs . "\n" . $exception);
+        $this->_logger->error($logs . PHP_EOL . $exception);
     }
 
     /**
@@ -79,12 +76,12 @@ class ExceptionHandler implements ExceptionHandlerInterface
     {
         $code = $exception->getCode();
         if ($request->expectsJson()) {
-            $json = ['code' => $code ? $code : 500, 'msg' => $exception->getMessage()];
+            $json = ['code' => $code ? $code : 500, 'msg' => $this->_debug ? $exception->getMessage() : 'Server internal error'];
             $this->_debug && $json['traces'] = (string)$exception;
             return new Response(200, ['Content-Type' => 'application/json'],
-                json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                \json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }
-        $error = $this->_debug ? nl2br((string)$exception) : 'Server internal error';
+        $error = $this->_debug ? \nl2br((string)$exception) : 'Server internal error';
         return new Response(500, [], $error);
     }
 

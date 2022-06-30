@@ -236,10 +236,10 @@ class Redis
     public static function instance()
     {
         if (!static::$_instance) {
-            $config = config('redis');
+            $config = \config('redis');
             $client = $config['client'] ?? self::PHPREDIS_CLIENT;
 
-            if (!in_array($client, static::$_allowClient)) {
+            if (!\in_array($client, static::$_allowClient)) {
                 $client = self::PHPREDIS_CLIENT;
             }
 

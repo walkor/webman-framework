@@ -74,7 +74,7 @@ class UploadFile extends File
      */
     public function getUploadExtension()
     {
-        return pathinfo($this->_uploadName, PATHINFO_EXTENSION);
+        return \pathinfo($this->_uploadName, PATHINFO_EXTENSION);
     }
 
     /**

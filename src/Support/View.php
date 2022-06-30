@@ -25,7 +25,7 @@ class View
     {
         $request = \request();
         $plugin =  $request->plugin ?? '';
-        $handler = config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
+        $handler = \config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
         $handler::assign($name, $value);
     }
 }

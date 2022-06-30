@@ -47,7 +47,7 @@ class Log
     public static function channel(string $name = 'default')
     {
         if (!isset(static::$_instance[$name])) {
-            $config = config('log', [])[$name];
+            $config = \config('log', [])[$name];
             $handlers = self::handlers($config);
             $processors = self::processors($config);
             static::$_instance[$name] = new Logger($name, $handlers, $processors);
@@ -111,7 +111,7 @@ class Log
         }
 
         foreach ($config['processors'] ?? [] as $value) {
-            if (is_array($value) && isset($value['class'])) {
+            if (\is_array($value) && isset($value['class'])) {
                 $value = new $value['class'](... \array_values($value['constructor'] ?? []));;
             }
             $result[] = $value;

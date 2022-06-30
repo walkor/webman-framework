@@ -94,7 +94,7 @@ class App
             }
 
             $worker->onWorkerStart = function ($worker) {
-                require_once base_path() . '/support/bootstrap.php';
+                require_once \base_path() . '/support/bootstrap.php';
                 $app = new \Webman\App(config('app.request_class', Request::class), Log::channel('default'), app_path(), public_path());
                 $worker->onMessage = [$app, 'onMessage'];
                 [$app, 'onWorkerStart']($worker);
@@ -125,7 +125,7 @@ class App
     }
 
     /**
-     * @param $excludes
+     * @param array $excludes
      * @return void
      */
     public static function loadAllConfig(array $excludes = [])
