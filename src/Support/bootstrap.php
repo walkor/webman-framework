@@ -13,8 +13,10 @@
  */
 
 use Dotenv\Dotenv;
-use Webman\Middleware;
+use Webman\Config;
 use Webman\Route;
+use Webman\Middleware;
+use Webman\Util;
 
 $worker = $worker ?? null;
 
@@ -22,7 +24,7 @@ if ($timezone = config('app.default_timezone')) {
     date_default_timezone_set($timezone);
 }
 
-set_error_handler(function ($level, $message, $file = '', $line = 0, $context = []) {
+set_error_handler(function ($level, $message, $file = '', $line = 0) {
     if (error_reporting() & $level) {
         throw new ErrorException($message, 0, $level, $file, $line);
     }
@@ -86,18 +88,12 @@ foreach (config('plugin', []) as $firm => $projects) {
     }
 }
 
-$paths = [config_path()];
 $directory = base_path() . '/plugin';
-if (is_dir($directory)) {
-    $handle = opendir($directory);
-    while (false !== ($entry = readdir($handle))) {
-        if ($entry == '.' || $entry == '..') {
-            continue;
-        }
-        $paths[] = $directory . '/' . $entry . '/config';
+$paths = [config_path()];
+foreach (Util::scanDir($directory) as $path) {
+    if (is_dir($path = "$path/config")) {
+        $paths[] = $path;
     }
-    closedir($handle);
 }
-
 Route::load($paths);
 

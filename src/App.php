@@ -115,19 +115,13 @@ class App
             $key = $request->method() . $path;
             if (isset(static::$_callbacks[$key])) {
                 [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
-                static::send($connection, $callback($request), $request);
-                return null;
+                return static::send($connection, $callback($request), $request);
             }
 
-            if (static::unsafeUri($connection, $path, $request)) {
-                return null;
-            }
-
-            if (static::findFile($connection, $path, $key, $request)) {
-                return null;
-            }
-
-            if (static::findRoute($connection, $path, $key, $request)) {
+            if (static::unsafeUri($connection, $path, $request) ||
+                static::findFile($connection, $path, $key, $request) ||
+                static::findRoute($connection, $path, $key, $request)
+            ) {
                 return null;
             }
 
@@ -143,7 +137,7 @@ class App
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
             $callback = static::getCallback($plugin, $app, [$controller, $action]);
-            static::$_callbacks[$key] = [$callback, $plugin, $app, $controller, $action, null];
+            static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
         } catch (\Throwable $e) {
@@ -160,6 +154,19 @@ class App
     {
         static::$_worker = $worker;
         Http::requestClass(static::$_requestClass);
+    }
+
+    /**
+     * @param string $key
+     * @param array $data
+     * @return void
+     */
+    protected static function collectCallbacks(string $key, array $data)
+    {
+        static::$_callbacks[$key] = $data;
+        if (count(static::$_callbacks) >= 1024) {
+            unset(static::$_callbacks[\key(static::$_callbacks)]);
+        }
     }
 
     /**
@@ -349,12 +356,9 @@ class App
                 $action = static::getRealMethod($controller, $callback[1]) ?? '';
             }
             $callback = static::getCallback($plugin, $app, $callback, $args, true, $route);
-            static::$_callbacks[$key] = [$callback, $plugin, $app, $controller ?: '', $action, $route];
+            static::collectCallbacks($key, [$callback, $plugin, $app, $controller ?: '', $action, $route]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, $callback($request), $request);
-            if (\count(static::$_callbacks) > 1024) {
-                static::clearCache();
-            }
             return true;
         }
         return false;
@@ -388,9 +392,9 @@ class App
             if (!static::config($plugin, 'app.support_php_files', false)) {
                 return false;
             }
-            static::$_callbacks[$key] = [function () use ($file) {
+            static::collectCallbacks($key, [function () use ($file) {
                 return static::execPhpFile($file);
-            }, '', '', '', '', null];
+            }, '', '', '', '', null]);
             [, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
             static::send($connection, static::execPhpFile($file), $request);
             return true;
@@ -400,14 +404,14 @@ class App
             return false;
         }
 
-        static::$_callbacks[$key] = [static::getCallback($plugin, '__static__', function ($request) use ($file) {
+        static::collectCallbacks($key, [static::getCallback($plugin, '__static__', function ($request) use ($file) {
             \clearstatcache(true, $file);
             if (!\is_file($file)) {
                 $callback = static::getFallback();
                 return $callback($request);
             }
             return (new Response())->file($file);
-        }, null, false), '', '', '', '', null];
+        }, null, false), '', '', '', '', null]);
         [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
         static::send($connection, $callback($request), $request);
         return true;
@@ -580,14 +584,6 @@ class App
             echo $e;
         }
         return \ob_get_clean();
-    }
-
-    /**
-     * Clear cache.
-     */
-    public static function clearCache()
-    {
-        static::$_callbacks = [];
     }
 
     /**

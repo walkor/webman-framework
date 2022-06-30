@@ -40,12 +40,16 @@ class Config
      */
     public static function load(string $config_path, array $exclude_file = [], string $key = null)
     {
-        static::$_loaded = false;
         static::$_configPath = $config_path;
         if (!$config_path) {
             return;
         }
+        static::$_loaded = false;
         $config = static::loadFromDir($config_path, $exclude_file);
+        if (!$config) {
+            static::$_loaded = true;
+            return;
+        }
         if ($key !== null) {
             foreach (array_reverse(explode('.', $key)) as $k) {
                 $config = [$k => $config];
@@ -53,7 +57,6 @@ class Config
         }
         static::$_config = array_replace_recursive(static::$_config, $config);
         static::formatConfig();
-
         static::$_loaded = true;
     }
 
@@ -171,10 +174,7 @@ class Config
             }
             $all_config = array_replace_recursive($all_config, $config);
         }
-
-        $config = $all_config;
-
-        return $config;
+        return $all_config;
     }
 
     /**

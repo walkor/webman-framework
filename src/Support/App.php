@@ -4,6 +4,7 @@ namespace Support;
 
 use Dotenv\Dotenv;
 use Webman\Config;
+use Webman\Util;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
@@ -93,8 +94,8 @@ class App
             }
 
             $worker->onWorkerStart = function ($worker) {
-                require_once base_path() . '/Support/bootstrap.php';
-                $app = new \Webman\App(config('app.request_class', Request::class), Log::channel('default'), app_path(), public_path(), );
+                require_once base_path() . '/support/bootstrap.php';
+                $app = new \Webman\App(config('app.request_class', Request::class), Log::channel('default'), app_path(), public_path());
                 $worker->onMessage = [$app, 'onMessage'];
                 [$app, 'onWorkerStart']($worker);
             };
@@ -130,18 +131,13 @@ class App
     public static function loadAllConfig(array $excludes = [])
     {
         Config::load(config_path(), $excludes);
-
         $directory = base_path() . '/plugin';
-        if (is_dir($directory)) {
-            $handle = opendir($directory);
-            while (false !== ($entry = readdir($handle))) {
-                if ($entry == '.' || $entry == '..') {
-                    continue;
-                }
-                $dir = $directory . '/' . $entry . '/config';
-                Config::load($dir, $excludes, "plugin.$entry");
+        foreach (Util::scanDir($directory, false) as $name) {
+            $dir = "$directory/$name/config";
+            if (\is_dir($dir)) {
+                Config::load($dir, $excludes, "plugin.$name");
             }
-            closedir($handle);
         }
     }
+
 }
