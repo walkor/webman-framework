@@ -11,6 +11,7 @@ class Install
      */
     protected static $pathRelation = [
         'start.php' => 'start.php',
+        'windows.php' => 'windows.php',
         'Support/bootstrap.php' => 'support/bootstrap.php'
     ];
 

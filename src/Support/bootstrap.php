@@ -13,6 +13,8 @@
  */
 
 use Dotenv\Dotenv;
+use Support\Log;
+use Webman\Bootstrap;
 use Webman\Config;
 use Webman\Route;
 use Webman\Middleware;
@@ -68,7 +70,13 @@ foreach (config('plugin', []) as $firm => $projects) {
 Middleware::load(['__static__' => config('static.middleware', [])], '');
 
 foreach (config('bootstrap', []) as $class_name) {
-    /** @var \Webman\Bootstrap $class_name */
+    if (!class_exists($class_name)) {
+        $log = "Warning: Class $class_name setting in config/bootstrap.php not found\r\n";
+        echo $log;
+        Log::error($log);
+        continue;
+    }
+    /** @var Bootstrap $class_name */
     $class_name::start($worker);
 }
 
@@ -78,12 +86,24 @@ foreach (config('plugin', []) as $firm => $projects) {
             continue;
         }
         foreach ($project['bootstrap'] ?? [] as $class_name) {
-            /** @var \Webman\Bootstrap $class_name */
+            if (!class_exists($class_name)) {
+                $log = "Warning: Class $class_name setting in config/plugin/$firm/$name/bootstrap.php not found\r\n";
+                echo $log;
+                Log::error($log);
+                continue;
+            }
+            /** @var Bootstrap $class_name */
             $class_name::start($worker);
         }
     }
     foreach ($projects['bootstrap'] ?? [] as $class_name) {
-        /** @var \Webman\Bootstrap $class_name */
+        if (!class_exists($class_name)) {
+            $log = "Warning: Class $class_name setting in plugin/$firm/config/bootstrap.php not found\r\n";
+            echo $log;
+            Log::error($log);
+            continue;
+        }
+        /** @var Bootstrap $class_name */
         $class_name::start($worker);
     }
 }
