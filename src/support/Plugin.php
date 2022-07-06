@@ -12,11 +12,12 @@ class Plugin
         if (!isset($autoload['psr-4'])) {
             return;
         }
-        $namespace = key($autoload['psr-4']);
-        $install_function = "\\{$namespace}Install::install";
-        $plugin_const = "\\{$namespace}Install::WEBMAN_PLUGIN";
-        if (defined($plugin_const) && is_callable($install_function)) {
-            $install_function();
+        foreach ($autoload['psr-4'] as $namespace => $path) {
+            $install_function = "\\{$namespace}Install::install";
+            $plugin_const = "\\{$namespace}Install::WEBMAN_PLUGIN";
+            if (defined($plugin_const) && is_callable($install_function)) {
+                $install_function();
+            }
         }
     }
 
@@ -32,11 +33,12 @@ class Plugin
         if (!isset($autoload['psr-4'])) {
             return;
         }
-        $namespace = key($autoload['psr-4']);
-        $uninstall_function = "\\{$namespace}Install::uninstall";
-        $plugin_const = "\\{$namespace}Install::WEBMAN_PLUGIN";
-        if (defined($plugin_const) && is_callable($uninstall_function)) {
-            $uninstall_function();
+        foreach ($autoload['psr-4'] as $namespace => $path) {
+            $uninstall_function = "\\{$namespace}Install::uninstall";
+            $plugin_const = "\\{$namespace}Install::WEBMAN_PLUGIN";
+            if (defined($plugin_const) && is_callable($uninstall_function)) {
+                $uninstall_function();
+            }
         }
     }
 
