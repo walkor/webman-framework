@@ -214,14 +214,14 @@ class App
             /** @var ExceptionHandlerInterface $exception_handler */
             $exception_handler = static::container($plugin)->make($exception_handler_class, [
                 'logger' => static::$_logger,
-                'debug' => Config::get('app.debug')
+                'debug' => static::config($plugin, 'app.debug')
             ]);
             $exception_handler->report($e);
             $response = $exception_handler->render($request, $e);
             $response->exception($e);
             return $response;
         } catch (Throwable $e) {
-            $response = new Response(500, [], Config::get('app.debug') ? (string)$e : $e->getMessage());
+            $response = new Response(500, [], static::config($plugin, 'app.debug') ? (string)$e : $e->getMessage());
             $response->exception($e);
             return $response;
         }
