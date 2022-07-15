@@ -482,7 +482,7 @@ class App
             $app_base_path_length = \strrpos($app_path, DIRECTORY_SEPARATOR) + 1;
             foreach ($iterator as $spl_file) {
                 $file = (string)$spl_file;
-                if (\is_dir($file) || false === \strpos(strtolower($file), '/controller/') || $spl_file->getExtension() !== 'php') {
+                if (\is_dir($file) || false === \strpos(strtolower($file), DIRECTORY_SEPARATOR . 'controller' . DIRECTORY_SEPARATOR) || $spl_file->getExtension() !== 'php') {
                     continue;
                 }
                 $controller_files[$file] = \str_replace(DIRECTORY_SEPARATOR, "\\", \strtolower(\substr(\substr($file, $app_base_path_length), 0, -4)));
