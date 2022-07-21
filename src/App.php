@@ -15,10 +15,10 @@
 namespace Webman;
 
 use Closure;
-use Throwable;
 use FastRoute\Dispatcher;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
+use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
@@ -373,6 +373,9 @@ class App
      */
     protected static function findFile(TcpConnection $connection, string $path, string $key, $request)
     {
+        if (preg_match('/%[0-9a-f]{2}/i', $path)) {
+            $path = urldecode($path);
+        }
         $path_explodes = \explode('/', trim($path, '/'));
         $plugin = '';
         if (isset($path_explodes[2]) && $path_explodes[0] === 'plugin') {
