@@ -20,6 +20,7 @@ use Illuminate\Events\Dispatcher;
 use Illuminate\Container\Container;
 use Illuminate\Database\Connection;
 use Jenssegers\Mongodb\Connection as MongodbConnection;
+use Illuminate\Pagination\Paginator;
 use Workerman\Worker;
 use Workerman\Timer;
 use support\Db;
@@ -85,6 +86,13 @@ class LaravelDb implements Bootstrap
                         } catch (\Throwable $e) {}
                     }
                 }
+            });
+        }
+        
+        if (class_exists(Paginator::class)) {
+            Paginator::currentPageResolver(function ($page_name = 'page') {
+                $page = (int)request()->input($page_name, 1);
+                return $page ?: 1;
             });
         }
     }
