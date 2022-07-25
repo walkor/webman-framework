@@ -22,7 +22,7 @@ class Mail
 
         self::$instance = new PHPMailer(true);
 
-        switch (env('MAIL_MAILER' , 'smtp')) {
+        switch ($config['driver']) {
             case 'smtp':
                 self::$instance->isSMTP();
                 if ($config['username'] != null && $config['password'] != null)
@@ -46,7 +46,7 @@ class Mail
         self::$instance->Port = $config['port'];
 
         try {
-            self::$instance->setFrom(env('MAIL_FROM_ADDRESS', 'hello@example.com'), env('MAIL_FROM_NAME', 'Example'));
+            self::$instance->setFrom($config['fromAddress'] , $config['fromName']);
         } catch (Exception $e) {
             (new Log())->channel('mailer')->error($e->getMessage());
         }
