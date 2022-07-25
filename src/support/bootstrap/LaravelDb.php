@@ -88,8 +88,14 @@ class LaravelDb implements Bootstrap
                 }
             });
         }
-        
+
         if (class_exists(Paginator::class)) {
+            Paginator::queryStringResolver(function () {
+                return request()->queryString();
+            });
+            Paginator::currentPathResolver(function () {
+                return request()->path();
+            });
             Paginator::currentPageResolver(function ($page_name = 'page') {
                 $page = (int)request()->input($page_name, 1);
                 return $page > 0 ? $page : 1;
