@@ -176,7 +176,7 @@ class App
      */
     protected static function unsafeUri($connection, $path, $request)
     {
-        if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
+        if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false || strpos($path, '%2f') !== false) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
@@ -357,7 +357,7 @@ class App
      */
     protected static function findFile($connection, $path, $key, $request)
     {
-        if (!strstr($path, '%2f') && preg_match('/%[0-9a-f]{2}/i', $path)) $path = urldecode($path);
+        if (preg_match('/%[0-9a-f]{2}/i', $path)) $path = urldecode($path);
         
         $public_dir = static::$_publicPath;
         $file = "$public_dir/$path";
