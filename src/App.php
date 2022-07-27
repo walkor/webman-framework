@@ -357,7 +357,7 @@ class App
      */
     protected static function findFile($connection, $path, $key, $request)
     {
-        if (preg_match('/%[0-9a-f]{2}/i', $path)) $path = urldecode($path);
+        if (!strstr($path, '%2f') && preg_match('/%[0-9a-f]{2}/i', $path)) $path = urldecode($path);
         
         $public_dir = static::$_publicPath;
         $file = "$public_dir/$path";
