@@ -176,7 +176,7 @@ class App
      */
     protected static function unsafeUri($connection, $path, $request)
     {
-        if (strpos($path, '/../') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
+        if (strpos($path, '..') !== false || strpos($path,"\\") !== false || strpos($path, "\0") !== false) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
