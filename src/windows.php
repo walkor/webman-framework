@@ -5,7 +5,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 use process\Monitor;
-use Support\App;
+use support\App;
 use Workerman\Worker;
 
 ini_set('display_errors', 'on');
@@ -48,7 +48,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Workerman\Worker;
 use Webman\Config;
-use Support\App;
+use support\App;
 
 ini_set('display_errors', 'on');
 error_reporting(E_ALL);
