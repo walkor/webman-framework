@@ -455,17 +455,18 @@ class App
         $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'plugin';
         $config_prefix = $is_plugin ? "{$path_explode[0]}.{$path_explode[1]}." : '';
         $path_prefix = $is_plugin ? "/{$path_explode[0]}/{$path_explode[1]}" : '';
+        $class_prefix = $is_plugin ? "{$path_explode[0]}\\{$path_explode[1]}" : '';
         $suffix = Config::get("{$config_prefix}app.controller_suffix", '');
         $relative_path = \trim(substr($path, strlen($path_prefix)), '/');
         $path_explode = $relative_path ? \explode('/', $relative_path) : [];
 
         $action = 'index';
-        if ($controller_action = static::guessControllerAction($path_explode, $action, $suffix)) {
+        if ($controller_action = static::guessControllerAction($path_explode, $action, $suffix, $class_prefix)) {
             return $controller_action;
         }
         $action = \end($path_explode);
         unset($path_explode[count($path_explode) - 1]);
-        return static::guessControllerAction($path_explode, $action, $suffix);
+        return static::guessControllerAction($path_explode, $action, $suffix, $class_prefix);
     }
 
     /**
@@ -475,17 +476,17 @@ class App
      * @return array|false
      * @throws \ReflectionException
      */
-    protected static function guessControllerAction($path_explode, $action, $suffix)
+    protected static function guessControllerAction($path_explode, $action, $suffix, $class_prefix)
     {
-        $map[] = 'app\\controller\\' . \implode('\\', $path_explode);
+        $map[] = "$class_prefix\\app\\controller\\" . \implode('\\', $path_explode);
         foreach ($path_explode as $index => $section) {
             $tmp = $path_explode;
             \array_splice($tmp, $index, 1, [$section, 'controller']);
-            $map[] = \implode('\\', ['app', ...$tmp]);
+            $map[] = "$class_prefix\\" . \implode('\\', ['app', ...$tmp]);
         }
         $last_index = \count($map) - 1;
         $map[$last_index] = \trim($map[$last_index], '\\') . '\\index';
-
+        var_export($map);
         foreach ($map as $controller_class) {
             $controller_class .= $suffix;
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
