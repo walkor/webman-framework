@@ -486,7 +486,6 @@ class App
         }
         $last_index = \count($map) - 1;
         $map[$last_index] = \trim($map[$last_index], '\\') . '\\index';
-        var_export($map);
         foreach ($map as $controller_class) {
             $controller_class .= $suffix;
             if ($controller_action = static::getControllerAction($controller_class, $action)) {

@@ -16,6 +16,7 @@ namespace Webman;
 /**
  * This deprecated class will certainly be removed in the future.
  * Please use Webman\Session\FileSessionHandler
+ * @deprecated
  * @package Webman
  */
 class FileSessionHandler extends Session\FileSessionHandler

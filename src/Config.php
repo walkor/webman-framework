@@ -61,6 +61,19 @@ class Config
     }
 
     /**
+     * This deprecated method will certainly be removed in the future
+     * 
+     * @deprecated
+     * @param string $config_path
+     * @param array $exclude_file
+     * @return void
+     */
+    public static function reload(string $config_path, array $exclude_file = [])
+    {
+        static::load($config_path, $exclude_file);
+    }
+
+    /**
      * @return void
      */
     protected static function formatConfig()

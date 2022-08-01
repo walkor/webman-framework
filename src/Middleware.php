@@ -27,8 +27,11 @@ class Middleware
      * @param string $plugin
      * @return void
      */
-    public static function load(array $all_middlewares, string $plugin)
+    public static function load($all_middlewares, string $plugin = '')
     {
+        if (!\is_array($all_middlewares)) {
+            return;
+        }
         foreach ($all_middlewares as $app_name => $middlewares) {
             if (!\is_array($middlewares)) {
                 throw new \RuntimeException('Bad middleware config');
@@ -60,4 +63,12 @@ class Middleware
         return \array_reverse(\array_merge($global_middleware, $app_middleware));
     }
 
+    /**
+     * @deprecated
+     * @return void
+     */
+    public static function container($_)
+    {
+
+    }
 }

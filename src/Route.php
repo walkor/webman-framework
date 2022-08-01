@@ -336,8 +336,11 @@ class Route
      * @param array $paths
      * @return void
      */
-    public static function load(array $paths)
+    public static function load($paths)
     {
+        if (!\is_array($paths)) {
+            return;
+        }
         static::$_dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
             Route::setCollector($route);
             foreach ($paths as $config_path) {
@@ -392,6 +395,15 @@ class Route
     public static function getFallback()
     {
         return static::$_fallback;
+    }
+
+    /**
+     * @deprecated
+     * @return void
+     */
+    public static function container()
+    {
+
     }
 
 }
