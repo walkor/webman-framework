@@ -177,7 +177,10 @@ class App
      */
     protected static function unsafeUri(TcpConnection $connection, string $path, $request)
     {
-        if (\strpos($path, '..') !== false || \strpos($path, "\\") !== false || \strpos($path, "\0") !== false) {
+        if (\strpos($path, '..') !== false ||
+            \strpos($path, "\\") !== false ||
+            \strpos($path, "\0") !== false ||
+            \strpos($path, '//') !== false || !$path) {
             $callback = static::getFallback();
             $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
@@ -452,33 +455,42 @@ class App
         $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'plugin';
         $config_prefix = $is_plugin ? "{$path_explode[0]}.{$path_explode[1]}." : '';
         $path_prefix = $is_plugin ? "/{$path_explode[0]}/{$path_explode[1]}" : '';
-        $class_prefix = $is_plugin ? "{$path_explode[0]}\\{$path_explode[1]}\\" : '';
         $suffix = Config::get("{$config_prefix}app.controller_suffix", '');
-        $path_explode = \explode('/', trim(substr($path, strlen($path_prefix)), '/'));
-        $app = !empty($path_explode[0]) ? $path_explode[0] : 'index';
-        $controller = $path_explode[1] ?? 'index';
-        $action = $path_explode[2] ?? 'index';
+        $relative_path = \trim(substr($path, strlen($path_prefix)), '/');
+        $path_explode = $relative_path ? \explode('/', $relative_path) : [];
 
-        if (isset($path_explode[2])) {
-            $controller_class = "{$class_prefix}app\\$app\\controller\\$controller$suffix";
+        $action = 'index';
+        if ($controller_action = static::guessControllerAction($path_explode, $action, $suffix)) {
+            return $controller_action;
+        }
+        $action = \end($path_explode);
+        unset($path_explode[count($path_explode) - 1]);
+        return static::guessControllerAction($path_explode, $action, $suffix);
+    }
+
+    /**
+     * @param $path_explode
+     * @param $action
+     * @param $suffix
+     * @return array|false
+     * @throws \ReflectionException
+     */
+    protected static function guessControllerAction($path_explode, $action, $suffix)
+    {
+        $map[] = 'app\\controller\\' . \implode('\\', $path_explode);
+        foreach ($path_explode as $index => $section) {
+            $tmp = $path_explode;
+            \array_splice($tmp, $index, 1, [$section, 'controller']);
+            $map[] = \implode('\\', ['app', ...$tmp]);
+        }
+        $last_index = \count($map) - 1;
+        $map[$last_index] = \trim($map[$last_index], '\\') . '\\index';
+
+        foreach ($map as $controller_class) {
+            $controller_class .= $suffix;
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
                 return $controller_action;
             }
-        }
-
-        $controller = $app;
-        $action = $path_explode[1] ?? 'index';
-
-        $controller_class = "{$class_prefix}app\\controller\\$controller$suffix";
-        if ($controller_action = static::getControllerAction($controller_class, $action)) {
-            return $controller_action;
-        }
-
-        $controller = $path_explode[1] ?? 'index';
-        $action = $path_explode[2] ?? 'index';
-        $controller_class = "{$class_prefix}app\\$app\\controller\\$controller$suffix";
-        if ($controller_action = static::getControllerAction($controller_class, $action)) {
-            return $controller_action;
         }
         return false;
     }
