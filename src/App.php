@@ -381,15 +381,14 @@ class App
         }
         $path_explodes = \explode('/', trim($path, '/'));
         $plugin = '';
-        if (isset($path_explodes[2]) && $path_explodes[0] === 'plugin') {
-            $public_dir = BASE_PATH . "/{$path_explodes[0]}/{$path_explodes[1]}/public";
+        if (isset($path_explodes[1]) && $path_explodes[0] === 'app') {
+            $public_dir = BASE_PATH . "/plugin/{$path_explodes[1]}/public";
             $plugin = $path_explodes[1];
-            $path = \substr($path, strlen("/{$path_explodes[0]}/{$path_explodes[1]}/"));
+            $path = \substr($path, strlen("/app/{$path_explodes[1]}/"));
         } else {
             $public_dir = static::$_publicPath;
         }
         $file = "$public_dir/$path";
-
         if (!\is_file($file)) {
             return false;
         }
@@ -452,10 +451,10 @@ class App
     protected static function parseControllerAction(string $path)
     {
         $path_explode = \explode('/', trim($path, '/'));
-        $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'plugin';
-        $config_prefix = $is_plugin ? "{$path_explode[0]}.{$path_explode[1]}." : '';
-        $path_prefix = $is_plugin ? "/{$path_explode[0]}/{$path_explode[1]}" : '';
-        $class_prefix = $is_plugin ? "{$path_explode[0]}\\{$path_explode[1]}" : '';
+        $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'app';
+        $config_prefix = $is_plugin ? "plugin.{$path_explode[1]}." : '';
+        $path_prefix = $is_plugin ? "/app/{$path_explode[1]}" : '';
+        $class_prefix = $is_plugin ? "plugin\\{$path_explode[1]}" : '';
         $suffix = Config::get("{$config_prefix}app.controller_suffix", '');
         $relative_path = \trim(substr($path, strlen($path_prefix)), '/');
         $path_explode = $relative_path ? \explode('/', $relative_path) : [];
