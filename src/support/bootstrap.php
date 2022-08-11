@@ -53,6 +53,19 @@ Support\App::loadAllConfig(['route']);
 foreach (config('autoload.files', []) as $file) {
     include_once $file;
 }
+foreach (config('plugin', []) as $firm => $projects) {
+    foreach ($projects as $name => $project) {
+        if (!is_array($project)) {
+            continue;
+        }
+        foreach ($project['autoload']['files'] ?? [] as $file) {
+            include_once $file;
+        }
+    }
+    foreach ($projects['autoload']['files'] ?? [] as $file) {
+        include_once $file;
+    }
+}
 
 Middleware::load(config('middleware', []), '');
 foreach (config('plugin', []) as $firm => $projects) {
