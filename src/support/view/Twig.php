@@ -12,15 +12,15 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\view;
+namespace support\View;
 
-use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
 use Webman\View;
 
 /**
  * Class Blade
- * @package support\view
+ * @package Support\View
  */
 class Twig implements View
 {
@@ -30,31 +30,36 @@ class Twig implements View
     protected static $_vars = [];
 
     /**
-     * @param $name
-     * @param null $value
+     * @param string $name
+     * @param mixed $value
      */
-    public static function assign($name, $value = null)
+    public static function assign(string $name, $value = null)
     {
         static::$_vars = \array_merge(static::$_vars, \is_array($name) ? $name : [$name => $value]);
     }
 
     /**
-     * @param $template
-     * @param $vars
-     * @param string $app
-     * @return mixed
+     * @param string $template
+     * @param array $vars
+     * @param string|null $app
+     * @return string
      */
-    public static function render($template, $vars, $app = null)
+    public static function render(string $template, array $vars, string $app = null)
     {
-        static $views = [], $view_suffix;
-        $view_suffix = $view_suffix ?: \config('view.options.view_suffix', \config('view.view_suffix', 'html'));
-        $app = $app === null ? \request()->app : $app;
-        if (!isset($views[$app])) {
-            $view_path = $app === '' ? \app_path() . '/view/' : \app_path() . "/$app/view/";
-            $views[$app] = new Environment(new FilesystemLoader($view_path), \config('view.options', []));
+        static $views = [];
+        $request = \request();
+        $plugin = $request->plugin ?? '';
+        $app = $app === null ? $request->app : $app;
+        $config_prefix = $plugin ? "plugin.$plugin." : '';
+        $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
+        $key = "{$plugin}-{$request->app}";
+        if (!isset($views[$key])) {
+            $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
+            $view_path = $app === '' ? "$base_view_path/view/" : "$base_view_path/$app/view/";
+            $views[$key] = new Environment(new FilesystemLoader($view_path), \config("{$config_prefix}view.options", []));
         }
         $vars = \array_merge(static::$_vars, $vars);
-        $content = $views[$app]->render("$template.$view_suffix", $vars);
+        $content = $views[$key]->render("$template.$view_suffix", $vars);
         static::$_vars = [];
         return $content;
     }

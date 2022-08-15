@@ -12,13 +12,17 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Webman\Session;
+
+use FastRoute\Dispatcher\GroupCountBased;
+use FastRoute\RouteCollector;
+use Workerman\Protocols\Http\Session\FileSessionHandler as FileHandler;
 
 /**
- * Class Response
- * @package Support
+ * Class FileSessionHandler
+ * @package Webman
  */
-class Response extends \Webman\Http\Response
+class FileSessionHandler extends FileHandler
 {
 
 }

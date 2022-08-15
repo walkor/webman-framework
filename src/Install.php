@@ -1,4 +1,5 @@
 <?php
+
 namespace Webman;
 
 class Install
@@ -10,8 +11,8 @@ class Install
      */
     protected static $pathRelation = [
         'start.php' => 'start.php',
-        'support/bootstrap.php' => 'support/bootstrap.php',
-        'support/helpers.php' => 'support/helpers.php',
+        'windows.php' => 'windows.php',
+        'support/bootstrap.php' => 'support/bootstrap.php'
     ];
 
     /**
@@ -40,15 +41,14 @@ class Install
     {
         foreach (static::$pathRelation as $source => $dest) {
             if ($pos = strrpos($dest, '/')) {
-                $parent_dir = base_path().'/'.substr($dest, 0, $pos);
+                $parent_dir = base_path() . '/' . substr($dest, 0, $pos);
                 if (!is_dir($parent_dir)) {
                     mkdir($parent_dir, 0777, true);
                 }
             }
-            copy_dir(__DIR__ . "/$source", base_path()."/$dest", true);
-            echo "Create $dest
-";
+            copy_dir(__DIR__ . "/$source", base_path() . "/$dest", true);
+            echo "Create $dest\r\n";
         }
     }
-    
+
 }

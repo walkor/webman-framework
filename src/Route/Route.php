@@ -11,6 +11,7 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Webman\Route;
 
 use FastRoute\Dispatcher\GroupCountBased;
@@ -55,12 +56,14 @@ class Route
 
     /**
      * Route constructor.
-     * @param $methods
-     * @param $path
+     *
+     * @param array $methods
+     * @param string $path
+     * @param callable $callback
      */
-    public function __construct($methods, $path, $callback)
+    public function __construct($methods, string $path, $callback)
     {
-        $this->_methods = (array) $methods;
+        $this->_methods = (array)$methods;
         $this->_path = $path;
         $this->_callback = $callback;
     }
@@ -74,10 +77,10 @@ class Route
     }
 
     /**
-     * @param $name
+     * @param string $name
      * @return $this
      */
-    public function name($name)
+    public function name(string $name)
     {
         $this->_name = $name;
         Router::setByName($name, $this);
@@ -85,7 +88,7 @@ class Route
     }
 
     /**
-     * @param null $middleware
+     * @param mixed $middleware
      * @return $this|array
      */
     public function middleware($middleware = null)
@@ -93,7 +96,7 @@ class Route
         if ($middleware === null) {
             return $this->_middlewares;
         }
-        $this->_middlewares = array_merge($this->_middlewares, (array)$middleware);
+        $this->_middlewares = \array_merge($this->_middlewares, (array)$middleware);
         return $this;
     }
 
@@ -148,7 +151,7 @@ class Route
      */
     public function setParams(array $params)
     {
-        $this->_params = array_merge($this->_params, $params);
+        $this->_params = \array_merge($this->_params, $params);
         return $this;
     }
 
@@ -161,8 +164,8 @@ class Route
         if (empty($parameters)) {
             return $this->_path;
         }
-        $path = str_replace(['[', ']'], '', $this->_path);
-        $path = preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
+        $path = \str_replace(['[', ']'], '', $this->_path);
+        $path = \preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
             if (!$parameters) {
                 return $matches[0];
             }
@@ -179,7 +182,7 @@ class Route
             }
             return $matches[0];
         }, $path);
-        return count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
+        return \count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
     }
 
 }

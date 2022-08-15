@@ -12,13 +12,11 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support;
+namespace Webman\Session;
 
-/**
- * Class Response
- * @package Support
- */
-class Response extends \Webman\Http\Response
+use Workerman\Protocols\Http\Session\RedisClusterSessionHandler as RedisClusterHandler;
+
+class RedisClusterSessionHandler extends RedisClusterHandler
 {
 
 }

@@ -18,7 +18,7 @@ use Illuminate\Database\Capsule\Manager;
 
 /**
  * Class Db
- * @package support
+ * @package Support
  * @method static array select(string $query, $bindings = [], $useReadPdo = true)
  * @method static int insert(string $query, $bindings = [])
  * @method static int update(string $query, $bindings = [])

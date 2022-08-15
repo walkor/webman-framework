@@ -14,16 +14,16 @@
 
 namespace support;
 
-use Workerman\Timer;
-use Workerman\Worker;
-use Illuminate\Redis\RedisManager;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Redis\Events\CommandExecuted;
+use Illuminate\Redis\RedisManager;
+use Workerman\Timer;
+use Workerman\Worker;
 
 
 /**
  * Class Redis
- * @package support
+ * @package Support
  *
  * Strings methods
  * @method static int append($key, $value)
@@ -236,10 +236,10 @@ class Redis
     public static function instance()
     {
         if (!static::$_instance) {
-            $config = config('redis');
+            $config = \config('redis');
             $client = $config['client'] ?? self::PHPREDIS_CLIENT;
 
-            if (!in_array($client, static::$_allowClient)) {
+            if (!\in_array($client, static::$_allowClient)) {
                 $client = self::PHPREDIS_CLIENT;
             }
 
@@ -268,11 +268,11 @@ class Redis
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         return static::connection('default')->{$name}(... $arguments);
     }

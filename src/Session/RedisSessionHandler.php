@@ -11,17 +11,18 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace Webman;
+
+namespace Webman\Session;
 
 use FastRoute\Dispatcher\GroupCountBased;
 use FastRoute\RouteCollector;
-use Workerman\Protocols\Http\Session\RedisSessionHandler as SessionHandler;
+use Workerman\Protocols\Http\Session\RedisSessionHandler as RedisHandler;
 
 /**
  * Class FileSessionHandler
  * @package Webman
  */
-class RedisSessionHandler extends SessionHandler
+class RedisSessionHandler extends RedisHandler
 {
 
 }
