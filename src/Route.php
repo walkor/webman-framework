@@ -58,7 +58,7 @@ class Route
     /**
      * @var bool
      */
-    protected static $_disableDefaultRoute = false;
+    protected static $_disableDefaultRoute = [];
 
     /**
      * @var RouteObject[]
@@ -232,17 +232,17 @@ class Route
      *
      * @return void
      */
-    public static function disableDefaultRoute()
+    public static function disableDefaultRoute($plugin = '')
     {
-        static::$_disableDefaultRoute = true;
+        static::$_disableDefaultRoute[$plugin] = true;
     }
 
     /**
      * @return bool
      */
-    public static function hasDisableDefaultRoute()
+    public static function hasDisableDefaultRoute($plugin = '')
     {
-        return static::$_disableDefaultRoute === true;
+        return static::$_disableDefaultRoute[$plugin] ?? false;
     }
 
     /**
