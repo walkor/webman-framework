@@ -481,7 +481,7 @@ class App
         foreach ($path_explode as $index => $section) {
             $tmp = $path_explode;
             \array_splice($tmp, $index, 1, [$section, 'controller']);
-            $map[] = "$class_prefix\\" . \implode('\\', ['app', ...$tmp]);
+            $map[] = "$class_prefix\\" . \implode('\\', \array_merge(['app'], $tmp));
         }
         $last_index = \count($map) - 1;
         $map[$last_index] = \trim($map[$last_index], '\\') . '\\index';
