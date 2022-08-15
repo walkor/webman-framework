@@ -11,7 +11,20 @@ use Workerman\Worker;
 ini_set('display_errors', 'on');
 error_reporting(E_ALL);
 
+if (class_exists('Dotenv\Dotenv') && file_exists(base_path() . '/.env')) {
+    if (method_exists('Dotenv\Dotenv', 'createUnsafeImmutable')) {
+        Dotenv::createUnsafeImmutable(base_path())->load();
+    } else {
+        Dotenv::createMutable(base_path())->load();
+    }
+}
+
 App::loadAllConfig(['route']);
+
+$error_reporting = config('app.error_reporting');
+if (isset($error_reporting)) {
+    error_reporting($error_reporting);
+}
 
 $runtime_process_path = runtime_path() . DIRECTORY_SEPARATOR . '/windows';
 if (!is_dir($runtime_process_path)) {
