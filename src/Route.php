@@ -304,9 +304,18 @@ class Route
             $callback = \explode('@', $callback, 2);
         }
 
-        if (!\is_callable($callback)) {
-            echo "Route set to $path is not callable\n";
-            return false;
+        if (!\is_array($callback)) {
+            if (!\is_callable($callback)) {
+                $call_str = \is_scalar($callback) ? $callback : 'Closure';
+                echo "Route $path $call_str is not callable\n";
+                return false;
+            }
+        } else {
+            $callback = \array_values($callback);
+            if (!isset($callback[1]) || !\class_exists($callback[0]) || !\method_exists($callback[0], $callback[1])) {
+                echo "Route $path " . \json_encode($callback) . " is not callable\n";
+                return false;
+            }
         }
 
         return $callback;
