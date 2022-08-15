@@ -378,7 +378,11 @@ class App
     {
         if (preg_match('/%[0-9a-f]{2}/i', $path)) {
             $path = urldecode($path);
+            if (static::unsafeUri($connection, $path, $request)) {
+                return true;
+            }
         }
+
         $path_explodes = \explode('/', trim($path, '/'));
         $plugin = '';
         if (isset($path_explodes[1]) && $path_explodes[0] === 'app') {
