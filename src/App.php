@@ -502,7 +502,7 @@ class App
      */
     protected static function getControllerAction(string $controller_class, string $action)
     {
-        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \is_callable([$controller_class, $action])) {
+        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \method_exists($controller_class, $action)) {
             return [
                 'plugin' => static::getPluginByClass($controller_class),
                 'app' => static::getAppByController($controller_class),
