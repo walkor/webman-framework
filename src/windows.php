@@ -6,6 +6,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use process\Monitor;
 use support\App;
+use Dotenv\Dotenv;
 use Workerman\Worker;
 
 ini_set('display_errors', 'on');
