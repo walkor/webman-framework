@@ -19,7 +19,7 @@ use Webman\Config;
 
 /**
  * Class Container
- * @package Support
+ * @package support
  * @method static mixed get($name)
  * @method static mixed make($name, array $parameters)
  * @method static bool has($name)

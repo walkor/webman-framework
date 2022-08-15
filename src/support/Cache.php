@@ -7,7 +7,7 @@ use Symfony\Component\Cache\Psr16Cache;
 
 /**
  * Class Cache
- * @package Support\Bootstrap
+ * @package support\bootstrap
  *
  * Strings methods
  * @method static mixed get($key, $default = null)

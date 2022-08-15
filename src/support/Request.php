@@ -16,7 +16,7 @@ namespace support;
 
 /**
  * Class Request
- * @package Support
+ * @package support
  */
 class Request extends \Webman\Http\Request
 {

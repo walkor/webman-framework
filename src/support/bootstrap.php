@@ -48,7 +48,7 @@ if (class_exists('Dotenv\Dotenv') && file_exists(base_path() . '/.env')) {
     }
 }
 
-Support\App::loadAllConfig(['route']);
+support\App::loadAllConfig(['route']);
 
 foreach (config('autoload.files', []) as $file) {
     include_once $file;

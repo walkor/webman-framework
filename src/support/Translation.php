@@ -19,7 +19,7 @@ use Webman\Exception\NotFoundException;
 
 /**
  * Class Translation
- * @package Support
+ * @package support
  * @method static string trans(?string $id, array $parameters = [], string $domain = null, string $locale = null)
  * @method static void setLocale(string $locale)
  * @method static string getLocale()

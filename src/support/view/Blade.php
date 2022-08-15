@@ -12,7 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\View;
+namespace support\view;
 
 use Jenssegers\Blade\Blade as BladeView;
 use Webman\View;
@@ -20,7 +20,7 @@ use Webman\View;
 /**
  * Class Blade
  * composer require jenssegers/blade
- * @package Support\View
+ * @package support\view
  */
 class Blade implements View
 {

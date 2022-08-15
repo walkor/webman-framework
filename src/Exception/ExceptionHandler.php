@@ -21,7 +21,7 @@ use Webman\Http\Response;
 
 /**
  * Class Handler
- * @package Support\Exception
+ * @package support\exception
  */
 class ExceptionHandler implements ExceptionHandlerInterface
 {

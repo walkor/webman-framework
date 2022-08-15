@@ -12,14 +12,14 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\View;
+namespace support\view;
 
 use think\Template;
 use Webman\View;
 
 /**
  * Class Blade
- * @package Support\View
+ * @package support\view
  */
 class ThinkPHP implements View
 {

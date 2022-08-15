@@ -21,7 +21,7 @@ use Workerman\Worker;
 
 /**
  * Class Session
- * @package Support
+ * @package support
  */
 class Session implements Bootstrap
 {

@@ -23,7 +23,7 @@ use Workerman\Worker;
 
 /**
  * Class Redis
- * @package Support
+ * @package support
  *
  * Strings methods
  * @method static int append($key, $value)

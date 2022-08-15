@@ -16,7 +16,7 @@ namespace support;
 
 /**
  * Class Response
- * @package Support
+ * @package support
  */
 class Response extends \Webman\Http\Response
 {

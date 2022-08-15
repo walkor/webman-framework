@@ -12,14 +12,14 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace support\View;
+namespace support\view;
 
 use Webman\View;
 use Throwable;
 
 /**
  * Class Raw
- * @package Support\View
+ * @package support\view
  */
 class Raw implements View
 {
