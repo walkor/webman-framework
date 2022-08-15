@@ -29,10 +29,10 @@ class ThinkPHP implements View
     protected static $_vars = [];
 
     /**
-     * @param string $name
+     * @param string|array $name
      * @param mixed $value
      */
-    public static function assign(string $name, $value = null)
+    public static function assign($name, $value = null)
     {
         static::$_vars = \array_merge(static::$_vars, \is_array($name) ? $name : [$name => $value]);
     }
