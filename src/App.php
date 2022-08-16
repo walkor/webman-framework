@@ -18,6 +18,8 @@ use Closure;
 use FastRoute\Dispatcher;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
+use ReflectionFunctionAbstract;
+use ReflectionMethod;
 use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
@@ -256,9 +258,9 @@ class App
         $controller_reuse = static::config($plugin, 'app.controller_reuse', true);
         if (\is_array($call) && \is_string($call[0])) {
             if (!$controller_reuse) {
-                $call = function ($request, ...$args) use ($call, $plugin) {
+                $call = function ($request, $args) use ($call, $plugin) {
                     $call[0] = static::container($plugin)->make($call[0]);
-                    return $call($request, ...$args);
+                    return static::autoInject($plugin, $call, $request, $args);
                 };
             } else {
                 $call[0] = static::container($plugin)->get($call[0]);
@@ -270,19 +272,15 @@ class App
                 return function ($request) use ($carry, $pipe) {
                     return $pipe($request, $carry);
                 };
-            }, function ($request) use ($call, $args) {
+            }, function ($request) use ($plugin, $call, $args) {
                 try {
-                    if ($args === null) {
-                        $response = $call($request);
-                    } else {
-                        $response = $call($request, ...$args);
-                    }
+                    $response = static::autoInject($plugin, $call, $request, $args);
                 } catch (Throwable $e) {
                     return static::exceptionResponse($e, $request);
                 }
                 if (!$response instanceof Response) {
                     if (\is_array($response)) {
-                        $response = 'Array';
+                        $response = true ? 'Array' : json_encode($response, JSON_UNESCAPED_UNICODE);
                     }
                     $response = new Response(200, [], $response);
                 }
@@ -292,13 +290,86 @@ class App
             if ($args === null) {
                 $callback = $call;
             } else {
-                $callback = function ($request) use ($call, $args) {
-                    return $call($request, ...$args);
+                $callback = function ($request) use ($plugin, $call, $args) {
+                    return static::autoInject($plugin, $call, $request, $args);
                 };
             }
         }
         return $callback;
     }
+
+    /**
+	 * @see   Dependency injection through reflection information
+     * @param string $plugin
+     * @param array|callable $call
+	 * @param Request $request
+     * @param null|array $args
+     * @return \Closure|mixed
+     */
+	protected static function autoInject(string $plugin, $call, $request, $args = null)
+	{
+        $args = $args ?? [];
+
+        if (static::config($plugin, 'app.action_inject', false)) {
+
+            [$instance, $method] = $call;
+
+            return $call(...static::resolveMethodDependencies(
+                $request, $args, new ReflectionMethod($instance, $method)
+            ));
+        }
+
+        return $call($request, ...$args);
+	}
+
+	protected static function resolveMethodDependencies($request, array $parameters, ReflectionFunctionAbstract $reflector)
+	{
+		// Specification parameter information
+		$values = array_values($parameters);
+
+		$args = [];
+
+		// An array of reflection classes for loop parameters, with each $parameter representing a reflection object of parameters
+		foreach ($reflector->getParameters() as /* $key => */ $parameter) {
+			// Parameter quota consumption
+			if ($parameter->hasType()) {
+				$name = $parameter->getType()->getName();
+				switch ($name) {
+					case 'int':
+					case 'string':
+					case 'bool':
+					case 'array':
+					case 'object':
+					case 'float':
+					case 'mixed':
+					case 'resource':
+						goto _else;
+					default:
+						if ($name === static::$_requestClass) {
+							//Inject Request
+							$args[] = $request;
+						}else{
+							$args[] = static::container()->make('\\'.trim($name, '\\'));
+						}
+						break;
+				}
+			}else{
+				_else:
+				// The variable parameter
+				if (null !== key($values)) {
+					$args[] = current($values);
+				}else{
+					// Indicates whether the current parameter has a default value.  If yes, return true
+					$args[] = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+				}
+				// Quota of consumption variables
+				next($values);
+			}
+
+		}
+		// Returns the result of parameters replacement
+		return $args;
+	}
 
     /**
      * @param string $plugin

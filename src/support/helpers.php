@@ -12,10 +12,10 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+use support\Container;
 use support\Request;
 use support\Response;
 use support\Translation;
-use support\Container;
 use support\view\Raw;
 use support\view\Blade;
 use support\view\ThinkPHP;
@@ -25,68 +25,94 @@ use Webman\App;
 use Webman\Config;
 use Webman\Route;
 
-// Phar support.
-if (\is_phar()) {
-    \define('BASE_PATH', dirname(__DIR__));
-} else {
-    \define('BASE_PATH', realpath(__DIR__ . '/../'));
-}
-\define('WEBMAN_VERSION', '1.4');
+define('BASE_PATH', dirname(__DIR__));
+define('WEBMAN_VERSION', '1.4');
 
 /**
- * @param $return_phar
+ * @return bool
+ */
+function is_phar()
+{
+    return class_exists(\Phar::class, false) && Phar::running();
+}
+
+function path_combine(string $front, string $back)
+{
+    return $front . ($back ? DIRECTORY_SEPARATOR.ltrim($back, DIRECTORY_SEPARATOR) : $back);
+}
+
+/**
+ * return the program execute directory
+ * @param string $path
+ * @return string
+ */
+function run_path(string $path = '')
+{
+    static $run_path = '';
+    if (!$run_path) {
+        $run_path = \is_phar() ? \dirname(Phar::running(false)) : BASE_PATH;
+    }
+    return \path_combine($run_path, $path);
+}
+
+/**
+ * if the param $path equal false,will return this program current execute directory
+ * @param string|false $path
  * @return false|string
  */
-function base_path(bool $return_phar = true)
+function base_path($path = '')
 {
-    static $real_path = '';
-    if (!$real_path) {
-        $real_path = \is_phar() ? \dirname(Phar::running(false)) : BASE_PATH;
+    if (false === $path) {
+        return \run_path();
     }
-    return $return_phar ? BASE_PATH : $real_path;
+
+    return \path_combine(BASE_PATH, $path);
 }
 
 /**
+ * @param string $path
  * @return string
  */
-function app_path()
+function app_path(string $path = '')
 {
-    return BASE_PATH . DIRECTORY_SEPARATOR . 'app';
+    return \path_combine(BASE_PATH . DIRECTORY_SEPARATOR . 'app', $path);
 }
 
 /**
+ * @param string $path
  * @return string
  */
-function public_path()
+function public_path(string $path = '')
 {
-    static $path = '';
-    if (!$path) {
-        $path = \config('app.public_path', BASE_PATH . DIRECTORY_SEPARATOR . 'public');
+    static $public_path = '';
+    if (!$public_path) {
+        $public_path = \config('app.public_path', BASE_PATH . DIRECTORY_SEPARATOR . 'public');
     }
-    return $path;
+    return \path_combine($public_path, $path);
 }
 
 /**
+ * @param string $path
  * @return string
  */
-function config_path()
+function config_path(string $path = '')
 {
-    return BASE_PATH . DIRECTORY_SEPARATOR . 'config';
+    return \path_combine(BASE_PATH . DIRECTORY_SEPARATOR . 'config', $path);
 }
 
 /**
  * Phar support.
  * Compatible with the 'realpath' function in the phar file.
- *
+ * @param string $path
  * @return string
  */
-function runtime_path()
+function runtime_path(string $path = '')
 {
-    static $path = '';
-    if (!$path) {
-        $path = \config('app.runtime_path', BASE_PATH . DIRECTORY_SEPARATOR . 'runtime');
+    static $runtime_path = '';
+    if (!$runtime_path) {
+        $runtime_path = \config('app.runtime_path', BASE_PATH . DIRECTORY_SEPARATOR . 'runtime');
     }
-    return $path;
+    return \path_combine($runtime_path, $path);
 }
 
 /**
@@ -451,14 +477,6 @@ function get_realpath(string $file_path): string
     } else {
         return \realpath($file_path);
     }
-}
-
-/**
- * @return bool
- */
-function is_phar()
-{
-    return \class_exists(\Phar::class, false) && Phar::running();
 }
 
 /**
