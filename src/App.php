@@ -126,13 +126,13 @@ class App
             }
 
             $controller_and_action = static::parseControllerAction($path);
-            if (!$controller_and_action || Route::hasDisableDefaultRoute()) {
+            $plugin = $controller_and_action['plugin'] ?? '';
+            if (!$controller_and_action || Route::hasDisableDefaultRoute($plugin)) {
                 $callback = static::getFallback();
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
                 return null;
             }
-            $plugin = $controller_and_action['plugin'];
             $app = $controller_and_action['app'];
             $controller = $controller_and_action['controller'];
             $action = $controller_and_action['action'];
