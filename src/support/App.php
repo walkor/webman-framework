@@ -19,11 +19,11 @@ class App
         ini_set('display_errors', 'on');
         error_reporting(E_ALL);
 
-        if (class_exists(Dotenv::class) && file_exists(base_path() . '/.env')) {
+        if (class_exists(Dotenv::class) && file_exists(run_path('.env'))) {
             if (method_exists(Dotenv::class, 'createUnsafeImmutable')) {
-                Dotenv::createUnsafeImmutable(base_path())->load();
+                Dotenv::createUnsafeImmutable(run_path())->load();
             } else {
-                Dotenv::createMutable(base_path())->load();
+                Dotenv::createMutable(run_path())->load();
             }
         }
 

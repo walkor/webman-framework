@@ -50,7 +50,7 @@ function run_path(string $path = '')
 {
     static $run_path = '';
     if (!$run_path) {
-        $run_path = \is_phar() ? \dirname(Phar::running(false)) : BASE_PATH;
+        $run_path = \is_phar() ? \dirname(\Phar::running(false)) : BASE_PATH;
     }
     return \path_combine($run_path, $path);
 }
@@ -86,7 +86,7 @@ function public_path(string $path = '')
 {
     static $public_path = '';
     if (!$public_path) {
-        $public_path = \config('app.public_path', BASE_PATH . DIRECTORY_SEPARATOR . 'public');
+        $public_path = \config('app.public_path') ? : \run_path('public');
     }
     return \path_combine($public_path, $path);
 }
@@ -110,7 +110,7 @@ function runtime_path(string $path = '')
 {
     static $runtime_path = '';
     if (!$runtime_path) {
-        $runtime_path = \config('app.runtime_path', BASE_PATH . DIRECTORY_SEPARATOR . 'runtime');
+        $runtime_path = \config('app.runtime_path') ? : \run_path('runtime');
     }
     return \path_combine($runtime_path, $path);
 }
