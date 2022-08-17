@@ -545,7 +545,7 @@ class App
         }
         $action = \end($path_explode);
         unset($path_explode[count($path_explode) - 1]);
-        return static::guessControllerAction($path_explode, $action, $suffix, $class_prefix);
+        return static::guessControllerAction($path_explode, $action, $suffix, $class_prefix) ?: '';
     }
 
     /**
