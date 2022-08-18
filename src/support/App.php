@@ -97,7 +97,7 @@ class App
                 require_once \base_path() . '/support/bootstrap.php';
                 $app = new \Webman\App(config('app.request_class', Request::class), Log::channel('default'), app_path(), public_path());
                 $worker->onMessage = [$app, 'onMessage'];
-                [$app, 'onWorkerStart']($worker);
+                \call_user_func([$app, 'onWorkerStart'], $worker);
             };
         }
 
