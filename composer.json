@@ -36,7 +36,6 @@
     "psr-4": {
       "Webman\\": "./src",
       "support\\": "./src/support",
-      "Support\\": "./src/support",
       "Support\\Bootstrap\\": "./src/support/bootstrap",
       "Support\\Exception\\": "./src/support/exception",
       "Support\\View\\": "./src/support/view"
