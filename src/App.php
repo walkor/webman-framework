@@ -245,7 +245,12 @@ class App
         if ($route) {
             $route_middlewares = \array_reverse($route->getMiddleware());
             foreach ($route_middlewares as $class_name) {
-                $middlewares[] = [$class_name, 'process'];
+                foreach ($route_middlewares as $class_name) {
+                    if (\is_array($class_name)) {
+                        $middlewares[] = [$class_name[0], 'process', \array_slice($class_name, 1, null)];
+                    } else {
+                        $middlewares[] = [$class_name, 'process'];
+                    }
             }
         }
         $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $with_global_middleware));
@@ -268,7 +273,9 @@ class App
         if ($middlewares) {
             $callback = \array_reduce($middlewares, function ($carry, $pipe) {
                 return function ($request) use ($carry, $pipe) {
-                    return $pipe($request, $carry);
+                    $args = \array_slice($pipe, 2, null);
+                    $pipe = \array_slice($pipe, 0, 2);
+                    return $pipe($request, $carry, ...$args);
                 };
             }, function ($request) use ($call, $args) {
                 try {
