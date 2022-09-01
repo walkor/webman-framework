@@ -5,6 +5,12 @@
     "high performance",
     "http service"
   ],
+  "repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/walkor/webman-framework"
+    }
+  ],
   "homepage": "",
   "license": "MIT",
   "description": "Intensive from workerman/webman-framework",
