@@ -1,34 +1,30 @@
 {
-  "name": "377960738/webman-framework",
+  "name": "workerman/webman-framework",
   "type": "library",
   "keywords": [
     "high performance",
     "http service"
   ],
-  "repositories": [
-    {
-        "type": "vcs",
-        "url": "https://github.com/walkor/webman-framework"
-    }
-  ],
-  "homepage": "",
+  "homepage": "https://www.workerman.net",
   "license": "MIT",
-  "description": "Intensive from workerman/webman-framework",
+  "description": "High performance HTTP Service Framework.",
   "authors": [
     {
-      "name": "377960738",
-      "email": "377960738@163.com",
-      "homepage": "",
+      "name": "walkor",
+      "email": "walkor@workerman.net",
+      "homepage": "https://www.workerman.net",
       "role": "Developer"
     }
   ],
   "support": {
-    "email": "377960738@163.com",
-    "issues": "https://github.com/377960738/webman-framework/issues",
-    "source": "https://github.com/377960738/webman-framework"
+    "email": "walkor@workerman.net",
+    "issues": "https://github.com/walkor/webman/issues",
+    "forum": "https://wenda.workerman.net/",
+    "wiki": "https://doc.workerman.net/",
+    "source": "https://github.com/walkor/webman-framework"
   },
   "require": {
-    "php": "^7.4||^8.0||^8.1",
+    "php": ">=7.2",
     "workerman/workerman": "^4.0.4",
     "nikic/fast-route": "^1.3",
     "psr/container": ">=1.0"
