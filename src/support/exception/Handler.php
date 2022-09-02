@@ -36,6 +36,11 @@ class Handler extends ExceptionHandler
 
     public function render(Request $request, Throwable $exception): Response
     {
+        if(($exception instanceof BusinessException) && ($response = $exception->render($request)))
+        {
+            return $response;
+        }
+
         return parent::render($request, $exception);
     }
 
