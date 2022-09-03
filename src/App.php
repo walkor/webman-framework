@@ -257,7 +257,7 @@ class App
         if (\is_array($call) && \is_string($call[0])) {
             if (!$controller_reuse) {
                 $call = function ($request, ...$args) use ($call, $plugin) {
-                    $call[0] = static::container($plugin)->make($call[0]);
+                    $call[0] = static::container($plugin)->make($call[0], [], true);
                     return $call($request, ...$args);
                 };
             } else {
