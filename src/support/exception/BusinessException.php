@@ -26,12 +26,6 @@ class BusinessException extends Exception
 {
     public function render(Request $request): ?Response
     {
-        $code = $this->getCode();
-        if ($request->expectsJson()) {
-            $json = ['code' => $code ? $code : 500, 'msg' => $this->getMessage()];
-            return new Response(200, ['Content-Type' => 'application/json'],
-                \json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-        }
-        return new Response(200, [], $this->getMessage());
+        return null;
     }
 }
