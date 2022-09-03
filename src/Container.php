@@ -48,7 +48,7 @@ class Container implements ContainerInterface
      * @return mixed
      * @throws NotFoundException
      */
-    public function make(string $name, array $constructor = [], $saveInstance = false)
+    public function make(string $name, array $constructor = [], bool $saveInstance = false)
     {
         if (!\class_exists($name)) {
             throw new NotFoundException("Class '$name' not found");
