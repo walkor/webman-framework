@@ -468,7 +468,14 @@ class App
         $relative_path = \trim(substr($path, strlen($path_prefix)), '/');
         $path_explode = $relative_path ? \explode('/', $relative_path) : [];
 
-        $action = 'index';
+        $action = static::config($config_prefix, "app.default_action", "index");
+        if (\count($path_explode) < 1) {
+            $app = static::config($config_prefix, "app.default_app", "app");
+            $app = $app !== "app" ? "\\{$app}" : "";
+            $controller_class = "\\app{$app}\\controller\\".static::config($config_prefix, "app.default_controller", "index").$suffix;
+            return static::getControllerAction($controller_class, $action);
+        }
+
         if ($controller_action = static::guessControllerAction($path_explode, $action, $suffix, $class_prefix)) {
             return $controller_action;
         }
