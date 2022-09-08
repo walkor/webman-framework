@@ -90,11 +90,6 @@ class App
     protected static $_requestClass = '';
 
     /**
-     * @var bool
-     */
-    protected static $_hasApcu = false;
-
-    /**
      * App constructor.
      *
      * @param string $request_class
@@ -164,8 +159,6 @@ class App
     {
         static::$_worker = $worker;
         Http::requestClass(static::$_requestClass);
-        //apcu available or not
-        static::$_hasApcu = extension_loaded('apcu') && \apcu_enabled();
     }
 
     /**
@@ -273,18 +266,31 @@ class App
             $middlewares[$key][0] = static::container($plugin)->get($item[0]);
         }
 
+        $need_inject = static::isNeedInject($call);
         if (\is_array($call) && \is_string($call[0])) {
             $controller_reuse = static::config($plugin, 'app.controller_reuse', true);
             if (!$controller_reuse) {
-                    $call[0] = static::container($plugin)->make($call[0]);
+                if ($need_inject) {
+                    $call = function ($request, ...$args) use ($call, $plugin) {
+                        $call[0] = static::container($plugin)->make($call[0]);
+                        $reflector = static::getReflector($call);
+                        $args = static::resolveMethodDependencies($plugin, $request, $args, $reflector);
+                        return $call(...$args);
+                    };
+                    $need_inject = false;
+                } else {
+                    $call = function ($request, ...$args) use ($call, $plugin) {
+                        $call[0] = static::container($plugin)->make($call[0]);
+                        return $call($request, ...$args);
+                    };
+                }
             } else {
                 $call[0] = static::container($plugin)->get($call[0]);
             }
         }
 
-        //inject
-        if (static::config($plugin, 'app.action_inject', false)) {
-            $call = static::resolveInject($plugin, $call, $args);
+        if ($need_inject) {
+            $call = static::resolveInject($plugin, $call);
         }
 
         if ($middlewares) {
@@ -323,76 +329,66 @@ class App
     }
 
     /**
-     * @see   Dependency injection through reflection information
      * @param string $plugin
      * @param array|Closure $call
      * @param null|array $args
      * @return Closure
+     * @see Dependency injection through reflection information
      */
     protected static function resolveInject(string $plugin, $call)
     {
         return function (Request $request, ...$args) use ($plugin, $call) {
-            //request key
-            $key = 'action_inject:' . $request->method() . ':' . $request->path();
-
-            if (static::$_hasApcu) {
-                if (!\apcu_exists($key)) {
-                    $needReflect = \apcu_entry($key, function () use ($key, $call) {
-                        if ($call instanceof Closure) {
-                            $reflector = new ReflectionFunction($call);
-                        } else {
-                            $reflector = new ReflectionMethod($call[0], $call[1]);
-                        }
-                        $inject = static::isNeedInject($reflector);
-                        \apcu_store($key, $inject);
-                        return $inject;
-                    });
-                } else {
-                    $needReflect = \apcu_fetch($key);
-                    //Invalid
-                    if (false === $needReflect) {
-                        \apcu_delete($key);
-                        $needReflect = 1;
-                    }
-                }
-            } else {
-                $needReflect = 1;
-            }
-
-            if ($needReflect) {
-                if ($call instanceof Closure) {
-                    $reflector = new ReflectionFunction($call);
-                } else {
-                    $reflector = new ReflectionMethod($call[0], $call[1]);
-                }
-                return $call(...static::resolveMethodDependencies($plugin, $request, $args, $reflector));
-            }
-            return $call($request, ...$args);
+            $reflector = static::getReflector($call);
+            $args = static::resolveMethodDependencies($plugin, $request, $args, $reflector);
+            return $call(...$args);
         };
     }
 
     /**
      * Check whether inject is required
-     * @param ReflectionFunctionAbstract $reflector
-     * @return int
+     *
+     * @param $call
+     * @return bool
      */
-    protected static function isNeedInject(ReflectionFunctionAbstract $reflector)
+    protected static function isNeedInject($call)
     {
-        $reflectionParameters = $reflector->getParameters();
-        $adaptersList = [static::$_requestClass, 'int', 'string', 'bool', 'array', 'object', 'float', 'mixed', 'resource'];
-
-        foreach ($reflectionParameters as $parameter) {
-            if ($parameter->hasType() && in_array($parameter->getType()->getName(), $adaptersList)) {
-                continue;
-            }
-
-            return 1;
+        $reflector = static::getReflector($call);
+        $reflection_parameters = $reflector->getParameters();
+        if (!$reflection_parameters) {
+            return false;
         }
-        return 0;
+        $first_parameter = current($reflection_parameters);
+        if (!$first_parameter->hasType() || $first_parameter->getType()->getName() != static::$_requestClass) {
+            return true;
+        }
+        unset($reflection_parameters[key($reflection_parameters)]);
+        $adapters_list = ['int', 'string', 'bool', 'array', 'object', 'float', 'mixed', 'resource'];
+        foreach ($reflection_parameters as $parameter) {
+            if ($parameter->hasType() && !in_array($parameter->getType()->getName(), $adapters_list)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
-     * return dependent parameters
+     * Get reflector.
+     *
+     * @param $call
+     * @return void
+     * @throws \ReflectionException
+     */
+    protected static function getReflector($call)
+    {
+        if ($call instanceof Closure) {
+            return new ReflectionFunction($call);
+        }
+        return new ReflectionMethod($call[0], $call[1]);
+    }
+
+    /**
+     * Return dependent parameters
+     *
      * @param string $plugin
      * @param Request $request
      * @param array $args
@@ -403,11 +399,9 @@ class App
     {
         // Specification parameter information
         $args = array_values($args);
-
         $parameters = [];
-
         // An array of reflection classes for loop parameters, with each $parameter representing a reflection object of parameters
-        foreach ($reflector->getParameters() as /* $key => */ $parameter) {
+        foreach ($reflector->getParameters() as $parameter) {
             // Parameter quota consumption
             if ($parameter->hasType()) {
                 $name = $parameter->getType()->getName();
