@@ -225,6 +225,62 @@ class Request extends \Workerman\Protocols\Http\Request
     {
         return $this->header('X-Requested-With') === 'XMLHttpRequest';
     }
+    
+    /**
+     * @return bool
+     */
+    public function isGet()
+    {
+        return strtoupper(parent::method()) == 'GET';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isPost()
+    {
+        return strtoupper(parent::method()) == 'POST';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isPut()
+    {
+        return strtoupper(parent::method()) == 'PUT';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDelete()
+    {
+        return strtoupper(parent::method()) == 'DELETE';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isHead()
+    {
+        return strtoupper(parent::method()) == 'HEAD';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isPatch()
+    {
+        return strtoupper(parent::method()) == 'PATCH';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOptions(): bool
+    {
+        return strtoupper(parent::method()) == 'OPTIONS';
+    }
 
     /**
      * @return bool
