@@ -61,10 +61,6 @@ class App
                     }
                 }
             }
-            //clear apcu
-            if (extension_loaded('apcu') && \apcu_enabled()) {
-                \apcu_clear_cache();
-            }
         };
 
         $config = config('server');
