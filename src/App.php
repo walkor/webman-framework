@@ -357,14 +357,14 @@ class App
         if (!$reflection_parameters) {
             return false;
         }
-        $first_parameter = current($reflection_parameters);
-        if (!$first_parameter->hasType() || $first_parameter->getType()->getName() != static::$_requestClass) {
+        $first_parameter = \current($reflection_parameters);
+        if (!$first_parameter->hasType() || \strtolower($first_parameter->getType()->getName()) != \strtolower(static::$_requestClass)) {
             return true;
         }
-        unset($reflection_parameters[key($reflection_parameters)]);
+        unset($reflection_parameters[\key($reflection_parameters)]);
         $adapters_list = ['int', 'string', 'bool', 'array', 'object', 'float', 'mixed', 'resource'];
         foreach ($reflection_parameters as $parameter) {
-            if ($parameter->hasType() && !in_array($parameter->getType()->getName(), $adapters_list)) {
+            if ($parameter->hasType() && !\in_array($parameter->getType()->getName(), $adapters_list)) {
                 return true;
             }
         }
@@ -398,7 +398,7 @@ class App
     protected static function resolveMethodDependencies(string $plugin, Request $request, array $args, ReflectionFunctionAbstract $reflector)
     {
         // Specification parameter information
-        $args = array_values($args);
+        $args = \array_values($args);
         $parameters = [];
         // An array of reflection classes for loop parameters, with each $parameter representing a reflection object of parameters
         foreach ($reflector->getParameters() as $parameter) {
@@ -416,7 +416,7 @@ class App
                     case 'resource':
                         goto _else;
                     default:
-                        if (strtolower($name) === strtolower(static::$_requestClass)) {
+                        if (\strtolower($name) === \strtolower(static::$_requestClass)) {
                             //Inject Request
                             $parameters[] = $request;
                         } else {
@@ -427,14 +427,14 @@ class App
             } else {
                 _else:
                 // The variable parameter
-                if (null !== key($args)) {
-                    $parameters[] = current($args);
+                if (null !== \key($args)) {
+                    $parameters[] = \current($args);
                 } else {
                     // Indicates whether the current parameter has a default value.  If yes, return true
                     $parameters[] = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
                 }
                 // Quota of consumption variables
-                next($args);
+                \next($args);
             }
         }
 
