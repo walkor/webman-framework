@@ -452,7 +452,7 @@ class App
     }
 
     /**
-     * @return Request
+     * @return Request|\support\Request
      */
     public static function request()
     {

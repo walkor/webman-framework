@@ -238,7 +238,7 @@ function twig_view(string $template, array $vars = [], string $app = null)
 }
 
 /**
- * @return \Webman\Http\Request|null
+ * @return \Webman\Http\Request|Request|null
  */
 function request()
 {
