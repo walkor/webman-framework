@@ -416,7 +416,7 @@ class App
                     case 'resource':
                         goto _else;
                     default:
-                        if ($name === static::$_requestClass) {
+                        if (strtolower($name) === strtolower(static::$_requestClass)) {
                             //Inject Request
                             $parameters[] = $request;
                         } else {
