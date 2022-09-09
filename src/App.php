@@ -596,6 +596,7 @@ class App
      */
     protected static function parseControllerAction(string $path)
     {
+        $path = \str_replace('-', '', $path);
         $path_explode = \explode('/', trim($path, '/'));
         $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'app';
         $config_prefix = $is_plugin ? "plugin.{$path_explode[1]}." : '';
