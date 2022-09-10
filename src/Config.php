@@ -76,6 +76,14 @@ class Config
     /**
      * @return void
      */
+    public static function clear()
+    {
+        static::$_config = [];
+    }
+
+    /**
+     * @return void
+     */
     protected static function formatConfig()
     {
         $config = static::$_config;
