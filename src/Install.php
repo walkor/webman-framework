@@ -47,8 +47,12 @@ class Install
                     mkdir($parent_dir, 0777, true);
                 }
             }
-            copy_dir(__DIR__ . "/$source", base_path() . "/$dest", true);
+            $source_file = __DIR__ . "/$source";
+            copy_dir($source_file, base_path() . "/$dest", true);
             echo "Create $dest\r\n";
+            if (is_file($source_file)) {
+                @unlink($source_file);
+            }
         }
     }
 
