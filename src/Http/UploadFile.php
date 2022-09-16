@@ -62,7 +62,7 @@ class UploadFile extends File
     /**
      * @return string
      */
-    public function getUploadMineType()
+    public function getUploadMimeType()
     {
         return $this->_uploadMimeType;
     }
