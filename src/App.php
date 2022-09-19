@@ -361,14 +361,6 @@ class App
             return false;
         }
         $first_parameter = \current($reflection_parameters);
-        if (!$first_parameter->hasType()) {
-            if (\count($args) < count($reflection_parameters)) {
-                return false;
-            }
-            return true;
-        } elseif (!\is_a(static::$_request, $first_parameter->getType()->getName())) {
-            return true;
-        }
         unset($reflection_parameters[\key($reflection_parameters)]);
         $adapters_list = ['int', 'string', 'bool', 'array', 'object', 'float', 'mixed', 'resource'];
         foreach ($reflection_parameters as $parameter) {
@@ -376,6 +368,15 @@ class App
                 return true;
             }
         }
+        if (!$first_parameter->hasType()) {
+            if (\count($args) <= count($reflection_parameters)) {
+                return false;
+            }
+            return true;
+        } elseif (!\is_a(static::$_request, $first_parameter->getType()->getName())) {
+            return true;
+        }
+
         return false;
     }
 
