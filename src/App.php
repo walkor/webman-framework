@@ -358,7 +358,7 @@ class App
             return false;
         }
         $first_parameter = \current($reflection_parameters);
-        if (!$first_parameter->hasType() || \strtolower($first_parameter->getType()->getName()) != \strtolower(static::$_requestClass)) {
+        if (!$first_parameter->hasType() || \is_subclass_of($first_parameter->getType()->getName(), Http\Request::class)) {
             return true;
         }
         unset($reflection_parameters[\key($reflection_parameters)]);
@@ -416,7 +416,7 @@ class App
                     case 'resource':
                         goto _else;
                     default:
-                        if (\strtolower($name) === \strtolower(static::$_requestClass)) {
+                        if (\is_subclass_of($name, Http\Request::class)) {
                             //Inject Request
                             $parameters[] = $request;
                         } else {
