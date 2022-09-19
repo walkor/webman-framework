@@ -183,13 +183,13 @@ class App
     protected static function unsafeUri(TcpConnection $connection, string $path, $request)
     {
         if (
+            !$path ||
             \strpos($path, '..') !== false ||
             \strpos($path, "\\") !== false ||
-            \strpos($path, "\0") !== false ||
-            \strpos($path, '//') !== false || !$path
+            \strpos($path, "\0") !== false
         ) {
             $callback = static::getFallback();
-            $request->app = $request->controller = $request->action = '';
+            $request->plugin = $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request), $request);
             return true;
         }
