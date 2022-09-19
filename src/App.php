@@ -366,7 +366,7 @@ class App
                 return false;
             }
             return true;
-        } elseif (!\is_subclass_of($first_parameter->getType()->getName(), Http\Request::class)) {
+        } elseif (!\is_a(static::$_request, $first_parameter->getType()->getName())) {
             return true;
         }
         unset($reflection_parameters[\key($reflection_parameters)]);
@@ -424,7 +424,7 @@ class App
                     case 'resource':
                         goto _else;
                     default:
-                        if (\is_subclass_of($name, Http\Request::class)) {
+                        if (\is_a(static::$_request, $name)) {
                             //Inject Request
                             $parameters[] = $request;
                         } else {
