@@ -266,7 +266,7 @@ class App
             $middlewares[$key][0] = static::container($plugin)->get($item[0]);
         }
 
-        $need_inject = static::isNeedInject($call);
+        $need_inject = static::isNeedInject($call, $args);
         if (\is_array($call) && \is_string($call[0])) {
             $controller_reuse = static::config($plugin, 'app.controller_reuse', true);
             if (!$controller_reuse) {
@@ -348,17 +348,25 @@ class App
      * Check whether inject is required
      *
      * @param $call
+     * @param $args
      * @return bool
+     * @throws \ReflectionException
      */
-    protected static function isNeedInject($call)
+    protected static function isNeedInject($call, $args)
     {
+        $args = $args ?: [];
         $reflector = static::getReflector($call);
         $reflection_parameters = $reflector->getParameters();
         if (!$reflection_parameters) {
             return false;
         }
         $first_parameter = \current($reflection_parameters);
-        if (!$first_parameter->hasType() || \is_subclass_of($first_parameter->getType()->getName(), Http\Request::class)) {
+        if (!$first_parameter->hasType()) {
+            if (\count($args) < count($reflection_parameters)) {
+                return false;
+            }
+            return true;
+        } elseif (!\is_subclass_of($first_parameter->getType()->getName(), Http\Request::class)) {
             return true;
         }
         unset($reflection_parameters[\key($reflection_parameters)]);
