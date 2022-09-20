@@ -80,7 +80,9 @@ class LaravelDb implements Bootstrap
                 foreach ($capsule->getDatabaseManager()->getConnections() as $connection) {
                     /* @var \Illuminate\Database\MySqlConnection $connection **/
                     if ($connection->getConfig('driver') == 'mysql') {
-                        $connection->select('select 1');
+                        try {
+                            $connection->select('select 1');
+                        } catch (Throwable $e) {}
                     }
                 }
             });
