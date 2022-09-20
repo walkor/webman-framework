@@ -76,20 +76,11 @@ class LaravelDb implements Bootstrap
 
         // Heartbeat
         if ($worker) {
-            Timer::add(55, function () use ($default, $connections) {
-                if (!class_exists(Connection::class, false)) {
-                    return;
-                }
-                foreach ($connections as $key => $item) {
-                    if ($item['driver'] == 'mysql') {
-                        try {
-                            if ($key == $default) {
-                                Db::select('select 1');
-                            } else {
-                                Db::connection($key)->select('select 1');
-                            }
-                        } catch (Throwable $e) {
-                        }
+            Timer::add(55, function () use ($default, $connections, $capsule) {
+                foreach ($capsule->getDatabaseManager()->getConnections() as $connection) {
+                    /* @var \Illuminate\Database\MySqlConnection $connection **/
+                    if ($connection->getConfig('driver') == 'mysql') {
+                        $connection->select('select 1');
                     }
                 }
             });
