@@ -197,8 +197,8 @@ class Request extends \Workerman\Protocols\Http\Request
         if ($safe_mode && !static::isIntranetIp($remote_ip)) {
             return $remote_ip;
         }
-        return $this->header('client-ip', $this->header('x-forwarded-for',
-            $this->header('x-real-ip', $this->header('x-client-ip',
+        return $this->header('x-real-ip', $this->header('x-forwarded-for',
+            $this->header('client-ip', $this->header('x-client-ip',
                 $this->header('via', $remote_ip)))));
     }
 
