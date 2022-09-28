@@ -263,7 +263,16 @@ class App
         $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $with_global_middleware));
 
         foreach ($middlewares as $key => $item) {
-            $middlewares[$key][0] = static::container($plugin)->get($item[0]);
+            $middleware = $item[0];
+            if (is_string($middleware)) {
+                $middleware = static::container($plugin)->get($middleware);
+            } elseif ($middleware instanceof \Closure) {
+                $middleware = call_user_func($middleware, static::container($plugin));
+            }
+            if (!$middleware instanceof MiddlewareInterface) {
+                throw new \InvalidArgumentException('Not support middleware type');
+            }
+            $middlewares[$key][0] = $middleware;
         }
 
         $need_inject = static::isNeedInject($call, $args);

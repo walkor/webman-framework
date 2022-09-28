@@ -96,7 +96,7 @@ class Route
         if ($middleware === null) {
             return $this->_middlewares;
         }
-        $this->_middlewares = \array_merge($this->_middlewares, (array)$middleware);
+        $this->_middlewares = \array_merge($this->_middlewares, is_array($middleware) ? $middleware : [$middleware]);
         return $this;
     }
 
