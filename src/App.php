@@ -305,7 +305,11 @@ class App
         if ($middlewares) {
             $callback = \array_reduce($middlewares, function ($carry, $pipe) {
                 return function ($request) use ($carry, $pipe) {
-                    return $pipe($request, $carry);
+                    try {
+                        return $pipe($request, $carry);
+                    } catch (Throwable $e) {
+                        return static::exceptionResponse($e, $request);
+                    }
                 };
             }, function ($request) use ($call, $args) {
                 try {
@@ -792,5 +796,4 @@ class App
     {
         return Config::get($plugin ? "plugin.$plugin.$key" : $key, $default);
     }
-
 }
