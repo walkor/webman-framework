@@ -367,6 +367,9 @@ class App
      */
     protected static function isNeedInject($call, $args)
     {
+        if (\is_array($call) && !\method_exists($call[0], $call[1])) {
+            return false;
+        }
         $args = $args ?: [];
         $reflector = static::getReflector($call);
         $reflection_parameters = $reflector->getParameters();
@@ -671,12 +674,16 @@ class App
      */
     protected static function getControllerAction(string $controller_class, string $action)
     {
-        if (static::loadController($controller_class) && ($controller_class = (new \ReflectionClass($controller_class))->name) && \method_exists($controller_class, $action)) {
+        // Disable calling magic methods
+        if (\strpos($action, '__') === 0) {
+            return false;
+        }
+        if (($controller_class = static::getController($controller_class)) && ($action = static::getAction($controller_class, $action))) {
             return [
                 'plugin' => static::getPluginByClass($controller_class),
                 'app' => static::getAppByController($controller_class),
                 'controller' => $controller_class,
-                'action' => static::getRealMethod($controller_class, $action)
+                'action' => $action
             ];
         }
         return false;
@@ -684,12 +691,13 @@ class App
 
     /**
      * @param string $controller_class
-     * @return bool
+     * @return string|false
+     * @throws \ReflectionException
      */
-    protected static function loadController(string $controller_class)
+    protected static function getController(string $controller_class)
     {
         if (\class_exists($controller_class)) {
-            return true;
+            return (new \ReflectionClass($controller_class))->name;
         }
         $explodes = \explode('\\', strtolower(ltrim($controller_class, '\\')));
         $base_path = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$_appPath;
@@ -717,10 +725,44 @@ class App
             if (\strtolower($name) === $file_name) {
                 require_once "$base_path/$name";
                 if (\class_exists($controller_class, false)) {
-                    return true;
+                    return (new \ReflectionClass($controller_class))->name;
                 }
             }
         }
+        return false;
+    }
+
+    /**
+     * @param string $controller_class
+     * @param string $action
+     * @return string|false
+     */
+    protected static function getAction(string $controller_class, string $action)
+    {
+        $methods = \get_class_methods($controller_class);
+        $action = \strtolower($action);
+        $finded = false;
+        foreach ($methods as $candidate) {
+            if (\strtolower($candidate) === $action) {
+                $action = $candidate;
+                $finded = true;
+                break;
+            }
+        }
+
+        if ($finded) {
+            return $action;
+        }
+
+        // Action is not public method
+        if (\method_exists($controller_class, $action)) {
+            return false;
+        }
+
+        if (\method_exists($controller_class, '__call')) {
+            return $action;
+        }
+
         return false;
     }
 
