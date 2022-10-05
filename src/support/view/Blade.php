@@ -50,13 +50,19 @@ class Blade implements View
         $request = \request();
         $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
+        $config_prefix = $plugin ? "plugin.$plugin." : '';
         $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
-        if (!isset($views[$app])) {
+        $key = "{$plugin}-{$request->app}";
+        if (!isset($views[$key])) {
             $view_path = $app === '' ? "$base_view_path/view" : "$base_view_path/$app/view";
-            $views[$app] = new BladeView($view_path, \runtime_path() . '/views');
+            $views[$key] = new BladeView($view_path, \runtime_path() . '/views');
+            $extension = \config("{$config_prefix}view.extension");
+            if ($extension) {
+                $extension($views[$key]);
+            }
         }
         $vars = \array_merge(static::$_vars, $vars);
-        $content = $views[$app]->render($template, $vars);
+        $content = $views[$key]->render($template, $vars);
         static::$_vars = [];
         return $content;
     }
