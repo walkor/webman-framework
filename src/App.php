@@ -644,6 +644,7 @@ class App
      * @param $path_explode
      * @param $action
      * @param $suffix
+     * @param $class_prefix
      * @return array|false
      * @throws \ReflectionException
      */
@@ -653,10 +654,10 @@ class App
         foreach ($path_explode as $index => $section) {
             $tmp = $path_explode;
             \array_splice($tmp, $index, 1, [$section, 'controller']);
-            $map[] = "$class_prefix\\" . \implode('\\', \array_merge(['app'], $tmp));
+            $tmp = trim("$class_prefix\\" . \implode('\\', \array_merge(['app'], $tmp)), '\\');
+            $map[] = $tmp;
+            $map[] = $tmp . '\\index';
         }
-        $last_index = \count($map) - 1;
-        $map[$last_index] = \trim($map[$last_index], '\\') . '\\index';
         foreach ($map as $controller_class) {
             $controller_class .= $suffix;
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
@@ -703,22 +704,22 @@ class App
         $base_path = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$_appPath;
         unset($explodes[0]);
         $file_name = \array_pop($explodes) . '.php';
-        $finded = true;
+        $found = true;
         foreach ($explodes as $path_section) {
-            if (!$finded) {
+            if (!$found) {
                 break;
             }
             $dirs = Util::scanDir($base_path, false);
-            $finded = false;
+            $found = false;
             foreach ($dirs as $name) {
                 if (\strtolower($name) === $path_section) {
                     $base_path = "$base_path/$name";
-                    $finded = true;
+                    $found = true;
                     break;
                 }
             }
         }
-        if (!$finded) {
+        if (!$found) {
             return false;
         }
         foreach (\scandir($base_path) ?: [] as $name) {
@@ -741,16 +742,16 @@ class App
     {
         $methods = \get_class_methods($controller_class);
         $action = \strtolower($action);
-        $finded = false;
+        $found = false;
         foreach ($methods as $candidate) {
             if (\strtolower($candidate) === $action) {
                 $action = $candidate;
-                $finded = true;
+                $found = true;
                 break;
             }
         }
 
-        if ($finded) {
+        if ($found) {
             return $action;
         }
 
