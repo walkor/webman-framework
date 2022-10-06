@@ -650,14 +650,16 @@ class App
      */
     protected static function guessControllerAction($path_explode, $action, $suffix, $class_prefix)
     {
-        $map[] = "$class_prefix\\app\\controller\\" . \implode('\\', $path_explode);
+        $map[] = trim("$class_prefix\\app\\controller\\" . \implode('\\', $path_explode), '\\');
         foreach ($path_explode as $index => $section) {
             $tmp = $path_explode;
             \array_splice($tmp, $index, 1, [$section, 'controller']);
-            $tmp = trim("$class_prefix\\" . \implode('\\', \array_merge(['app'], $tmp)), '\\');
-            $map[] = $tmp;
-            $map[] = $tmp . '\\index';
+            $map[] = trim("$class_prefix\\" . \implode('\\', \array_merge(['app'], $tmp)), '\\');
         }
+        foreach ($map as $item) {
+            $map[] = $item . '\\index';
+        }
+
         foreach ($map as $controller_class) {
             $controller_class .= $suffix;
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
