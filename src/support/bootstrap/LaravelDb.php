@@ -90,10 +90,12 @@ class LaravelDb implements Bootstrap
 
         // Paginator
         if (class_exists(Paginator::class)) {
-            Paginator::queryStringResolver(function () {
-                $request = request();
-                return $request ? $request->queryString(): null;
-            });
+            if (method_exists(Paginator::class, 'queryStringResolver')) {
+                Paginator::queryStringResolver(function () {
+                    $request = request();
+                    return $request ? $request->queryString() : null;
+                });
+            }
             Paginator::currentPathResolver(function () {
                 $request = request();
                 return $request ? $request->path(): '/';
