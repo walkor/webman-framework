@@ -236,7 +236,7 @@ class App
             $response->exception($e);
             return $response;
         } catch (Throwable $e) {
-            $response = new Response(500, [], static::config($plugin, 'app.debug') ? (string)$e : $e->getMessage());
+            $response = new Response(500, [], static::config($plugin ?? '', 'app.debug') ? (string)$e : $e->getMessage());
             $response->exception($e);
             return $response;
         }
