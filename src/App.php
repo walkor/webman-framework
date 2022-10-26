@@ -714,8 +714,9 @@ class App
             $dirs = Util::scanDir($base_path, false);
             $found = false;
             foreach ($dirs as $name) {
-                if (\strtolower($name) === $path_section) {
-                    $base_path = "$base_path/$name";
+                $path = "$base_path/$name";
+                if (\is_dir($path) && \strtolower($name) === $path_section) {
+                    $base_path = $path;
                     $found = true;
                     break;
                 }
