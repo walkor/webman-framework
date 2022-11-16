@@ -184,7 +184,7 @@ use Workerman\Worker;
  * @method static mixed watch($keys)
  * @method static mixed unwatch($keys)
  * Scripting methods
- * @method mixed eval($script, $numkeys, $keyOrArg1 = null, $keyOrArgN = null)
+ * @method static mixed eval($script, $numkeys, $keyOrArg1 = null, $keyOrArgN = null)
  * @method static mixed evalSha($scriptSha, $numkeys, ...$arguments)
  * @method static mixed script($command, ...$scripts)
  * @method static mixed client(...$args)
