@@ -400,12 +400,12 @@ class App
      * Get reflector.
      *
      * @param $call
-     * @return void
+     * @return ReflectionFunction|ReflectionMethod
      * @throws \ReflectionException
      */
     protected static function getReflector($call)
     {
-        if ($call instanceof Closure) {
+        if ($call instanceof Closure || \is_string($call)) {
             return new ReflectionFunction($call);
         }
         return new ReflectionMethod($call[0], $call[1]);
