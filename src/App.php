@@ -552,7 +552,8 @@ class App
 
         $path_explodes = \explode('/', trim($path, '/'));
         $plugin = '';
-        if (isset($path_explodes[1]) && $path_explodes[0] === 'app') {
+        $is_plugin = isset($path_explodes[1]) && $path_explodes[0] === Config::get("app.plugin_url_suffix", 'app');
+        if ($is_plugin) {
             $public_dir = BASE_PATH . "/plugin/{$path_explodes[1]}/public";
             $plugin = $path_explodes[1];
             $path = \substr($path, strlen("/app/{$path_explodes[1]}/"));
@@ -623,7 +624,7 @@ class App
     {
         $path = \str_replace('-', '', $path);
         $path_explode = \explode('/', trim($path, '/'));
-        $is_plugin = isset($path_explode[1]) && $path_explode[0] === 'app';
+        $is_plugin = isset($path_explode[1]) && $path_explode[0] === Config::get("app.plugin_url_suffix", 'app');
         $config_prefix = $is_plugin ? "plugin.{$path_explode[1]}." : '';
         $path_prefix = $is_plugin ? "/app/{$path_explode[1]}" : '';
         $class_prefix = $is_plugin ? "plugin\\{$path_explode[1]}" : '';
