@@ -119,7 +119,8 @@ class App
             $key = $request->method() . $path;
             if (isset(static::$_callbacks[$key])) {
                 [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
-                return static::send($connection, $callback($request), $request);
+                static::send($connection, $callback($request), $request);
+                return null;
             }
 
             if (
@@ -131,9 +132,9 @@ class App
             }
 
             $controller_and_action = static::parseControllerAction($path);
-            $plugin = $controller_and_action['plugin'] ?? '';
+            $plugin = $controller_and_action['plugin'] ?? static::getPluginByPath($path);
             if (!$controller_and_action || Route::hasDisableDefaultRoute($plugin)) {
-                $callback = static::getFallback();
+                $callback = static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
                 return null;
@@ -180,7 +181,7 @@ class App
      * @param $request
      * @return bool
      */
-    protected static function unsafeUri(TcpConnection $connection, string $path, $request)
+    protected static function unsafeUri(TcpConnection $connection, string $path, $request): bool
     {
         if (
             !$path ||
@@ -197,12 +198,13 @@ class App
     }
 
     /**
+     * @param string $plugin
      * @return Closure
      */
-    protected static function getFallback()
+    protected static function getFallback(string $plugin = ''): Closure
     {
         // when route, controller and action not found, try to use Route::fallback
-        return Route::getFallback() ?: function () {
+        return Route::getFallback($plugin) ?: function () {
             try {
                 $notFoundContent = \file_get_contents(static::$_publicPath . '/404.html');
             } catch (Throwable $e) {
@@ -215,7 +217,7 @@ class App
     /**
      * @param Throwable $e
      * @param $request
-     * @return string|Response
+     * @return Response
      */
     protected static function exceptionResponse(Throwable $e, $request)
     {
@@ -514,7 +516,7 @@ class App
             $ret[0] = 'route';
             $callback = $ret[1]['callback'];
             $route = clone $ret[1]['route'];
-            $plugin = $app = $controller = $action = '';
+            $app = $controller = $action = '';
             $args = !empty($ret[2]) ? $ret[2] : null;
             if ($args) {
                 $route->setParams($args);
@@ -524,6 +526,8 @@ class App
                 $plugin = static::getPluginByClass($controller);
                 $app = static::getAppByController($controller);
                 $action = static::getRealMethod($controller, $callback[1]) ?? '';
+            } else {
+                $plugin = static::getPluginByPath($path);
             }
             $callback = static::getCallback($plugin, $app, $callback, $args, true, $route);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller ?: '', $action, $route]);
@@ -541,7 +545,7 @@ class App
      * @param Request $request
      * @return bool
      */
-    protected static function findFile(TcpConnection $connection, string $path, string $key, $request)
+    protected static function findFile(TcpConnection $connection, string $path, string $key, $request): bool
     {
         if (preg_match('/%[0-9a-f]{2}/i', $path)) {
             $path = urldecode($path);
@@ -580,10 +584,10 @@ class App
             return false;
         }
 
-        static::collectCallbacks($key, [static::getCallback($plugin, '__static__', function ($request) use ($file) {
+        static::collectCallbacks($key, [static::getCallback($plugin, '__static__', function ($request) use ($file, $plugin) {
             \clearstatcache(true, $file);
             if (!\is_file($file)) {
-                $callback = static::getFallback();
+                $callback = static::getFallback($plugin);
                 return $callback($request);
             }
             return (new Response())->file($file);
@@ -779,6 +783,20 @@ class App
         $controller_class = \trim($controller_class, '\\');
         $tmp = \explode('\\', $controller_class, 3);
         if ($tmp[0] !== 'plugin') {
+            return '';
+        }
+        return $tmp[1] ?? '';
+    }
+
+    /**
+     * @param string $path
+     * @return mixed|string
+     */
+    public static function getPluginByPath(string $path)
+    {
+        $path = \trim($path, '/');
+        $tmp = \explode('/', $path, 3);
+        if ($tmp[0] !== 'app') {
             return '';
         }
         return $tmp[1] ?? '';

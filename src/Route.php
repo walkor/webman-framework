@@ -43,7 +43,7 @@ class Route
     /**
      * @var null|callable
      */
-    protected static $_fallback = null;
+    protected static $_fallback = [];
 
     /**
      * @var array
@@ -391,19 +391,20 @@ class Route
 
     /**
      * @param callable $callback
+     * @param string $plugin
      * @return void
      */
-    public static function fallback(callable $callback)
+    public static function fallback(callable $callback, string $plugin = '')
     {
-        static::$_fallback = $callback;
+        static::$_fallback[$plugin] = $callback;
     }
 
     /**
      * @return callable|null
      */
-    public static function getFallback()
+    public static function getFallback(string $plugin = '')
     {
-        return static::$_fallback;
+        return static::$_fallback[$plugin] ?? null;
     }
 
     /**
