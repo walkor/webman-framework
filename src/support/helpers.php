@@ -27,28 +27,17 @@ use Webman\Config;
 use Webman\Route;
 
 // Webman version
-define('WEBMAN_VERSION', '1.4');
+const WEBMAN_VERSION = '1.4';
 
 // Project base path
 define('BASE_PATH', dirname(__DIR__));
-
-/**
- * Generate paths based on given information
- * @param string $front
- * @param string $back
- * @return string
- */
-function path_combine(string $front, string $back)
-{
-    return $front . ($back ? (DIRECTORY_SEPARATOR . ltrim($back, DIRECTORY_SEPARATOR)) : $back);
-}
 
 /**
  * return the program execute directory
  * @param string $path
  * @return string
  */
-function run_path(string $path = '')
+function run_path(string $path = ''): string
 {
     static $run_path = '';
     if (!$run_path) {
@@ -60,31 +49,32 @@ function run_path(string $path = '')
 /**
  * if the param $path equal false,will return this program current execute directory
  * @param string|false $path
- * @return false|string
+ * @return string
  */
-function base_path($path = '')
+function base_path($path = ''): string
 {
     if (false === $path) {
         return \run_path();
     }
-
     return \path_combine(BASE_PATH, $path);
 }
 
 /**
+ * App path
  * @param string $path
  * @return string
  */
-function app_path(string $path = '')
+function app_path(string $path = ''): string
 {
     return \path_combine(BASE_PATH . DIRECTORY_SEPARATOR . 'app', $path);
 }
 
 /**
+ * Public path
  * @param string $path
  * @return string
  */
-function public_path(string $path = '')
+function public_path(string $path = ''): string
 {
     static $public_path = '';
     if (!$public_path) {
@@ -94,21 +84,21 @@ function public_path(string $path = '')
 }
 
 /**
+ * Config path
  * @param string $path
  * @return string
  */
-function config_path(string $path = '')
+function config_path(string $path = ''): string
 {
     return \path_combine(BASE_PATH . DIRECTORY_SEPARATOR . 'config', $path);
 }
 
 /**
- * Phar support.
- * Compatible with the 'realpath' function in the phar file.
+ * Runtime path
  * @param string $path
  * @return string
  */
-function runtime_path(string $path = '')
+function runtime_path(string $path = ''): string
 {
     static $runtime_path = '';
     if (!$runtime_path) {
@@ -118,31 +108,45 @@ function runtime_path(string $path = '')
 }
 
 /**
+ * Generate paths based on given information
+ * @param string $front
+ * @param string $back
+ * @return string
+ */
+function path_combine(string $front, string $back): string
+{
+    return $front . ($back ? (DIRECTORY_SEPARATOR . ltrim($back, DIRECTORY_SEPARATOR)) : $back);
+}
+
+/**
+ * Response
  * @param int $status
  * @param array $headers
  * @param string $body
  * @return Response
  */
-function response($body = '', $status = 200, $headers = [])
+function response(string $body = '', int $status = 200, array $headers = []): Response
 {
     return new Response($status, $headers, $body);
 }
 
 /**
+ * Json response
  * @param $data
  * @param int $options
  * @return Response
  */
-function json($data, $options = JSON_UNESCAPED_UNICODE)
+function json($data, int $options = JSON_UNESCAPED_UNICODE): Response
 {
     return new Response(200, ['Content-Type' => 'application/json'], \json_encode($data, $options));
 }
 
 /**
+ * Xml response
  * @param $xml
  * @return Response
  */
-function xml($xml)
+function xml($xml): Response
 {
     if ($xml instanceof SimpleXMLElement) {
         $xml = $xml->asXML();
@@ -151,11 +155,12 @@ function xml($xml)
 }
 
 /**
+ * Jsonp response
  * @param $data
  * @param string $callback_name
  * @return Response
  */
-function jsonp($data, $callback_name = 'callback')
+function jsonp($data, string $callback_name = 'callback'): Response
 {
     if (!\is_scalar($data) && null !== $data) {
         $data = \json_encode($data);
@@ -164,12 +169,13 @@ function jsonp($data, $callback_name = 'callback')
 }
 
 /**
+ * Redirect response
  * @param string $location
  * @param int $status
  * @param array $headers
  * @return Response
  */
-function redirect(string $location, int $status = 302, array $headers = [])
+function redirect(string $location, int $status = 302, array $headers = []): Response
 {
     $response = new Response($status, ['Location' => $location]);
     if (!empty($headers)) {
@@ -179,12 +185,13 @@ function redirect(string $location, int $status = 302, array $headers = [])
 }
 
 /**
- * @param $template
+ * View response
+ * @param string $template
  * @param array $vars
- * @param null $app
+ * @param string|null $app
  * @return Response
  */
-function view(string $template, array $vars = [], string $app = null)
+function view(string $template, array $vars = [], string $app = null): Response
 {
     $request = \request();
     $plugin =  $request->plugin ?? '';
@@ -193,51 +200,56 @@ function view(string $template, array $vars = [], string $app = null)
 }
 
 /**
+ * Raw view response
  * @param string $template
  * @param array $vars
  * @param string|null $app
  * @return Response
  * @throws Throwable
  */
-function raw_view(string $template, array $vars = [], string $app = null)
+function raw_view(string $template, array $vars = [], string $app = null): Response
 {
     return new Response(200, [], Raw::render($template, $vars, $app));
 }
 
 /**
+ * Blade view response
  * @param string $template
  * @param array $vars
  * @param string|null $app
  * @return Response
  */
-function blade_view(string $template, array $vars = [], string $app = null)
+function blade_view(string $template, array $vars = [], string $app = null): Response
 {
     return new Response(200, [], Blade::render($template, $vars, $app));
 }
 
 /**
+ * Think view response
  * @param string $template
  * @param array $vars
  * @param string|null $app
  * @return Response
  */
-function think_view(string $template, array $vars = [], string $app = null)
+function think_view(string $template, array $vars = [], string $app = null): Response
 {
     return new Response(200, [], ThinkPHP::render($template, $vars, $app));
 }
 
 /**
+ * Twig view response
  * @param string $template
  * @param array $vars
  * @param string|null $app
  * @return Response
  */
-function twig_view(string $template, array $vars = [], string $app = null)
+function twig_view(string $template, array $vars = [], string $app = null): Response
 {
     return new Response(200, [], Twig::render($template, $vars, $app));
 }
 
 /**
+ * Get request
  * @return \Webman\Http\Request|Request|null
  */
 function request()
@@ -246,6 +258,7 @@ function request()
 }
 
 /**
+ * Get config
  * @param string|null $key
  * @param $default
  * @return array|mixed|null
@@ -256,11 +269,12 @@ function config(string $key = null, $default = null)
 }
 
 /**
+ * Create url
  * @param string $name
  * @param ...$parameters
  * @return string
  */
-function route(string $name, ...$parameters)
+function route(string $name, ...$parameters): string
 {
     $route = Route::getByName($name);
     if (!$route) {
@@ -279,6 +293,7 @@ function route(string $name, ...$parameters)
 }
 
 /**
+ * Session
  * @param mixed $key
  * @param mixed $default
  * @return mixed
@@ -308,23 +323,25 @@ function session($key = null, $default = null)
 }
 
 /**
+ * Translation
  * @param string $id
  * @param array $parameters
  * @param string|null $domain
  * @param string|null $locale
  * @return string
  */
-function trans(string $id, array $parameters = [], string $domain = null, string $locale = null)
+function trans(string $id, array $parameters = [], string $domain = null, string $locale = null): string
 {
     $res = Translation::trans($id, $parameters, $domain, $locale);
     return $res === '' ? $id : $res;
 }
 
 /**
- * @param null|string $locale
- * @return string
+ * Locale
+ * @param string|null $locale
+ * @return void
  */
-function locale(string $locale = null)
+function locale(string $locale = null): string
 {
     if (!$locale) {
         return Translation::getLocale();
@@ -334,17 +351,15 @@ function locale(string $locale = null)
 
 /**
  * 404 not found
- *
  * @return Response
  */
-function not_found()
+function not_found(): Response
 {
     return new Response(404, [], \file_get_contents(public_path() . '/404.html'));
 }
 
 /**
- * Copy dir.
- *
+ * Copy dir
  * @param string $source
  * @param string $dest
  * @param bool $overwrite
@@ -368,12 +383,11 @@ function copy_dir(string $source, string $dest, bool $overwrite = false)
 }
 
 /**
- * Remove dir.
- *
+ * Remove dir
  * @param string $dir
  * @return bool
  */
-function remove_dir(string $dir)
+function remove_dir(string $dir): bool
 {
     if (\is_link($dir) || \is_file($dir)) {
         return \unlink($dir);
@@ -386,6 +400,7 @@ function remove_dir(string $dir)
 }
 
 /**
+ * Bind worker
  * @param $worker
  * @param $class
  */
@@ -412,6 +427,7 @@ function worker_bind($worker, $class)
 }
 
 /**
+ * Start worker
  * @param $process_name
  * @param $config
  * @return void
@@ -465,9 +481,7 @@ function worker_start($process_name, $config)
 }
 
 /**
- * Phar support.
- * Compatible with the 'realpath' function in the phar file.
- *
+ * Get realpath
  * @param string $file_path
  * @return string
  */
@@ -481,17 +495,19 @@ function get_realpath(string $file_path): string
 }
 
 /**
+ * Is phar
  * @return bool
  */
-function is_phar()
+function is_phar(): bool
 {
     return \class_exists(\Phar::class, false) && Phar::running();
 }
 
 /**
+ * Get cpu count
  * @return int
  */
-function cpu_count()
+function cpu_count(): int
 {
     // Windows does not support the number of processes setting.
     if (\DIRECTORY_SEPARATOR === '\\') {
