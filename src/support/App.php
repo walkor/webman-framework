@@ -12,6 +12,7 @@ use Workerman\Worker;
 class App
 {
     /**
+     * Run.
      * @return void
      */
     public static function run()
@@ -125,6 +126,7 @@ class App
     }
 
     /**
+     * LoadAllConfig.
      * @param array $excludes
      * @return void
      */

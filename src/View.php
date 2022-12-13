@@ -17,9 +17,10 @@ namespace Webman;
 interface View
 {
     /**
-     * @param $template
-     * @param $vars
-     * @param null $app
+     * Render.
+     * @param string $template
+     * @param array $vars
+     * @param string|null $app
      * @return string
      */
     static function render(string $template, array $vars, string $app = null);

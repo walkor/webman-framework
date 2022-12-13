@@ -30,6 +30,7 @@ class Blade implements View
     protected static $_vars = [];
 
     /**
+     * Assign.
      * @param string|array $name
      * @param mixed $value
      */
@@ -39,12 +40,13 @@ class Blade implements View
     }
 
     /**
+     * Render.
      * @param string $template
      * @param array $vars
      * @param string|null $app
      * @return string
      */
-    public static function render(string $template, array $vars, string $app = null)
+    public static function render(string $template, array $vars, string $app = null): string
     {
         static $views = [];
         $request = \request();

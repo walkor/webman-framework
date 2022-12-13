@@ -14,8 +14,6 @@
 
 namespace Webman\Route;
 
-use FastRoute\Dispatcher\GroupCountBased;
-use FastRoute\RouteCollector;
 use Webman\Route as Router;
 
 /**
@@ -56,7 +54,6 @@ class Route
 
     /**
      * Route constructor.
-     *
      * @param array $methods
      * @param string $path
      * @param callable $callback
@@ -69,18 +66,20 @@ class Route
     }
 
     /**
-     * @return mixed|null
+     * Get name.
+     * @return string|null
      */
-    public function getName()
+    public function getName(): ?string
     {
         return $this->_name ?? null;
     }
 
     /**
+     * Name.
      * @param string $name
      * @return $this
      */
-    public function name(string $name)
+    public function name(string $name): Route
     {
         $this->_name = $name;
         Router::setByName($name, $this);
@@ -88,6 +87,7 @@ class Route
     }
 
     /**
+     * Middleware.
      * @param mixed $middleware
      * @return $this|array
      */
@@ -101,38 +101,43 @@ class Route
     }
 
     /**
+     * GetPath.
      * @return string
      */
-    public function getPath()
+    public function getPath(): string
     {
         return $this->_path;
     }
 
     /**
+     * GetMethods.
      * @return array
      */
-    public function getMethods()
+    public function getMethods(): array
     {
         return $this->_methods;
     }
 
     /**
+     * GetCallback.
      * @return callable
      */
-    public function getCallback()
+    public function getCallback(): ?callable
     {
         return $this->_callback;
     }
 
     /**
+     * GetMiddleware.
      * @return array
      */
-    public function getMiddleware()
+    public function getMiddleware(): array
     {
         return $this->_middlewares;
     }
 
     /**
+     * Param.
      * @param string|null $name
      * @param $default
      * @return array|mixed|null
@@ -146,20 +151,22 @@ class Route
     }
 
     /**
+     * SetParams.
      * @param array $params
      * @return $this
      */
-    public function setParams(array $params)
+    public function setParams(array $params): Route
     {
         $this->_params = \array_merge($this->_params, $params);
         return $this;
     }
 
     /**
-     * @param $parameters
+     * Url.
+     * @param array $parameters
      * @return string
      */
-    public function url($parameters = [])
+    public function url(array $parameters = []): string
     {
         if (empty($parameters)) {
             return $this->_path;

@@ -29,6 +29,7 @@ class ThinkPHP implements View
     protected static $_vars = [];
 
     /**
+     * Assign.
      * @param string|array $name
      * @param mixed $value
      */
@@ -38,6 +39,7 @@ class ThinkPHP implements View
     }
 
     /**
+     * Render.
      * @param string $template
      * @param array $vars
      * @param string|null $app

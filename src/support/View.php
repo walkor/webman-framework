@@ -17,6 +17,7 @@ namespace support;
 class View
 {
     /**
+     * Assign.
      * @param mixed $name
      * @param mixed $value
      * @return void

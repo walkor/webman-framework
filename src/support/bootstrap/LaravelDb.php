@@ -33,11 +33,11 @@ use Workerman\Worker;
 class LaravelDb implements Bootstrap
 {
     /**
-     * @param Worker $worker
+     * @param Worker|null $worker
      *
      * @return void
      */
-    public static function start($worker)
+    public static function start(?Worker $worker)
     {
         if (!class_exists(Capsule::class)) {
             return;

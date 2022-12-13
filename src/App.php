@@ -18,7 +18,10 @@ namespace Webman;
 use Closure;
 use FastRoute\Dispatcher;
 use Monolog\Logger;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
@@ -40,7 +43,7 @@ class App
 {
 
     /**
-     * @var array
+     * @var callable[]
      */
     protected static $_callbacks = [];
 
@@ -48,11 +51,6 @@ class App
      * @var Worker
      */
     protected static $_worker = null;
-
-    /**
-     * @var ContainerInterface
-     */
-    protected static $_container = null;
 
     /**
      * @var Logger
@@ -68,11 +66,6 @@ class App
      * @var string
      */
     protected static $_publicPath = '';
-
-    /**
-     * @var string
-     */
-    protected static $_configPath = '';
 
     /**
      * @var TcpConnection
@@ -91,7 +84,6 @@ class App
 
     /**
      * App constructor.
-     *
      * @param string $request_class
      * @param Logger $logger
      * @param string $app_path
@@ -106,6 +98,7 @@ class App
     }
 
     /**
+     * OnMessage.
      * @param TcpConnection $connection
      * @param Request $request
      * @return null
@@ -153,6 +146,7 @@ class App
     }
 
     /**
+     * OnWorkerStart.
      * @param $worker
      * @return void
      */
@@ -163,6 +157,7 @@ class App
     }
 
     /**
+     * CollectCallbacks.
      * @param string $key
      * @param array $data
      * @return void
@@ -176,6 +171,7 @@ class App
     }
 
     /**
+     * UnsafeUri.
      * @param TcpConnection $connection
      * @param string $path
      * @param $request
@@ -198,6 +194,7 @@ class App
     }
 
     /**
+     * GetFallback.
      * @param string $plugin
      * @return Closure
      */
@@ -215,11 +212,12 @@ class App
     }
 
     /**
+     * ExceptionResponse.
      * @param Throwable $e
      * @param $request
      * @return Response
      */
-    protected static function exceptionResponse(Throwable $e, $request)
+    protected static function exceptionResponse(Throwable $e, $request): Response
     {
         try {
             $app = $request->app ?: '';
@@ -245,12 +243,17 @@ class App
     }
 
     /**
-     * @param $app
+     * GetCallback.
+     * @param string $plugin
+     * @param string $app
      * @param $call
      * @param array|null $args
      * @param bool $with_global_middleware
-     * @param RouteObject $route
+     * @param RouteObject|null $route
      * @return callable
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     protected static function getCallback(string $plugin, string $app, $call, array $args = null, bool $with_global_middleware = true, RouteObject $route = null)
     {
@@ -344,13 +347,13 @@ class App
     }
 
     /**
+     * ResolveInject.
      * @param string $plugin
      * @param array|Closure $call
-     * @param null|array $args
      * @return Closure
      * @see Dependency injection through reflection information
      */
-    protected static function resolveInject(string $plugin, $call)
+    protected static function resolveInject(string $plugin, $call): Closure
     {
         return function (Request $request, ...$args) use ($plugin, $call) {
             $reflector = static::getReflector($call);
@@ -360,14 +363,13 @@ class App
     }
 
     /**
-     * Check whether inject is required
-     *
+     * Check whether inject is required.
      * @param $call
      * @param $args
      * @return bool
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
-    protected static function isNeedInject($call, $args)
+    protected static function isNeedInject($call, $args): bool
     {
         if (\is_array($call) && !\method_exists($call[0], $call[1])) {
             return false;
@@ -400,10 +402,9 @@ class App
 
     /**
      * Get reflector.
-     *
      * @param $call
      * @return ReflectionFunction|ReflectionMethod
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected static function getReflector($call)
     {
@@ -415,14 +416,14 @@ class App
 
     /**
      * Return dependent parameters
-     *
      * @param string $plugin
      * @param Request $request
      * @param array $args
      * @param ReflectionFunctionAbstract $reflector
      * @return array
+     * @throws Exception\NotFoundException
      */
-    protected static function resolveMethodDependencies(string $plugin, Request $request, array $args, ReflectionFunctionAbstract $reflector)
+    protected static function resolveMethodDependencies(string $plugin, Request $request, array $args, ReflectionFunctionAbstract $reflector): array
     {
         // Specification parameter information
         $args = \array_values($args);
@@ -470,6 +471,7 @@ class App
     }
 
     /**
+     * Container.
      * @param string $plugin
      * @return ContainerInterface
      */
@@ -479,6 +481,7 @@ class App
     }
 
     /**
+     * Get request.
      * @return Request|\support\Request
      */
     public static function request()
@@ -487,29 +490,35 @@ class App
     }
 
     /**
+     * Get connection.
      * @return TcpConnection
      */
-    public static function connection()
+    public static function connection(): ?TcpConnection
     {
         return static::$_connection;
     }
 
     /**
+     * Get worker.
      * @return Worker
      */
-    public static function worker()
+    public static function worker(): ?Worker
     {
         return static::$_worker;
     }
 
     /**
+     * Find Route.
      * @param TcpConnection $connection
      * @param string $path
      * @param string $key
      * @param Request $request
      * @return bool
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
-    protected static function findRoute(TcpConnection $connection, string $path, string $key, $request)
+    protected static function findRoute(TcpConnection $connection, string $path, string $key, $request): bool
     {
         $ret = Route::dispatch($request->method(), $path);
         if ($ret[0] === Dispatcher::FOUND) {
@@ -539,11 +548,15 @@ class App
     }
 
     /**
+     * Find File.
      * @param TcpConnection $connection
      * @param string $path
      * @param string $key
      * @param Request $request
      * @return bool
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     protected static function findFile(TcpConnection $connection, string $path, string $key, $request): bool
     {
@@ -598,6 +611,7 @@ class App
     }
 
     /**
+     * Send.
      * @param TcpConnection $connection
      * @param Response $response
      * @param Request $request
@@ -617,11 +631,10 @@ class App
     }
 
     /**
+     * ParseControllerAction.
      * @param string $path
      * @return array|false
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \Psr\Container\NotFoundExceptionInterface
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected static function parseControllerAction(string $path)
     {
@@ -645,12 +658,13 @@ class App
     }
 
     /**
+     * GuessControllerAction.
      * @param $path_explode
      * @param $action
      * @param $suffix
      * @param $class_prefix
      * @return array|false
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected static function guessControllerAction($path_explode, $action, $suffix, $class_prefix)
     {
@@ -674,10 +688,11 @@ class App
     }
 
     /**
+     * GetControllerAction.
      * @param string $controller_class
      * @param string $action
      * @return array|false
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected static function getControllerAction(string $controller_class, string $action)
     {
@@ -697,9 +712,10 @@ class App
     }
 
     /**
+     * GetController.
      * @param string $controller_class
      * @return string|false
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected static function getController(string $controller_class)
     {
@@ -741,6 +757,7 @@ class App
     }
 
     /**
+     * GetAction.
      * @param string $controller_class
      * @param string $action
      * @return string|false
@@ -757,24 +774,21 @@ class App
                 break;
             }
         }
-
         if ($found) {
             return $action;
         }
-
         // Action is not public method
         if (\method_exists($controller_class, $action)) {
             return false;
         }
-
         if (\method_exists($controller_class, '__call')) {
             return $action;
         }
-
         return false;
     }
 
     /**
+     * GetPluginByClass.
      * @param string $controller_class
      * @return mixed|string
      */
@@ -789,6 +803,7 @@ class App
     }
 
     /**
+     * GetPluginByPath.
      * @param string $path
      * @return mixed|string
      */
@@ -803,6 +818,7 @@ class App
     }
 
     /**
+     * GetAppByController.
      * @param string $controller_class
      * @return mixed|string
      */
@@ -818,6 +834,7 @@ class App
     }
 
     /**
+     * ExecPhpFile.
      * @param string $file
      * @return false|string
      */
@@ -834,11 +851,12 @@ class App
     }
 
     /**
+     * GetRealMethod.
      * @param string $class
      * @param string $method
      * @return string
      */
-    protected static function getRealMethod(string $class, string $method)
+    protected static function getRealMethod(string $class, string $method): string
     {
         $method = \strtolower($method);
         $methods = \get_class_methods($class);
@@ -851,6 +869,7 @@ class App
     }
 
     /**
+     * Config.
      * @param string $plugin
      * @param string $key
      * @param $default

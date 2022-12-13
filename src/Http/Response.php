@@ -29,10 +29,11 @@ class Response extends \Workerman\Protocols\Http\Response
     protected $_exception = null;
 
     /**
+     * File
      * @param string $file
      * @return $this
      */
-    public function file(string $file)
+    public function file(string $file): Response
     {
         if ($this->notModifiedSince($file)) {
             return $this->withStatus(304);
@@ -41,11 +42,12 @@ class Response extends \Workerman\Protocols\Http\Response
     }
 
     /**
+     * Download
      * @param string $file
      * @param string $download_name
      * @return $this
      */
-    public function download(string $file, string $download_name = '')
+    public function download(string $file, string $download_name = ''): Response
     {
         $this->withFile($file);
         if ($download_name) {
@@ -55,10 +57,11 @@ class Response extends \Workerman\Protocols\Http\Response
     }
 
     /**
+     * NotModifiedSince
      * @param string $file
      * @return bool
      */
-    protected function notModifiedSince(string $file)
+    protected function notModifiedSince(string $file): bool
     {
         $if_modified_since = App::request()->header('if-modified-since');
         if ($if_modified_since === null || !($mtime = \filemtime($file))) {
@@ -68,10 +71,11 @@ class Response extends \Workerman\Protocols\Http\Response
     }
 
     /**
-     * @param Throwable $exception
+     * Exception
+     * @param Throwable|null $exception
      * @return Throwable
      */
-    public function exception($exception = null)
+    public function exception(Throwable $exception = null): Throwable
     {
         if ($exception) {
             $this->_exception = $exception;

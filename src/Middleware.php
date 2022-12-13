@@ -1,7 +1,4 @@
 <?php
-
-namespace Webman;
-
 /**
  * This file is part of webman.
  *
@@ -14,6 +11,10 @@ namespace Webman;
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
+namespace Webman;
+
+
 class Middleware
 {
 

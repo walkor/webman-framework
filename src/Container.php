@@ -22,6 +22,7 @@ class Container implements ContainerInterface
     protected $_definitions = [];
 
     /**
+     * Get.
      * @param string $name
      * @return mixed
      * @throws NotFoundException
@@ -42,6 +43,7 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Has.
      * @param string $name
      * @return bool
      */
@@ -52,6 +54,7 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Make.
      * @param string $name
      * @param array $constructor
      * @return mixed
@@ -66,10 +69,11 @@ class Container implements ContainerInterface
     }
 
     /**
+     * AddDefinitions.
      * @param array $definitions
      * @return $this
      */
-    public function addDefinitions(array $definitions)
+    public function addDefinitions(array $definitions): Container
     {
         $this->_definitions = array_merge($this->_definitions, $definitions);
         return $this;

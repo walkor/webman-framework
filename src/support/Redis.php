@@ -15,6 +15,7 @@
 namespace support;
 
 use Illuminate\Events\Dispatcher;
+use Illuminate\Redis\Connections\Connection;
 use Illuminate\Redis\Events\CommandExecuted;
 use Illuminate\Redis\RedisManager;
 use Workerman\Timer;
@@ -233,7 +234,7 @@ class Redis
     /**
      * @return RedisManager
      */
-    public static function instance()
+    public static function instance(): ?RedisManager
     {
         if (!static::$_instance) {
             $config = \config('redis');
@@ -249,10 +250,11 @@ class Redis
     }
 
     /**
+     * Connection.
      * @param string $name
-     * @return \Illuminate\Redis\Connections\Connection
+     * @return Connection
      */
-    public static function connection(string $name = 'default')
+    public static function connection(string $name = 'default'): Connection
     {
         static $timers = [];
         $connection = static::instance()->connection($name);

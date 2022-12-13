@@ -21,7 +21,9 @@ namespace Webman;
 class Util
 {
     /**
-     * @param string $path
+     * ScanDir.
+     * @param string $base_path
+     * @param bool $with_base_path
      * @return array
      */
     public static function scanDir(string $base_path, $with_base_path = true): array

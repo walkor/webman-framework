@@ -57,25 +57,27 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * Input
      * @param string $name
-     * @param string|null $default
+     * @param mixed $default
      * @return mixed|null
      */
-    public function input($name, $default = null)
+    public function input(string $name, $default = null)
     {
         $post = $this->post();
         if (isset($post[$name])) {
             return $post[$name];
         }
         $get = $this->get();
-        return isset($get[$name]) ? $get[$name] : $default;
+        return $get[$name] ?? $default;
     }
 
     /**
+     * Only
      * @param array $keys
      * @return array
      */
-    public function only(array $keys)
+    public function only(array $keys): array
     {
         $all = $this->all();
         $result = [];
@@ -88,6 +90,7 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * Except
      * @param array $keys
      * @return mixed|null
      */
@@ -101,6 +104,7 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * File
      * @param string|null $name
      * @return null|UploadFile[]|UploadFile
      */
@@ -130,19 +134,21 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * ParseFile
      * @param array $file
      * @return UploadFile
      */
-    protected function parseFile(array $file)
+    protected function parseFile(array $file): UploadFile
     {
         return new UploadFile($file['tmp_name'], $file['name'], $file['type'], $file['error']);
     }
 
     /**
+     * ParseFiles
      * @param array $files
      * @return array
      */
-    protected function parseFiles(array $files)
+    protected function parseFiles(array $files): array
     {
         $upload_files = [];
         foreach ($files as $key => $file) {
@@ -156,42 +162,47 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * GetRemoteIp
      * @return string
      */
-    public function getRemoteIp()
+    public function getRemoteIp(): string
     {
         return App::connection()->getRemoteIp();
     }
 
     /**
+     * GetRemotePort
      * @return int
      */
-    public function getRemotePort()
+    public function getRemotePort(): int
     {
         return App::connection()->getRemotePort();
     }
 
     /**
+     * GetLocalIp
      * @return string
      */
-    public function getLocalIp()
+    public function getLocalIp(): string
     {
         return App::connection()->getLocalIp();
     }
 
     /**
+     * GetLocalPort
      * @return int
      */
-    public function getLocalPort()
+    public function getLocalPort(): int
     {
         return App::connection()->getLocalPort();
     }
 
     /**
+     * GetRealIp
      * @param bool $safe_mode
      * @return string
      */
-    public function getRealIp(bool $safe_mode = true)
+    public function getRealIp(bool $safe_mode = true): string
     {
         $remote_ip = $this->getRemoteIp();
         if ($safe_mode && !static::isIntranetIp($remote_ip)) {
@@ -203,58 +214,65 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * Url
      * @return string
      */
-    public function url()
+    public function url(): string
     {
         return '//' . $this->host() . $this->path();
     }
 
     /**
+     * FullUrl
      * @return string
      */
-    public function fullUrl()
+    public function fullUrl(): string
     {
         return '//' . $this->host() . $this->uri();
     }
 
     /**
+     * IsAjax
      * @return bool
      */
-    public function isAjax()
+    public function isAjax(): bool
     {
         return $this->header('X-Requested-With') === 'XMLHttpRequest';
     }
 
     /**
+     * IsPjax
      * @return bool
      */
-    public function isPjax()
+    public function isPjax(): bool
     {
         return (bool)$this->header('X-PJAX');
     }
 
     /**
+     * ExpectsJson
      * @return bool
      */
-    public function expectsJson()
+    public function expectsJson(): bool
     {
         return ($this->isAjax() && !$this->isPjax()) || $this->acceptJson();
     }
 
     /**
+     * AcceptJson
      * @return bool
      */
-    public function acceptJson()
+    public function acceptJson(): bool
     {
         return false !== \strpos($this->header('accept', ''), 'json');
     }
 
     /**
+     * IsIntranetIp
      * @param string $ip
      * @return bool
      */
-    public static function isIntranetIp(string $ip)
+    public static function isIntranetIp(string $ip): bool
     {
         // Not validate ip .
         if (!\filter_var($ip, \FILTER_VALIDATE_IP)) {

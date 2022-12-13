@@ -27,10 +27,10 @@ class Session implements Bootstrap
 {
 
     /**
-     * @param Worker $worker
+     * @param Worker|null $worker
      * @return void
      */
-    public static function start($worker)
+    public static function start(?Worker $worker)
     {
         $config = \config('session');
         if (\property_exists(SessionBase::class, 'name')) {

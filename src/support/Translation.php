@@ -33,10 +33,12 @@ class Translation
     protected static $_instance = [];
 
     /**
+     * Instance.
+     * @param string $plugin
      * @return Translator
      * @throws NotFoundException
      */
-    public static function instance(string $plugin = '')
+    public static function instance(string $plugin = ''): Translator
     {
         if (!isset(static::$_instance[$plugin])) {
             $config = \config($plugin ? "plugin.$plugin.translation" : 'translation', []);

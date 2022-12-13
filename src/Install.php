@@ -35,7 +35,7 @@ class Install
     }
 
     /**
-     * installByRelation
+     * InstallByRelation
      * @return void
      */
     public static function installByRelation()

@@ -54,22 +54,25 @@ class UploadFile extends File
     }
 
     /**
+     * GetUploadName
      * @return string
      */
-    public function getUploadName()
+    public function getUploadName(): ?string
     {
         return $this->_uploadName;
     }
 
     /**
+     * GetUploadMimeType
      * @return string
      */
-    public function getUploadMimeType()
+    public function getUploadMimeType(): ?string
     {
         return $this->_uploadMimeType;
     }
 
     /**
+     * GetUploadExtension
      * @return mixed
      */
     public function getUploadExtension()
@@ -78,26 +81,29 @@ class UploadFile extends File
     }
 
     /**
+     * GetUploadErrorCode
      * @return int
      */
-    public function getUploadErrorCode()
+    public function getUploadErrorCode(): ?int
     {
         return $this->_uploadErrorCode;
     }
 
     /**
+     * IsValid
      * @return bool
      */
-    public function isValid()
+    public function isValid(): bool
     {
         return $this->_uploadErrorCode === UPLOAD_ERR_OK;
     }
 
     /**
+     * GetUploadMineType
      * @deprecated
      * @return string
      */
-    public function getUploadMineType()
+    public function getUploadMineType(): ?string
     {
         return $this->_uploadMimeType;
     }

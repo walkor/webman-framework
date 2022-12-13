@@ -322,12 +322,12 @@ class Route
     }
 
     /**
-     * @param array $methods
+     * @param array|string $methods
      * @param string $path
      * @param callable $callback
      * @return RouteObject
      */
-    protected static function addRoute($methods, string $path, $callback)
+    protected static function addRoute($methods, string $path, $callback): RouteObject
     {
         $route = new RouteObject($methods, static::$_groupPrefix . $path, $callback);
         static::$_allRoutes[] = $route;
@@ -342,6 +342,7 @@ class Route
     }
 
     /**
+     * Load.
      * @param array $paths
      * @return void
      */
@@ -381,6 +382,7 @@ class Route
     }
 
     /**
+     * SetCollector.
      * @param RouteCollector $route
      * @return void
      */
@@ -390,6 +392,7 @@ class Route
     }
 
     /**
+     * Fallback.
      * @param callable $callback
      * @param string $plugin
      * @return void
@@ -400,9 +403,10 @@ class Route
     }
 
     /**
+     * GetFallBack.
      * @return callable|null
      */
-    public static function getFallback(string $plugin = '')
+    public static function getFallback(string $plugin = ''): ?callable
     {
         return static::$_fallback[$plugin] ?? null;
     }

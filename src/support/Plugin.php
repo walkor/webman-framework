@@ -5,12 +5,13 @@ namespace support;
 class Plugin
 {
     /**
+     * Install.
      * @param $event
      * @return void
      */
     public static function install($event)
     {
-        static::findHepler();
+        static::findHelper();
         $operation = $event->getOperation();
         $autoload = \method_exists($operation, 'getPackage') ? $operation->getPackage()->getAutoload() : $operation->getTargetPackage()->getAutoload();
         if (!isset($autoload['psr-4'])) {
@@ -26,6 +27,7 @@ class Plugin
     }
 
     /**
+     * Update.
      * @param $event
      * @return void
      */
@@ -35,12 +37,13 @@ class Plugin
     }
 
     /**
+     * Uninstall.
      * @param $event
      * @return void
      */
     public static function uninstall($event)
     {
-        static::findHepler();
+        static::findHelper();
         $autoload = $event->getOperation()->getPackage()->getAutoload();
         if (!isset($autoload['psr-4'])) {
             return;
@@ -55,9 +58,10 @@ class Plugin
     }
 
     /**
+     * FindHelper.
      * @return void
      */
-    protected static function findHepler()
+    protected static function findHelper()
     {
         // Plugin.php in vendor
         $file = __DIR__ . '/../../../../../support/helpers.php';

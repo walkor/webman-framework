@@ -41,10 +41,11 @@ class Log
     protected static $_instance = [];
 
     /**
+     * Channel.
      * @param string $name
      * @return Logger
      */
-    public static function channel(string $name = 'default')
+    public static function channel(string $name = 'default'): Logger
     {
         if (!isset(static::$_instance[$name])) {
             $config = \config('log', [])[$name];
@@ -56,6 +57,7 @@ class Log
     }
 
     /**
+     * Handlers.
      * @param array $config
      * @return array
      */
@@ -76,6 +78,7 @@ class Log
     }
 
     /**
+     * Handler.
      * @param string $class
      * @param array $constructor
      * @param array $formatterConfig
@@ -100,6 +103,7 @@ class Log
     }
 
     /**
+     * Processors.
      * @param array $config
      * @return array
      */

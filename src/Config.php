@@ -33,6 +33,7 @@ class Config
     protected static $_loaded = false;
 
     /**
+     * Load.
      * @param string $config_path
      * @param array $exclude_file
      * @param string|null $key
@@ -61,8 +62,7 @@ class Config
     }
 
     /**
-     * This deprecated method will certainly be removed in the future
-     * 
+     * This deprecated method will certainly be removed in the future.
      * @deprecated
      * @param string $config_path
      * @param array $exclude_file
@@ -74,6 +74,7 @@ class Config
     }
 
     /**
+     * Clear.
      * @return void
      */
     public static function clear()
@@ -82,6 +83,7 @@ class Config
     }
 
     /**
+     * FormatConfig.
      * @return void
      */
     protected static function formatConfig()
@@ -161,11 +163,12 @@ class Config
     }
 
     /**
+     * LoadFromDir.
      * @param string $config_path
      * @param array $exclude_file
      * @return array
      */
-    public static function loadFromDir(string $config_path, array $exclude_file = [])
+    public static function loadFromDir(string $config_path, array $exclude_file = []): array
     {
         $all_config = [];
         $dir_iterator = new \RecursiveDirectoryIterator($config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
@@ -199,6 +202,7 @@ class Config
     }
 
     /**
+     * Get.
      * @param string|null $key
      * @param mixed $default
      * @return array|mixed|void|null
@@ -228,6 +232,7 @@ class Config
     }
 
     /**
+     * Read.
      * @param string $key
      * @param mixed $default
      * @return array|mixed|null
@@ -253,6 +258,7 @@ class Config
     }
 
     /**
+     * Find.
      * @param array $key_array
      * @param mixed $stack
      * @param mixed $default
