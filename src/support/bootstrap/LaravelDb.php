@@ -14,13 +14,14 @@
 
 namespace support\bootstrap;
 
-use Illuminate\Container\Container;
+use Illuminate\Container\Container as IlluminateContainer;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Connection;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Pagination\Paginator;
 use Jenssegers\Mongodb\Connection as MongodbConnection;
 use support\Db;
+use support\Container;
 use Throwable;
 use Webman\Bootstrap;
 use Workerman\Timer;
@@ -49,7 +50,7 @@ class LaravelDb implements Bootstrap
             return;
         }
 
-        $capsule = new Capsule;
+        $capsule = new Capsule(IlluminateContainer::getInstance());
 
         $capsule->getDatabaseManager()->extend('mongodb', function ($config, $name) {
             $config['name'] = $name;
@@ -66,8 +67,8 @@ class LaravelDb implements Bootstrap
             $capsule->addConnection($config, $name);
         }
 
-        if (\class_exists(Dispatcher::class)) {
-            $capsule->setEventDispatcher(new Dispatcher(new Container));
+        if (\class_exists(Dispatcher::class) && !$capsule->getEventDispatcher()) {
+            $capsule->setEventDispatcher(Container::make(Dispatcher::class, [IlluminateContainer::getInstance()]));
         }
 
         $capsule->setAsGlobal();
