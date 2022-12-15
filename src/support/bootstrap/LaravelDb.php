@@ -21,7 +21,7 @@ use Illuminate\Events\Dispatcher;
 use Illuminate\Pagination\Paginator;
 use Jenssegers\Mongodb\Connection as MongodbConnection;
 use support\Db;
-use support\facade\Container;
+use support\Container;
 use Throwable;
 use Webman\Bootstrap;
 use Workerman\Timer;
