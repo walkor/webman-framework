@@ -652,6 +652,9 @@ class App
         if ($controller_action = static::guessControllerAction($path_explode, $action, $suffix, $class_prefix)) {
             return $controller_action;
         }
+        if (count($path_explode) <= 1) {
+            return false;
+        }
         $action = \end($path_explode);
         unset($path_explode[count($path_explode) - 1]);
         return static::guessControllerAction($path_explode, $action, $suffix, $class_prefix);
@@ -668,7 +671,7 @@ class App
      */
     protected static function guessControllerAction($path_explode, $action, $suffix, $class_prefix)
     {
-        $map[] = trim("$class_prefix\\app\\controller\\" . \implode('\\', $path_explode), '\\');
+        $map[] = \trim("$class_prefix\\app\\controller\\" . \implode('\\', $path_explode), '\\');
         foreach ($path_explode as $index => $section) {
             $tmp = $path_explode;
             \array_splice($tmp, $index, 1, [$section, 'controller']);
@@ -679,6 +682,10 @@ class App
         }
 
         foreach ($map as $controller_class) {
+            // Remove xx\xx\controller
+            if (substr($controller_class, -11) === '\\controller') {
+                continue;
+            }
             $controller_class .= $suffix;
             if ($controller_action = static::getControllerAction($controller_class, $action)) {
                 return $controller_action;
