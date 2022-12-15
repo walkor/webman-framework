@@ -73,9 +73,9 @@ class Response extends \Workerman\Protocols\Http\Response
     /**
      * Exception
      * @param Throwable|null $exception
-     * @return Throwable
+     * @return Throwable|null
      */
-    public function exception(Throwable $exception = null): Throwable
+    public function exception(Throwable $exception = null): ?Throwable
     {
         if ($exception) {
             $this->_exception = $exception;
