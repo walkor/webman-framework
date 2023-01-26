@@ -43,7 +43,7 @@ class Translation
         if (!isset(static::$instance[$plugin])) {
             $config = \config($plugin ? "plugin.$plugin.translation" : 'translation', []);
             // Phar support. Compatible with the 'realpath' function in the phar file.
-            if (!$translations_path = \get_realpath($config['path'])) {
+            if (!$translationsPath = \get_realpath($config['path'])) {
                 throw new NotFoundException("File {$config['path']} not found");
             }
 
@@ -63,10 +63,10 @@ class Translation
 
             foreach ($classes as $class => $opts) {
                 $translator->addLoader($opts['format'], new $class);
-                foreach (\glob($translations_path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*' . $opts['extension']) as $file) {
+                foreach (\glob($translationsPath . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*' . $opts['extension']) as $file) {
                     $domain = \basename($file, $opts['extension']);
-                    $dir_name = \pathinfo($file, PATHINFO_DIRNAME);
-                    $locale = \substr(strrchr($dir_name, DIRECTORY_SEPARATOR), 1);
+                    $dirName = \pathinfo($file, PATHINFO_DIRNAME);
+                    $locale = \substr(strrchr($dirName, DIRECTORY_SEPARATOR), 1);
                     if ($domain && $locale) {
                         $translator->addResource($opts['format'], $file, $locale, $domain);
                     }

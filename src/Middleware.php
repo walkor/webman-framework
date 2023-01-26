@@ -24,25 +24,25 @@ class Middleware
     protected static $instances = [];
 
     /**
-     * @param array $all_middlewares
+     * @param array $allMiddlewares
      * @param string $plugin
      * @return void
      */
-    public static function load($all_middlewares, string $plugin = '')
+    public static function load($allMiddlewares, string $plugin = '')
     {
-        if (!\is_array($all_middlewares)) {
+        if (!\is_array($allMiddlewares)) {
             return;
         }
-        foreach ($all_middlewares as $app_name => $middlewares) {
+        foreach ($allMiddlewares as $appName => $middlewares) {
             if (!\is_array($middlewares)) {
                 throw new \RuntimeException('Bad middleware config');
             }
-            foreach ($middlewares as $class_name) {
-                if (\method_exists($class_name, 'process')) {
-                    static::$instances[$plugin][$app_name][] = [$class_name, 'process'];
+            foreach ($middlewares as $className) {
+                if (\method_exists($className, 'process')) {
+                    static::$instances[$plugin][$appName][] = [$className, 'process'];
                 } else {
                     // @todo Log
-                    echo "middleware $class_name::process not exsits\n";
+                    echo "middleware $className::process not exsits\n";
                 }
             }
         }
@@ -50,18 +50,18 @@ class Middleware
 
     /**
      * @param string $plugin
-     * @param string $app_name
-     * @param bool $with_global_middleware
+     * @param string $appName
+     * @param bool $withGlobal_middleware
      * @return array|mixed
      */
-    public static function getMiddleware(string $plugin, string $app_name, bool $with_global_middleware = true)
+    public static function getMiddleware(string $plugin, string $appName, bool $withGlobal_middleware = true)
     {
-        $global_middleware = $with_global_middleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
-        if ($app_name === '') {
-            return \array_reverse($global_middleware);
+        $globalMiddleware = $withGlobal_middleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
+        if ($appName === '') {
+            return \array_reverse($globalMiddleware);
         }
-        $app_middleware = static::$instances[$plugin][$app_name] ?? [];
-        return \array_reverse(\array_merge($global_middleware, $app_middleware));
+        $appMiddleware = static::$instances[$plugin][$appName] ?? [];
+        return \array_reverse(\array_merge($globalMiddleware, $appMiddleware));
     }
 
     /**

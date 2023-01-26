@@ -39,11 +39,11 @@ define('BASE_PATH', dirname(__DIR__));
  */
 function run_path(string $path = ''): string
 {
-    static $run_path = '';
-    if (!$run_path) {
-        $run_path = \is_phar() ? \dirname(\Phar::running(false)) : BASE_PATH;
+    static $runPath = '';
+    if (!$runPath) {
+        $runPath = \is_phar() ? \dirname(\Phar::running(false)) : BASE_PATH;
     }
-    return \path_combine($run_path, $path);
+    return \path_combine($runPath, $path);
 }
 
 /**
@@ -76,11 +76,11 @@ function app_path(string $path = ''): string
  */
 function public_path(string $path = ''): string
 {
-    static $public_path = '';
-    if (!$public_path) {
-        $public_path = \config('app.public_path') ? : \run_path('public');
+    static $publicPath = '';
+    if (!$publicPath) {
+        $publicPath = \config('app.public_path') ? : \run_path('public');
     }
-    return \path_combine($public_path, $path);
+    return \path_combine($publicPath, $path);
 }
 
 /**
@@ -100,11 +100,11 @@ function config_path(string $path = ''): string
  */
 function runtime_path(string $path = ''): string
 {
-    static $runtime_path = '';
-    if (!$runtime_path) {
-        $runtime_path = \config('app.runtime_path') ? : \run_path('runtime');
+    static $runtimePath = '';
+    if (!$runtimePath) {
+        $runtimePath = \config('app.runtime_path') ? : \run_path('runtime');
     }
-    return \path_combine($runtime_path, $path);
+    return \path_combine($runtimePath, $path);
 }
 
 /**
@@ -157,15 +157,15 @@ function xml($xml): Response
 /**
  * Jsonp response
  * @param $data
- * @param string $callback_name
+ * @param string $callbackName
  * @return Response
  */
-function jsonp($data, string $callback_name = 'callback'): Response
+function jsonp($data, string $callbackName = 'callback'): Response
 {
     if (!\is_scalar($data) && null !== $data) {
         $data = \json_encode($data);
     }
-    return new Response(200, [], "$callback_name($data)");
+    return new Response(200, [], "$callbackName($data)");
 }
 
 /**
@@ -309,9 +309,9 @@ function session($key = null, $default = null)
         return null;
     }
     if (\strpos($key, '.')) {
-        $key_array = \explode('.', $key);
+        $keyArray = \explode('.', $key);
         $value = $session->all();
-        foreach ($key_array as $index) {
+        foreach ($keyArray as $index) {
             if (!isset($value[$index])) {
                 return $default;
             }
@@ -406,7 +406,7 @@ function remove_dir(string $dir): bool
  */
 function worker_bind($worker, $class)
 {
-    $callback_map = [
+    $callbackMap = [
         'onConnect',
         'onMessage',
         'onClose',
@@ -416,7 +416,7 @@ function worker_bind($worker, $class)
         'onWorkerStop',
         'onWebSocketConnect'
     ];
-    foreach ($callback_map as $name) {
+    foreach ($callbackMap as $name) {
         if (\method_exists($class, $name)) {
             $worker->$name = [$class, $name];
         }
@@ -428,14 +428,14 @@ function worker_bind($worker, $class)
 
 /**
  * Start worker
- * @param $process_name
+ * @param $processName
  * @param $config
  * @return void
  */
-function worker_start($process_name, $config)
+function worker_start($processName, $config)
 {
     $worker = new Worker($config['listen'] ?? null, $config['context'] ?? []);
-    $property_map = [
+    $propertyMap = [
         'count',
         'user',
         'group',
@@ -444,8 +444,8 @@ function worker_start($process_name, $config)
         'transport',
         'protocol',
     ];
-    $worker->name = $process_name;
-    foreach ($property_map as $property) {
+    $worker->name = $processName;
+    foreach ($propertyMap as $property) {
         if (isset($config[$property])) {
             $worker->$property = $config[$property];
         }
@@ -482,15 +482,15 @@ function worker_start($process_name, $config)
 
 /**
  * Get realpath
- * @param string $file_path
+ * @param string $filePath
  * @return string
  */
-function get_realpath(string $file_path): string
+function get_realpath(string $filePath): string
 {
-    if (\strpos($file_path, 'phar://') === 0) {
-        return $file_path;
+    if (\strpos($filePath, 'phar://') === 0) {
+        return $filePath;
     } else {
-        return \realpath($file_path);
+        return \realpath($filePath);
     }
 }
 

@@ -52,20 +52,20 @@ class Twig implements View
         $request = \request();
         $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
-        $config_prefix = $plugin ? "plugin.$plugin." : '';
-        $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
+        $configPrefix = $plugin ? "plugin.$plugin." : '';
+        $viewSuffix = \config("{$configPrefix}view.options.view_suffix", 'html');
         $key = "{$plugin}-{$request->app}";
         if (!isset($views[$key])) {
-            $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
-            $view_path = $app === '' ? "$base_view_path/view/" : "$base_view_path/$app/view/";
-            $views[$key] = new Environment(new FilesystemLoader($view_path), \config("{$config_prefix}view.options", []));
-            $extension = \config("{$config_prefix}view.extension");
+            $baseView_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
+            $viewPath = $app === '' ? "$baseView_path/view/" : "$baseView_path/$app/view/";
+            $views[$key] = new Environment(new FilesystemLoader($viewPath), \config("{$configPrefix}view.options", []));
+            $extension = \config("{$configPrefix}view.extension");
             if ($extension) {
                 $extension($views[$key]);
             }
         }
         $vars = \array_merge(static::$vars, $vars);
-        $content = $views[$key]->render("$template.$view_suffix", $vars);
+        $content = $views[$key]->render("$template.$viewSuffix", $vars);
         static::$vars = [];
         return $content;
     }

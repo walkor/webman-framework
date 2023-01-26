@@ -40,17 +40,17 @@ class UploadFile extends File
     /**
      * UploadFile constructor.
      *
-     * @param string $file_name
-     * @param string $upload_name
-     * @param string $upload_mime_type
-     * @param int $upload_error_code
+     * @param string $fileName
+     * @param string $uploadName
+     * @param string $uploadMime_type
+     * @param int $uploadError_code
      */
-    public function __construct(string $file_name, string $upload_name, string $upload_mime_type, int $upload_error_code)
+    public function __construct(string $fileName, string $uploadName, string $uploadMime_type, int $uploadError_code)
     {
-        $this->uploadName = $upload_name;
-        $this->uploadMimeType = $upload_mime_type;
-        $this->uploadErrorCode = $upload_error_code;
-        parent::__construct($file_name);
+        $this->uploadName = $uploadName;
+        $this->uploadMimeType = $uploadMime_type;
+        $this->uploadErrorCode = $uploadError_code;
+        parent::__construct($fileName);
     }
 
     /**

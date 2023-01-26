@@ -18,10 +18,10 @@ class Plugin
             return;
         }
         foreach ($autoload['psr-4'] as $namespace => $path) {
-            $install_function = "\\{$namespace}Install::install";
-            $plugin_const = "\\{$namespace}Install::WEBMAN_PLUGIN";
-            if (\defined($plugin_const) && \is_callable($install_function)) {
-                $install_function();
+            $installFunction = "\\{$namespace}Install::install";
+            $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
+            if (\defined($pluginConst) && \is_callable($installFunction)) {
+                $installFunction();
             }
         }
     }
@@ -49,10 +49,10 @@ class Plugin
             return;
         }
         foreach ($autoload['psr-4'] as $namespace => $path) {
-            $uninstall_function = "\\{$namespace}Install::uninstall";
-            $plugin_const = "\\{$namespace}Install::WEBMAN_PLUGIN";
-            if (defined($plugin_const) && is_callable($uninstall_function)) {
-                $uninstall_function();
+            $uninstallFunction = "\\{$namespace}Install::uninstall";
+            $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
+            if (defined($pluginConst) && is_callable($uninstallFunction)) {
+                $uninstallFunction();
             }
         }
     }

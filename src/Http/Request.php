@@ -121,16 +121,16 @@ class Request extends \Workerman\Protocols\Http\Request
             }
             return $this->parseFile($files);
         }
-        $upload_files = [];
+        $uploadFiles = [];
         foreach ($files as $name => $file) {
             // Multi files
             if (\is_array(\current($file))) {
-                $upload_files[$name] = $this->parseFiles($file);
+                $uploadFiles[$name] = $this->parseFiles($file);
             } else {
-                $upload_files[$name] = $this->parseFile($file);
+                $uploadFiles[$name] = $this->parseFile($file);
             }
         }
-        return $upload_files;
+        return $uploadFiles;
     }
 
     /**
@@ -150,15 +150,15 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     protected function parseFiles(array $files): array
     {
-        $upload_files = [];
+        $uploadFiles = [];
         foreach ($files as $key => $file) {
             if (\is_array(\current($file))) {
-                $upload_files[$key] = $this->parseFiles($file);
+                $uploadFiles[$key] = $this->parseFiles($file);
             } else {
-                $upload_files[$key] = $this->parseFile($file);
+                $uploadFiles[$key] = $this->parseFile($file);
             }
         }
-        return $upload_files;
+        return $uploadFiles;
     }
 
     /**
@@ -199,18 +199,18 @@ class Request extends \Workerman\Protocols\Http\Request
 
     /**
      * GetRealIp
-     * @param bool $safe_mode
+     * @param bool $safeMode
      * @return string
      */
-    public function getRealIp(bool $safe_mode = true): string
+    public function getRealIp(bool $safeMode = true): string
     {
-        $remote_ip = $this->getRemoteIp();
-        if ($safe_mode && !static::isIntranetIp($remote_ip)) {
-            return $remote_ip;
+        $remoteIp = $this->getRemoteIp();
+        if ($safeMode && !static::isIntranetIp($remoteIp)) {
+            return $remoteIp;
         }
         return $this->header('x-real-ip', $this->header('x-forwarded-for',
             $this->header('client-ip', $this->header('x-client-ip',
-                $this->header('via', $remote_ip)))));
+                $this->header('via', $remoteIp)))));
     }
 
     /**
@@ -287,7 +287,7 @@ class Request extends \Workerman\Protocols\Http\Request
             return false;
         }
         // Manual check .
-        $reserved_ips = [
+        $reservedIps = [
             1681915904 => 1686110207, // 100.64.0.0 -  100.127.255.255
             3221225472 => 3221225727, // 192.0.0.0 - 192.0.0.255
             3221225984 => 3221226239, // 192.0.2.0 - 192.0.2.255
@@ -297,9 +297,9 @@ class Request extends \Workerman\Protocols\Http\Request
             3405803776 => 3405804031, // 203.0.113.0 - 203.0.113.255
             3758096384 => 4026531839, // 224.0.0.0 - 239.255.255.255
         ];
-        $ip_long = \ip2long($ip);
-        foreach ($reserved_ips as $ip_start => $ip_end) {
-            if (($ip_long >= $ip_start) && ($ip_long <= $ip_end)) {
+        $ipLong = \ip2long($ip);
+        foreach ($reservedIps as $ipStart => $ipEnd) {
+            if (($ipLong >= $ipStart) && ($ipLong <= $ipEnd)) {
                 return true;
             }
         }

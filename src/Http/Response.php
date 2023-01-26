@@ -44,14 +44,14 @@ class Response extends \Workerman\Protocols\Http\Response
     /**
      * Download
      * @param string $file
-     * @param string $download_name
+     * @param string $downloadName
      * @return $this
      */
-    public function download(string $file, string $download_name = ''): Response
+    public function download(string $file, string $downloadName = ''): Response
     {
         $this->withFile($file);
-        if ($download_name) {
-            $this->header('Content-Disposition', "attachment; filename=\"$download_name\"");
+        if ($downloadName) {
+            $this->header('Content-Disposition', "attachment; filename=\"$downloadName\"");
         }
         return $this;
     }
@@ -63,11 +63,11 @@ class Response extends \Workerman\Protocols\Http\Response
      */
     protected function notModifiedSince(string $file): bool
     {
-        $if_modified_since = App::request()->header('if-modified-since');
-        if ($if_modified_since === null || !($mtime = \filemtime($file))) {
+        $ifModified_since = App::request()->header('if-modified-since');
+        if ($ifModified_since === null || !($mtime = \filemtime($file))) {
             return false;
         }
-        return $if_modified_since === \gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+        return $ifModified_since === \gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
     }
 
     /**

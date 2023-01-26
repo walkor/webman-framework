@@ -172,12 +172,12 @@ class Route
             $callback = $path;
             $path = '';
         }
-        $previous_group_prefix = static::$groupPrefix;
-        static::$groupPrefix = $previous_group_prefix . $path;
+        $previousGroup_prefix = static::$groupPrefix;
+        static::$groupPrefix = $previousGroup_prefix . $path;
         $instance = static::$instance = new static;
         static::$collector->addGroup($path, $callback);
         static::$instance = null;
-        static::$groupPrefix = $previous_group_prefix;
+        static::$groupPrefix = $previousGroup_prefix;
         return $instance;
     }
 
@@ -191,9 +191,9 @@ class Route
     {
         $name = trim($name, '/');
         if (\is_array($options) && !empty($options)) {
-            $diff_options = \array_diff($options, ['index', 'create', 'store', 'update', 'show', 'edit', 'destroy', 'recovery']);
-            if (!empty($diff_options)) {
-                foreach ($diff_options as $action) {
+            $diffOptions = \array_diff($options, ['index', 'create', 'store', 'update', 'show', 'edit', 'destroy', 'recovery']);
+            if (!empty($diffOptions)) {
+                foreach ($diffOptions as $action) {
                     static::any("/{$name}/{$action}[/{id}]", [$controller, $action])->name("{$name}.{$action}");
                 }
             }
@@ -306,8 +306,8 @@ class Route
 
         if (!\is_array($callback)) {
             if (!\is_callable($callback)) {
-                $call_str = \is_scalar($callback) ? $callback : 'Closure';
-                echo "Route $path $call_str is not callable\n";
+                $callStr = \is_scalar($callback) ? $callback : 'Closure';
+                echo "Route $path $callStr is not callable\n";
                 return false;
             }
         } else {
@@ -353,26 +353,26 @@ class Route
         }
         static::$dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
             Route::setCollector($route);
-            foreach ($paths as $config_path) {
-                $route_config_file = $config_path . '/route.php';
-                if (\is_file($route_config_file)) {
-                    require_once $route_config_file;
+            foreach ($paths as $configPath) {
+                $routeConfig_file = $configPath . '/route.php';
+                if (\is_file($routeConfig_file)) {
+                    require_once $routeConfig_file;
                 }
-                if (!is_dir($plugin_config_path = $config_path . '/plugin')) {
+                if (!is_dir($pluginConfig_path = $configPath . '/plugin')) {
                     continue;
                 }
-                $dir_iterator = new \RecursiveDirectoryIterator($plugin_config_path, \FilesystemIterator::FOLLOW_SYMLINKS);
-                $iterator = new \RecursiveIteratorIterator($dir_iterator);
+                $dirIterator = new \RecursiveDirectoryIterator($pluginConfig_path, \FilesystemIterator::FOLLOW_SYMLINKS);
+                $iterator = new \RecursiveIteratorIterator($dirIterator);
                 foreach ($iterator as $file) {
                     if ($file->getBaseName('.php') !== 'route') {
                         continue;
                     }
-                    $app_config_file = pathinfo($file, PATHINFO_DIRNAME) . '/app.php';
-                    if (!is_file($app_config_file)) {
+                    $appConfig_file = pathinfo($file, PATHINFO_DIRNAME) . '/app.php';
+                    if (!is_file($appConfig_file)) {
                         continue;
                     }
-                    $app_config = include $app_config_file;
-                    if (empty($app_config['enable'])) {
+                    $appConfig = include $appConfig_file;
+                    if (empty($appConfig['enable'])) {
                         continue;
                     }
                     require_once $file;

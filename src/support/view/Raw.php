@@ -49,11 +49,11 @@ class Raw implements View
     {
         $request = \request();
         $plugin = $request->plugin ?? '';
-        $config_prefix = $plugin ? "plugin.$plugin." : '';
-        $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
+        $configPrefix = $plugin ? "plugin.$plugin." : '';
+        $viewSuffix = \config("{$configPrefix}view.options.view_suffix", 'html');
         $app = $app === null ? $request->app : $app;
-        $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
-        $__template_path__ = $app === '' ? "$base_view_path/view/$template.$view_suffix" : "$base_view_path/$app/view/$template.$view_suffix";
+        $baseView_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
+        $__template_path__ = $app === '' ? "$baseView_path/view/$template.$viewSuffix" : "$baseView_path/$app/view/$template.$viewSuffix";
 
         \extract(static::$vars);
         \extract($vars);

@@ -59,8 +59,8 @@ class LaravelDb implements Bootstrap
 
         $default = $config['default'] ?? false;
         if ($default) {
-            $default_config = $connections[$config['default']];
-            $capsule->addConnection($default_config);
+            $defaultConfig = $connections[$config['default']];
+            $capsule->addConnection($defaultConfig);
         }
 
         foreach ($connections as $name => $config) {
@@ -101,12 +101,12 @@ class LaravelDb implements Bootstrap
                 $request = request();
                 return $request ? $request->path(): '/';
             });
-            Paginator::currentPageResolver(function ($page_name = 'page') {
+            Paginator::currentPageResolver(function ($pageName = 'page') {
                 $request = request();
                 if (!$request) {
                     return 1;
                 }
-                $page = (int)($request->input($page_name, 1));
+                $page = (int)($request->input($pageName, 1));
                 return $page > 0 ? $page : 1;
             });
         }

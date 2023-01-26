@@ -50,16 +50,16 @@ class ThinkPHP implements View
         $request = \request();
         $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
-        $config_prefix = $plugin ? "plugin.$plugin." : '';
-        $view_suffix = \config("{$config_prefix}view.options.view_suffix", 'html');
-        $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
-        $view_path = $app === '' ? "$base_view_path/view/" : "$base_view_path/$app/view/";
-        $default_options = [
-            'view_path' => $view_path,
+        $configPrefix = $plugin ? "plugin.$plugin." : '';
+        $viewSuffix = \config("{$configPrefix}view.options.view_suffix", 'html');
+        $baseView_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
+        $viewPath = $app === '' ? "$baseView_path/view/" : "$baseView_path/$app/view/";
+        $defaultOptions = [
+            'view_path' => $viewPath,
             'cache_path' => \runtime_path() . '/views/',
-            'view_suffix' => $view_suffix
+            'view_suffix' => $viewSuffix
         ];
-        $options = $default_options + \config("{$config_prefix}view.options", []);
+        $options = $defaultOptions + \config("{$configPrefix}view.options", []);
         $views = new Template($options);
         \ob_start();
         $vars = \array_merge(static::$vars, $vars);

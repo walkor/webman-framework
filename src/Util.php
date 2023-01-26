@@ -22,18 +22,18 @@ class Util
 {
     /**
      * ScanDir.
-     * @param string $base_path
-     * @param bool $with_base_path
+     * @param string $basePath
+     * @param bool $withBase_path
      * @return array
      */
-    public static function scanDir(string $base_path, $with_base_path = true): array
+    public static function scanDir(string $basePath, $withBase_path = true): array
     {
-        if (!is_dir($base_path)) {
+        if (!is_dir($basePath)) {
             return [];
         }
-        $paths = \array_diff(\scandir($base_path), array('.', '..')) ?: [];
-        return $with_base_path ? \array_map(function($path) use ($base_path) {
-            return $base_path . DIRECTORY_SEPARATOR . $path;
+        $paths = \array_diff(\scandir($basePath), array('.', '..')) ?: [];
+        return $withBase_path ? \array_map(function($path) use ($basePath) {
+            return $basePath . DIRECTORY_SEPARATOR . $path;
         }, $paths) : $paths;
     }
 

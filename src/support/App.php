@@ -30,24 +30,24 @@ class App
 
         static::loadAllConfig(['route', 'container']);
 
-        $error_reporting = config('app.error_reporting');
-        if (isset($error_reporting)) {
-            error_reporting($error_reporting);
+        $errorReporting = config('app.error_reporting');
+        if (isset($errorReporting)) {
+            error_reporting($errorReporting);
         }
         if ($timezone = config('app.default_timezone')) {
             date_default_timezone_set($timezone);
         }
 
-        $runtime_logs_path = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
-        if (!file_exists($runtime_logs_path) || !is_dir($runtime_logs_path)) {
-            if (!mkdir($runtime_logs_path, 0777, true)) {
+        $runtimeLogs_path = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
+        if (!file_exists($runtimeLogs_path) || !is_dir($runtimeLogs_path)) {
+            if (!mkdir($runtimeLogs_path, 0777, true)) {
                 throw new \RuntimeException("Failed to create runtime logs directory. Please check the permission.");
             }
         }
 
-        $runtime_views_path = runtime_path() . DIRECTORY_SEPARATOR . 'views';
-        if (!file_exists($runtime_views_path) || !is_dir($runtime_views_path)) {
-            if (!mkdir($runtime_views_path, 0777, true)) {
+        $runtimeViews_path = runtime_path() . DIRECTORY_SEPARATOR . 'views';
+        if (!file_exists($runtimeViews_path) || !is_dir($runtimeViews_path)) {
+            if (!mkdir($runtimeViews_path, 0777, true)) {
                 throw new \RuntimeException("Failed to create runtime views directory. Please check the permission.");
             }
         }
@@ -79,7 +79,7 @@ class App
 
         if ($config['listen']) {
             $worker = new Worker($config['listen'], $config['context']);
-            $property_map = [
+            $propertyMap = [
                 'name',
                 'count',
                 'user',
@@ -88,7 +88,7 @@ class App
                 'transport',
                 'protocol'
             ];
-            foreach ($property_map as $property) {
+            foreach ($propertyMap as $property) {
                 if (isset($config[$property])) {
                     $worker->$property = $config[$property];
                 }
@@ -104,20 +104,20 @@ class App
 
         // Windows does not support custom processes.
         if (\DIRECTORY_SEPARATOR === '/') {
-            foreach (config('process', []) as $process_name => $config) {
-                worker_start($process_name, $config);
+            foreach (config('process', []) as $processName => $config) {
+                worker_start($processName, $config);
             }
             foreach (config('plugin', []) as $firm => $projects) {
                 foreach ($projects as $name => $project) {
                     if (!is_array($project)) {
                         continue;
                     }
-                    foreach ($project['process'] ?? [] as $process_name => $config) {
-                        worker_start("plugin.$firm.$name.$process_name", $config);
+                    foreach ($project['process'] ?? [] as $processName => $config) {
+                        worker_start("plugin.$firm.$name.$processName", $config);
                     }
                 }
-                foreach ($projects['process'] ?? [] as $process_name => $config) {
-                    worker_start("plugin.$firm.$process_name", $config);
+                foreach ($projects['process'] ?? [] as $processName => $config) {
+                    worker_start("plugin.$firm.$processName", $config);
                 }
             }
         }
