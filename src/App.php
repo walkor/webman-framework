@@ -68,16 +68,6 @@ class App
     protected static $_publicPath = '';
 
     /**
-     * @var TcpConnection
-     */
-    protected static $_connection = null;
-
-    /**
-     * @var Request
-     */
-    protected static $_request = null;
-
-    /**
      * @var string
      */
     protected static $_requestClass = '';
@@ -106,8 +96,7 @@ class App
     public function onMessage($connection, $request)
     {
         try {
-            static::$_request = $request;
-            static::$_connection = $connection;
+            Context::set(Request::class, $request);
             $path = $request->path();
             $key = $request->method() . $path;
             if (isset(static::$_callbacks[$key])) {
@@ -393,7 +382,7 @@ class App
                 return false;
             }
             return true;
-        } elseif (!\is_a(static::$_request, $first_parameter->getType()->getName())) {
+        } elseif (!\is_a(static::$_requestClass, $first_parameter->getType()->getName())) {
             return true;
         }
 
@@ -444,7 +433,7 @@ class App
                     case 'resource':
                         goto _else;
                     default:
-                        if (\is_a(static::$_request, $name)) {
+                        if (\is_a($request, $name)) {
                             //Inject Request
                             $parameters[] = $request;
                         } else {
@@ -486,16 +475,7 @@ class App
      */
     public static function request()
     {
-        return static::$_request;
-    }
-
-    /**
-     * Get connection.
-     * @return TcpConnection
-     */
-    public static function connection(): ?TcpConnection
-    {
-        return static::$_connection;
+        return Context::get(Request::class);
     }
 
     /**
@@ -613,14 +593,14 @@ class App
     /**
      * Send.
      * @param TcpConnection $connection
-     * @param Response $response
+     * @param mixed $response
      * @param Request $request
      * @return void
      */
     protected static function send(TcpConnection $connection, $response, $request)
     {
         $keep_alive = $request->header('connection');
-        static::$_request = static::$_connection = null;
+        Context::destroy();
         if (($keep_alive === null && $request->protocolVersion() === '1.1')
             || $keep_alive === 'keep-alive' || $keep_alive === 'Keep-Alive'
         ) {

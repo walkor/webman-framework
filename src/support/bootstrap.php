@@ -30,7 +30,7 @@ set_error_handler(function ($level, $message, $file = '', $line = 0) {
 
 if ($worker) {
     register_shutdown_function(function ($start_time) {
-        if (time() - $start_time <= 1) {
+        if (time() - $start_time <= 0.1) {
             sleep(1);
         }
     }, time());
