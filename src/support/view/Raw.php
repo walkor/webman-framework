@@ -26,7 +26,7 @@ class Raw implements View
     /**
      * @var array
      */
-    protected static $_vars = [];
+    protected static $vars = [];
 
     /**
      * Assign.
@@ -35,7 +35,7 @@ class Raw implements View
      */
     public static function assign($name, $value = null)
     {
-        static::$_vars = \array_merge(static::$_vars, \is_array($name) ? $name : [$name => $value]);
+        static::$vars = \array_merge(static::$vars, \is_array($name) ? $name : [$name => $value]);
     }
 
     /**
@@ -55,18 +55,18 @@ class Raw implements View
         $base_view_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
         $__template_path__ = $app === '' ? "$base_view_path/view/$template.$view_suffix" : "$base_view_path/$app/view/$template.$view_suffix";
 
-        \extract(static::$_vars);
+        \extract(static::$vars);
         \extract($vars);
         \ob_start();
         // Try to include php file.
         try {
             include $__template_path__;
         } catch (Throwable $e) {
-            static::$_vars = [];
+            static::$vars = [];
             \ob_end_clean();
             throw $e;
         }
-        static::$_vars = [];
+        static::$vars = [];
         return \ob_get_clean();
     }
 

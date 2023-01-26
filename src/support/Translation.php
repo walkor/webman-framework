@@ -30,7 +30,7 @@ class Translation
     /**
      * @var Translator[]
      */
-    protected static $_instance = [];
+    protected static $instance = [];
 
     /**
      * Instance.
@@ -40,14 +40,14 @@ class Translation
      */
     public static function instance(string $plugin = ''): Translator
     {
-        if (!isset(static::$_instance[$plugin])) {
+        if (!isset(static::$instance[$plugin])) {
             $config = \config($plugin ? "plugin.$plugin.translation" : 'translation', []);
             // Phar support. Compatible with the 'realpath' function in the phar file.
             if (!$translations_path = \get_realpath($config['path'])) {
                 throw new NotFoundException("File {$config['path']} not found");
             }
 
-            static::$_instance[$plugin] = $translator = new Translator($config['locale']);
+            static::$instance[$plugin] = $translator = new Translator($config['locale']);
             $translator->setFallbackLocales($config['fallback_locale']);
 
             $classes = [
@@ -73,7 +73,7 @@ class Translation
                 }
             }
         }
-        return static::$_instance[$plugin];
+        return static::$instance[$plugin];
     }
 
     /**

@@ -38,7 +38,7 @@ class Log
     /**
      * @var array
      */
-    protected static $_instance = [];
+    protected static $instance = [];
 
     /**
      * Channel.
@@ -47,13 +47,13 @@ class Log
      */
     public static function channel(string $name = 'default'): Logger
     {
-        if (!isset(static::$_instance[$name])) {
+        if (!isset(static::$instance[$name])) {
             $config = \config('log', [])[$name];
             $handlers = self::handlers($config);
             $processors = self::processors($config);
-            static::$_instance[$name] = new Logger($name, $handlers, $processors);
+            static::$instance[$name] = new Logger($name, $handlers, $processors);
         }
-        return static::$_instance[$name];
+        return static::$instance[$name];
     }
 
     /**

@@ -210,7 +210,7 @@ class Redis
     /**
      * @var RedisManager
      */
-    protected static $_instance = null;
+    protected static $instance = null;
 
     /**
      * need to install phpredis extension
@@ -226,7 +226,7 @@ class Redis
     /**
      * Support client collection
      */
-    static $_allowClient = [
+    static $allowClient = [
         self::PHPREDIS_CLIENT,
         self::PREDIS_CLIENT
     ];
@@ -236,17 +236,17 @@ class Redis
      */
     public static function instance(): ?RedisManager
     {
-        if (!static::$_instance) {
+        if (!static::$instance) {
             $config = \config('redis');
             $client = $config['client'] ?? self::PHPREDIS_CLIENT;
 
-            if (!\in_array($client, static::$_allowClient)) {
+            if (!\in_array($client, static::$allowClient)) {
                 $client = self::PHPREDIS_CLIENT;
             }
 
-            static::$_instance = new RedisManager('', $client, $config);
+            static::$instance = new RedisManager('', $client, $config);
         }
-        return static::$_instance;
+        return static::$instance;
     }
 
     /**

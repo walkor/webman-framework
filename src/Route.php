@@ -28,47 +28,47 @@ class Route
     /**
      * @var Route
      */
-    protected static $_instance = null;
+    protected static $instance = null;
 
     /**
      * @var GroupCountBased
      */
-    protected static $_dispatcher = null;
+    protected static $dispatcher = null;
 
     /**
      * @var RouteCollector
      */
-    protected static $_collector = null;
+    protected static $collector = null;
 
     /**
      * @var null|callable
      */
-    protected static $_fallback = [];
+    protected static $fallback = [];
 
     /**
      * @var array
      */
-    protected static $_nameList = [];
+    protected static $nameList = [];
 
     /**
      * @var string
      */
-    protected static $_groupPrefix = '';
+    protected static $groupPrefix = '';
 
     /**
      * @var bool
      */
-    protected static $_disableDefaultRoute = [];
+    protected static $disableDefaultRoute = [];
 
     /**
      * @var RouteObject[]
      */
-    protected static $_allRoutes = [];
+    protected static $allRoutes = [];
 
     /**
      * @var RouteObject[]
      */
-    protected $_routes = [];
+    protected $routes = [];
 
     /**
      * @param string $path
@@ -172,12 +172,12 @@ class Route
             $callback = $path;
             $path = '';
         }
-        $previous_group_prefix = static::$_groupPrefix;
-        static::$_groupPrefix = $previous_group_prefix . $path;
-        $instance = static::$_instance = new static;
-        static::$_collector->addGroup($path, $callback);
-        static::$_instance = null;
-        static::$_groupPrefix = $previous_group_prefix;
+        $previous_group_prefix = static::$groupPrefix;
+        static::$groupPrefix = $previous_group_prefix . $path;
+        $instance = static::$instance = new static;
+        static::$collector->addGroup($path, $callback);
+        static::$instance = null;
+        static::$groupPrefix = $previous_group_prefix;
         return $instance;
     }
 
@@ -224,7 +224,7 @@ class Route
      */
     public static function getRoutes()
     {
-        return static::$_allRoutes;
+        return static::$allRoutes;
     }
 
     /**
@@ -234,7 +234,7 @@ class Route
      */
     public static function disableDefaultRoute($plugin = '')
     {
-        static::$_disableDefaultRoute[$plugin] = true;
+        static::$disableDefaultRoute[$plugin] = true;
     }
 
     /**
@@ -242,7 +242,7 @@ class Route
      */
     public static function hasDisableDefaultRoute($plugin = '')
     {
-        return static::$_disableDefaultRoute[$plugin] ?? false;
+        return static::$disableDefaultRoute[$plugin] ?? false;
     }
 
     /**
@@ -251,7 +251,7 @@ class Route
      */
     public function middleware($middleware)
     {
-        foreach ($this->_routes as $route) {
+        foreach ($this->routes as $route) {
             $route->middleware($middleware);
         }
     }
@@ -261,7 +261,7 @@ class Route
      */
     public function collect(RouteObject $route)
     {
-        $this->_routes[] = $route;
+        $this->routes[] = $route;
     }
 
     /**
@@ -270,7 +270,7 @@ class Route
      */
     public static function setByName(string $name, RouteObject $instance)
     {
-        static::$_nameList[$name] = $instance;
+        static::$nameList[$name] = $instance;
     }
 
     /**
@@ -279,7 +279,7 @@ class Route
      */
     public static function getByName(string $name)
     {
-        return static::$_nameList[$name] ?? null;
+        return static::$nameList[$name] ?? null;
     }
 
 
@@ -290,7 +290,7 @@ class Route
      */
     public static function dispatch($method, string $path)
     {
-        return static::$_dispatcher->dispatch($method, $path);
+        return static::$dispatcher->dispatch($method, $path);
     }
 
     /**
@@ -329,14 +329,14 @@ class Route
      */
     protected static function addRoute($methods, string $path, $callback): RouteObject
     {
-        $route = new RouteObject($methods, static::$_groupPrefix . $path, $callback);
-        static::$_allRoutes[] = $route;
+        $route = new RouteObject($methods, static::$groupPrefix . $path, $callback);
+        static::$allRoutes[] = $route;
 
         if ($callback = static::convertToCallable($path, $callback)) {
-            static::$_collector->addRoute($methods, $path, ['callback' => $callback, 'route' => $route]);
+            static::$collector->addRoute($methods, $path, ['callback' => $callback, 'route' => $route]);
         }
-        if (static::$_instance) {
-            static::$_instance->collect($route);
+        if (static::$instance) {
+            static::$instance->collect($route);
         }
         return $route;
     }
@@ -351,7 +351,7 @@ class Route
         if (!\is_array($paths)) {
             return;
         }
-        static::$_dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
+        static::$dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
             Route::setCollector($route);
             foreach ($paths as $config_path) {
                 $route_config_file = $config_path . '/route.php';
@@ -388,7 +388,7 @@ class Route
      */
     public static function setCollector(RouteCollector $route)
     {
-        static::$_collector = $route;
+        static::$collector = $route;
     }
 
     /**
@@ -399,7 +399,7 @@ class Route
      */
     public static function fallback(callable $callback, string $plugin = '')
     {
-        static::$_fallback[$plugin] = $callback;
+        static::$fallback[$plugin] = $callback;
     }
 
     /**
@@ -408,7 +408,7 @@ class Route
      */
     public static function getFallback(string $plugin = ''): ?callable
     {
-        return static::$_fallback[$plugin] ?? null;
+        return static::$fallback[$plugin] ?? null;
     }
 
     /**

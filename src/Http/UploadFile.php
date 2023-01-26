@@ -25,17 +25,17 @@ class UploadFile extends File
     /**
      * @var string
      */
-    protected $_uploadName = null;
+    protected $uploadName = null;
 
     /**
      * @var string
      */
-    protected $_uploadMimeType = null;
+    protected $uploadMimeType = null;
 
     /**
      * @var int
      */
-    protected $_uploadErrorCode = null;
+    protected $uploadErrorCode = null;
 
     /**
      * UploadFile constructor.
@@ -47,9 +47,9 @@ class UploadFile extends File
      */
     public function __construct(string $file_name, string $upload_name, string $upload_mime_type, int $upload_error_code)
     {
-        $this->_uploadName = $upload_name;
-        $this->_uploadMimeType = $upload_mime_type;
-        $this->_uploadErrorCode = $upload_error_code;
+        $this->uploadName = $upload_name;
+        $this->uploadMimeType = $upload_mime_type;
+        $this->uploadErrorCode = $upload_error_code;
         parent::__construct($file_name);
     }
 
@@ -59,7 +59,7 @@ class UploadFile extends File
      */
     public function getUploadName(): ?string
     {
-        return $this->_uploadName;
+        return $this->uploadName;
     }
 
     /**
@@ -68,7 +68,7 @@ class UploadFile extends File
      */
     public function getUploadMimeType(): ?string
     {
-        return $this->_uploadMimeType;
+        return $this->uploadMimeType;
     }
 
     /**
@@ -77,7 +77,7 @@ class UploadFile extends File
      */
     public function getUploadExtension()
     {
-        return \pathinfo($this->_uploadName, PATHINFO_EXTENSION);
+        return \pathinfo($this->uploadName, PATHINFO_EXTENSION);
     }
 
     /**
@@ -86,7 +86,7 @@ class UploadFile extends File
      */
     public function getUploadErrorCode(): ?int
     {
-        return $this->_uploadErrorCode;
+        return $this->uploadErrorCode;
     }
 
     /**
@@ -95,7 +95,7 @@ class UploadFile extends File
      */
     public function isValid(): bool
     {
-        return $this->_uploadErrorCode === UPLOAD_ERR_OK;
+        return $this->uploadErrorCode === UPLOAD_ERR_OK;
     }
 
     /**
@@ -105,6 +105,6 @@ class UploadFile extends File
      */
     public function getUploadMineType(): ?string
     {
-        return $this->_uploadMimeType;
+        return $this->uploadMimeType;
     }
 }

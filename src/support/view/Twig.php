@@ -27,7 +27,7 @@ class Twig implements View
     /**
      * @var array
      */
-    protected static $_vars = [];
+    protected static $vars = [];
 
     /**
      * Assign.
@@ -36,7 +36,7 @@ class Twig implements View
      */
     public static function assign($name, $value = null)
     {
-        static::$_vars = \array_merge(static::$_vars, \is_array($name) ? $name : [$name => $value]);
+        static::$vars = \array_merge(static::$vars, \is_array($name) ? $name : [$name => $value]);
     }
 
     /**
@@ -64,9 +64,9 @@ class Twig implements View
                 $extension($views[$key]);
             }
         }
-        $vars = \array_merge(static::$_vars, $vars);
+        $vars = \array_merge(static::$vars, $vars);
         $content = $views[$key]->render("$template.$view_suffix", $vars);
-        static::$_vars = [];
+        static::$vars = [];
         return $content;
     }
 }

@@ -45,32 +45,32 @@ class App
     /**
      * @var callable[]
      */
-    protected static $_callbacks = [];
+    protected static $callbacks = [];
 
     /**
      * @var Worker
      */
-    protected static $_worker = null;
+    protected static $worker = null;
 
     /**
      * @var Logger
      */
-    protected static $_logger = null;
+    protected static $logger = null;
 
     /**
      * @var string
      */
-    protected static $_appPath = '';
+    protected static $appPath = '';
 
     /**
      * @var string
      */
-    protected static $_publicPath = '';
+    protected static $publicPath = '';
 
     /**
      * @var string
      */
-    protected static $_requestClass = '';
+    protected static $requestClass = '';
 
     /**
      * App constructor.
@@ -81,10 +81,10 @@ class App
      */
     public function __construct(string $request_class, Logger $logger, string $app_path, string $public_path)
     {
-        static::$_requestClass = $request_class;
-        static::$_logger = $logger;
-        static::$_publicPath = $public_path;
-        static::$_appPath = $app_path;
+        static::$requestClass = $request_class;
+        static::$logger = $logger;
+        static::$publicPath = $public_path;
+        static::$appPath = $app_path;
     }
 
     /**
@@ -99,8 +99,8 @@ class App
             Context::set(Request::class, $request);
             $path = $request->path();
             $key = $request->method() . $path;
-            if (isset(static::$_callbacks[$key])) {
-                [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            if (isset(static::$callbacks[$key])) {
+                [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
                 static::send($connection, $callback($request), $request);
                 return null;
             }
@@ -126,7 +126,7 @@ class App
             $action = $controller_and_action['action'];
             $callback = static::getCallback($plugin, $app, [$controller, $action]);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
-            [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
             static::send($connection, $callback($request), $request);
         } catch (Throwable $e) {
             static::send($connection, static::exceptionResponse($e, $request), $request);
@@ -141,8 +141,8 @@ class App
      */
     public function onWorkerStart($worker)
     {
-        static::$_worker = $worker;
-        Http::requestClass(static::$_requestClass);
+        static::$worker = $worker;
+        Http::requestClass(static::$requestClass);
     }
 
     /**
@@ -153,9 +153,9 @@ class App
      */
     protected static function collectCallbacks(string $key, array $data)
     {
-        static::$_callbacks[$key] = $data;
-        if (\count(static::$_callbacks) >= 1024) {
-            unset(static::$_callbacks[\key(static::$_callbacks)]);
+        static::$callbacks[$key] = $data;
+        if (\count(static::$callbacks) >= 1024) {
+            unset(static::$callbacks[\key(static::$callbacks)]);
         }
     }
 
@@ -192,7 +192,7 @@ class App
         // when route, controller and action not found, try to use Route::fallback
         return Route::getFallback($plugin) ?: function () {
             try {
-                $notFoundContent = \file_get_contents(static::$_publicPath . '/404.html');
+                $notFoundContent = \file_get_contents(static::$publicPath . '/404.html');
             } catch (Throwable $e) {
                 $notFoundContent = '404 Not Found';
             }
@@ -217,7 +217,7 @@ class App
 
             /** @var ExceptionHandlerInterface $exception_handler */
             $exception_handler = static::container($plugin)->make($exception_handler_class, [
-                'logger' => static::$_logger,
+                'logger' => static::$logger,
                 'debug' => static::config($plugin, 'app.debug')
             ]);
             $exception_handler->report($e);
@@ -382,7 +382,7 @@ class App
                 return false;
             }
             return true;
-        } elseif (!\is_a(static::$_requestClass, $first_parameter->getType()->getName())) {
+        } elseif (!\is_a(static::$requestClass, $first_parameter->getType()->getName())) {
             return true;
         }
 
@@ -484,7 +484,7 @@ class App
      */
     public static function worker(): ?Worker
     {
-        return static::$_worker;
+        return static::$worker;
     }
 
     /**
@@ -520,7 +520,7 @@ class App
             }
             $callback = static::getCallback($plugin, $app, $callback, $args, true, $route);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller ?: '', $action, $route]);
-            [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
             static::send($connection, $callback($request), $request);
             return true;
         }
@@ -554,7 +554,7 @@ class App
             $plugin = $path_explodes[1];
             $path = \substr($path, strlen("/app/{$path_explodes[1]}/"));
         } else {
-            $public_dir = static::$_publicPath;
+            $public_dir = static::$publicPath;
         }
         $file = "$public_dir/$path";
         if (!\is_file($file)) {
@@ -568,7 +568,7 @@ class App
             static::collectCallbacks($key, [function () use ($file) {
                 return static::execPhpFile($file);
             }, '', '', '', '', null]);
-            [, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+            [, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
             static::send($connection, static::execPhpFile($file), $request);
             return true;
         }
@@ -585,7 +585,7 @@ class App
             }
             return (new Response())->file($file);
         }, null, false), '', '', '', '', null]);
-        [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$_callbacks[$key];
+        [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
         static::send($connection, $callback($request), $request);
         return true;
     }
@@ -710,7 +710,7 @@ class App
             return (new \ReflectionClass($controller_class))->name;
         }
         $explodes = \explode('\\', strtolower(ltrim($controller_class, '\\')));
-        $base_path = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$_appPath;
+        $base_path = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$appPath;
         unset($explodes[0]);
         $file_name = \array_pop($explodes) . '.php';
         $found = true;

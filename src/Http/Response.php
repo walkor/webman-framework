@@ -26,7 +26,7 @@ class Response extends \Workerman\Protocols\Http\Response
     /**
      * @var Throwable
      */
-    protected $_exception = null;
+    protected $exception = null;
 
     /**
      * File
@@ -78,8 +78,8 @@ class Response extends \Workerman\Protocols\Http\Response
     public function exception(Throwable $exception = null): ?Throwable
     {
         if ($exception) {
-            $this->_exception = $exception;
+            $this->exception = $exception;
         }
-        return $this->_exception;
+        return $this->exception;
     }
 }

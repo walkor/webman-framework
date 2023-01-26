@@ -20,17 +20,17 @@ class Config
     /**
      * @var array
      */
-    protected static $_config = [];
+    protected static $config = [];
 
     /**
      * @var string
      */
-    protected static $_configPath = '';
+    protected static $configPath = '';
 
     /**
      * @var bool
      */
-    protected static $_loaded = false;
+    protected static $loaded = false;
 
     /**
      * Load.
@@ -41,14 +41,14 @@ class Config
      */
     public static function load(string $config_path, array $exclude_file = [], string $key = null)
     {
-        static::$_configPath = $config_path;
+        static::$configPath = $config_path;
         if (!$config_path) {
             return;
         }
-        static::$_loaded = false;
+        static::$loaded = false;
         $config = static::loadFromDir($config_path, $exclude_file);
         if (!$config) {
-            static::$_loaded = true;
+            static::$loaded = true;
             return;
         }
         if ($key !== null) {
@@ -56,9 +56,9 @@ class Config
                 $config = [$k => $config];
             }
         }
-        static::$_config = \array_replace_recursive(static::$_config, $config);
+        static::$config = \array_replace_recursive(static::$config, $config);
         static::formatConfig();
-        static::$_loaded = true;
+        static::$loaded = true;
     }
 
     /**
@@ -79,7 +79,7 @@ class Config
      */
     public static function clear()
     {
-        static::$_config = [];
+        static::$config = [];
     }
 
     /**
@@ -88,7 +88,7 @@ class Config
      */
     protected static function formatConfig()
     {
-        $config = static::$_config;
+        $config = static::$config;
         // Merge log config
         foreach ($config['plugin'] ?? [] as $firm => $projects) {
             if (isset($projects['app'])) {
@@ -159,7 +159,7 @@ class Config
                 }
             }
         }
-        static::$_config = $config;
+        static::$config = $config;
     }
 
     /**
@@ -210,14 +210,14 @@ class Config
     public static function get(string $key = null, $default = null)
     {
         if ($key === null) {
-            return static::$_config;
+            return static::$config;
         }
         $key_array = \explode('.', $key);
-        $value = static::$_config;
+        $value = static::$config;
         $found = true;
         foreach ($key_array as $index) {
             if (!isset($value[$index])) {
-                if (static::$_loaded) {
+                if (static::$loaded) {
                     return $default;
                 }
                 $found = false;
@@ -239,7 +239,7 @@ class Config
      */
     protected static function read(string $key, $default = null)
     {
-        $path = static::$_configPath;
+        $path = static::$configPath;
         if ($path === '') {
             return $default;
         }

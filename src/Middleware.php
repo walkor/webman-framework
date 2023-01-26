@@ -21,7 +21,7 @@ class Middleware
     /**
      * @var array
      */
-    protected static $_instances = [];
+    protected static $instances = [];
 
     /**
      * @param array $all_middlewares
@@ -39,7 +39,7 @@ class Middleware
             }
             foreach ($middlewares as $class_name) {
                 if (\method_exists($class_name, 'process')) {
-                    static::$_instances[$plugin][$app_name][] = [$class_name, 'process'];
+                    static::$instances[$plugin][$app_name][] = [$class_name, 'process'];
                 } else {
                     // @todo Log
                     echo "middleware $class_name::process not exsits\n";
@@ -56,11 +56,11 @@ class Middleware
      */
     public static function getMiddleware(string $plugin, string $app_name, bool $with_global_middleware = true)
     {
-        $global_middleware = $with_global_middleware && isset(static::$_instances[$plugin]['']) ? static::$_instances[$plugin][''] : [];
+        $global_middleware = $with_global_middleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
         if ($app_name === '') {
             return \array_reverse($global_middleware);
         }
-        $app_middleware = static::$_instances[$plugin][$app_name] ?? [];
+        $app_middleware = static::$instances[$plugin][$app_name] ?? [];
         return \array_reverse(\array_merge($global_middleware, $app_middleware));
     }
 
