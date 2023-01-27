@@ -16,7 +16,7 @@
 namespace Webman;
 
 use StdClass;
-use WeakMap;
+use SplObjectStorage;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
@@ -30,9 +30,9 @@ class Context
 {
 
     /**
-     * @var WeakMap
+     * @var SplObjectStorage;
      */
-    protected static $weakMap;
+    protected static $objectStorage;
 
     /**
      * @var StdClass
@@ -44,18 +44,18 @@ class Context
      */
     protected static function getObject()
     {
-        if (!static::$weakMap) {
-            static::$weakMap = new WeakMap();
+        if (!static::$objectStorage) {
+            static::$objectStorage = new SplObjectStorage();
             static::$object = new StdClass;
         }
         $coroutine = static::getCoroutine();
         if (!$coroutine) {
             return static::$object;
         }
-        if (!isset(static::$weakMap[$coroutine])) {
-            static::$weakMap[$coroutine] = new StdClass;
+        if (!isset(static::$objectStorage[$coroutine])) {
+            static::$objectStorage[$coroutine] = new StdClass;
         }
-        return static::$weakMap[$coroutine];
+        return static::$objectStorage[$coroutine];
     }
 
     /**
@@ -126,7 +126,7 @@ class Context
         static::$object = new StdClass;
         $coroutine = static::getCoroutine();
         if ($coroutine) {
-            unset(static::$weakMap[$coroutine]);
+            unset(static::$objectStorage[$coroutine]);
         }
     }
 }
