@@ -178,14 +178,14 @@ class Config
             if (\is_dir($file) || $file->getExtension() != 'php' || \in_array($file->getBaseName('.php'), $excludeFile)) {
                 continue;
             }
-            $appConfig_file = $file->getPath() . '/app.php';
-            if (!\is_file($appConfig_file)) {
+            $appConfigFile = $file->getPath() . '/app.php';
+            if (!\is_file($appConfigFile)) {
                 continue;
             }
             $relativePath = \str_replace($configPath . DIRECTORY_SEPARATOR, '', substr($file, 0, -4));
             $explode = \array_reverse(\explode(DIRECTORY_SEPARATOR, $relativePath));
             if (\count($explode) >= 2) {
-                $appConfig = include $appConfig_file;
+                $appConfig = include $appConfigFile;
                 if (empty($appConfig['enable'])) {
                     continue;
                 }

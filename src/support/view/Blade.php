@@ -53,10 +53,10 @@ class Blade implements View
         $plugin = $request->plugin ?? '';
         $app = $app === null ? $request->app : $app;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
-        $baseView_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
+        $baseViewPath = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
         $key = "{$plugin}-{$request->app}";
         if (!isset($views[$key])) {
-            $viewPath = $app === '' ? "$baseView_path/view" : "$baseView_path/$app/view";
+            $viewPath = $app === '' ? "$baseViewPath/view" : "$baseViewPath/$app/view";
             $views[$key] = new BladeView($viewPath, \runtime_path() . '/views');
             $extension = \config("{$configPrefix}view.extension");
             if ($extension) {

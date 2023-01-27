@@ -172,12 +172,12 @@ class Route
             $callback = $path;
             $path = '';
         }
-        $previousGroup_prefix = static::$groupPrefix;
-        static::$groupPrefix = $previousGroup_prefix . $path;
+        $previousGroupPrefix = static::$groupPrefix;
+        static::$groupPrefix = $previousGroupPrefix . $path;
         $instance = static::$instance = new static;
         static::$collector->addGroup($path, $callback);
         static::$instance = null;
-        static::$groupPrefix = $previousGroup_prefix;
+        static::$groupPrefix = $previousGroupPrefix;
         return $instance;
     }
 
@@ -354,24 +354,24 @@ class Route
         static::$dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
             Route::setCollector($route);
             foreach ($paths as $configPath) {
-                $routeConfig_file = $configPath . '/route.php';
-                if (\is_file($routeConfig_file)) {
-                    require_once $routeConfig_file;
+                $routeConfigFile = $configPath . '/route.php';
+                if (\is_file($routeConfigFile)) {
+                    require_once $routeConfigFile;
                 }
-                if (!is_dir($pluginConfig_path = $configPath . '/plugin')) {
+                if (!is_dir($pluginConfigPath = $configPath . '/plugin')) {
                     continue;
                 }
-                $dirIterator = new \RecursiveDirectoryIterator($pluginConfig_path, \FilesystemIterator::FOLLOW_SYMLINKS);
+                $dirIterator = new \RecursiveDirectoryIterator($pluginConfigPath, \FilesystemIterator::FOLLOW_SYMLINKS);
                 $iterator = new \RecursiveIteratorIterator($dirIterator);
                 foreach ($iterator as $file) {
                     if ($file->getBaseName('.php') !== 'route') {
                         continue;
                     }
-                    $appConfig_file = pathinfo($file, PATHINFO_DIRNAME) . '/app.php';
-                    if (!is_file($appConfig_file)) {
+                    $appConfigFile = pathinfo($file, PATHINFO_DIRNAME) . '/app.php';
+                    if (!is_file($appConfigFile)) {
                         continue;
                     }
-                    $appConfig = include $appConfig_file;
+                    $appConfig = include $appConfigFile;
                     if (empty($appConfig['enable'])) {
                         continue;
                     }

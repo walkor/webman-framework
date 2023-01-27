@@ -23,16 +23,16 @@ class Util
     /**
      * ScanDir.
      * @param string $basePath
-     * @param bool $withBase_path
+     * @param bool $withBasePath
      * @return array
      */
-    public static function scanDir(string $basePath, $withBase_path = true): array
+    public static function scanDir(string $basePath, $withBasePath = true): array
     {
         if (!is_dir($basePath)) {
             return [];
         }
         $paths = \array_diff(\scandir($basePath), array('.', '..')) ?: [];
-        return $withBase_path ? \array_map(function($path) use ($basePath) {
+        return $withBasePath ? \array_map(function($path) use ($basePath) {
             return $basePath . DIRECTORY_SEPARATOR . $path;
         }, $paths) : $paths;
     }

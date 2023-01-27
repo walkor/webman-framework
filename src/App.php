@@ -113,17 +113,17 @@ class App
                 return null;
             }
 
-            $controllerAnd_action = static::parseControllerAction($path);
-            $plugin = $controllerAnd_action['plugin'] ?? static::getPluginByPath($path);
-            if (!$controllerAnd_action || Route::hasDisableDefaultRoute($plugin)) {
+            $controllerAndAction = static::parseControllerAction($path);
+            $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
+            if (!$controllerAndAction || Route::hasDisableDefaultRoute($plugin)) {
                 $callback = static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
                 return null;
             }
-            $app = $controllerAnd_action['app'];
-            $controller = $controllerAnd_action['controller'];
-            $action = $controllerAnd_action['action'];
+            $app = $controllerAndAction['app'];
+            $controller = $controllerAndAction['controller'];
+            $action = $controllerAndAction['action'];
             $callback = static::getCallback($plugin, $app, [$controller, $action]);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
@@ -213,10 +213,10 @@ class App
             $plugin = $request->plugin ?: '';
             $exceptionConfig = static::config($plugin, 'exception');
             $defaultException = $exceptionConfig[''] ?? ExceptionHandler::class;
-            $exceptionHandler_class = $exceptionConfig[$app] ?? $defaultException;
+            $exceptionHandlerClass = $exceptionConfig[$app] ?? $defaultException;
 
             /** @var ExceptionHandlerInterface $exceptionHandler */
-            $exceptionHandler = static::container($plugin)->make($exceptionHandler_class, [
+            $exceptionHandler = static::container($plugin)->make($exceptionHandlerClass, [
                 'logger' => static::$logger,
                 'debug' => static::config($plugin, 'app.debug')
             ]);
@@ -237,14 +237,14 @@ class App
      * @param string $app
      * @param $call
      * @param array|null $args
-     * @param bool $withGlobal_middleware
+     * @param bool $withGlobalMiddleware
      * @param RouteObject|null $route
      * @return callable
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected static function getCallback(string $plugin, string $app, $call, array $args = null, bool $withGlobal_middleware = true, RouteObject $route = null)
+    protected static function getCallback(string $plugin, string $app, $call, array $args = null, bool $withGlobalMiddleware = true, RouteObject $route = null)
     {
         $args = $args === null ? null : \array_values($args);
         $middlewares = [];
@@ -254,7 +254,7 @@ class App
                 $middlewares[] = [$className, 'process'];
             }
         }
-        $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $withGlobal_middleware));
+        $middlewares = \array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $withGlobalMiddleware));
 
         foreach ($middlewares as $key => $item) {
             $middleware = $item[0];

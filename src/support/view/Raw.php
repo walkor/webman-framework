@@ -52,8 +52,8 @@ class Raw implements View
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $viewSuffix = \config("{$configPrefix}view.options.view_suffix", 'html');
         $app = $app === null ? $request->app : $app;
-        $baseView_path = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
-        $__template_path__ = $app === '' ? "$baseView_path/view/$template.$viewSuffix" : "$baseView_path/$app/view/$template.$viewSuffix";
+        $baseViewPath = $plugin ? \base_path() . "/plugin/$plugin/app" : \app_path();
+        $__template_path__ = $app === '' ? "$baseViewPath/view/$template.$viewSuffix" : "$baseViewPath/$app/view/$template.$viewSuffix";
 
         \extract(static::$vars);
         \extract($vars);

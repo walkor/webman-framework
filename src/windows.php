@@ -27,15 +27,15 @@ if (isset($errorReporting)) {
     error_reporting($errorReporting);
 }
 
-$runtimeProcess_path = runtime_path() . DIRECTORY_SEPARATOR . '/windows';
-if (!is_dir($runtimeProcess_path)) {
-    mkdir($runtimeProcess_path);
+$runtimeProcessPath = runtime_path() . DIRECTORY_SEPARATOR . '/windows';
+if (!is_dir($runtimeProcessPath)) {
+    mkdir($runtimeProcessPath);
 }
 $processFiles = [
     __DIR__ . DIRECTORY_SEPARATOR . 'start.php'
 ];
 foreach (config('process', []) as $processName => $config) {
-    $processFiles[] = write_process_file($runtimeProcess_path, $processName, '');
+    $processFiles[] = write_process_file($runtimeProcessPath, $processName, '');
 }
 
 foreach (config('plugin', []) as $firm => $projects) {
@@ -44,15 +44,15 @@ foreach (config('plugin', []) as $firm => $projects) {
             continue;
         }
         foreach ($project['process'] ?? [] as $processName => $config) {
-            $processFiles[] = write_process_file($runtimeProcess_path, $processName, "$firm.$name");
+            $processFiles[] = write_process_file($runtimeProcessPath, $processName, "$firm.$name");
         }
     }
     foreach ($projects['process'] ?? [] as $processName => $config) {
-        $processFiles[] = write_process_file($runtimeProcess_path, $processName, $firm);
+        $processFiles[] = write_process_file($runtimeProcessPath, $processName, $firm);
     }
 }
 
-function write_process_file($runtimeProcess_path, $processName, $firm)
+function write_process_file($runtimeProcessPath, $processName, $firm)
 {
     $processParam = $firm ? "plugin.$firm.$processName" : $processName;
     $configParam = $firm ? "config('plugin.$firm.process')['$processName']" : "config('process')['$processName']";
@@ -82,7 +82,7 @@ if (DIRECTORY_SEPARATOR != "/") {
 Worker::runAll();
 
 EOF;
-    $processFile = $runtimeProcess_path . DIRECTORY_SEPARATOR . "start_$processParam.php";
+    $processFile = $runtimeProcessPath . DIRECTORY_SEPARATOR . "start_$processParam.php";
     file_put_contents($processFile, $fileContent);
     return $processFile;
 }

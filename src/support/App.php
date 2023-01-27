@@ -38,16 +38,16 @@ class App
             date_default_timezone_set($timezone);
         }
 
-        $runtimeLogs_path = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
-        if (!file_exists($runtimeLogs_path) || !is_dir($runtimeLogs_path)) {
-            if (!mkdir($runtimeLogs_path, 0777, true)) {
+        $runtimeLogsPath = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
+        if (!file_exists($runtimeLogsPath) || !is_dir($runtimeLogsPath)) {
+            if (!mkdir($runtimeLogsPath, 0777, true)) {
                 throw new \RuntimeException("Failed to create runtime logs directory. Please check the permission.");
             }
         }
 
-        $runtimeViews_path = runtime_path() . DIRECTORY_SEPARATOR . 'views';
-        if (!file_exists($runtimeViews_path) || !is_dir($runtimeViews_path)) {
-            if (!mkdir($runtimeViews_path, 0777, true)) {
+        $runtimeViewsPath = runtime_path() . DIRECTORY_SEPARATOR . 'views';
+        if (!file_exists($runtimeViewsPath) || !is_dir($runtimeViewsPath)) {
+            if (!mkdir($runtimeViewsPath, 0777, true)) {
                 throw new \RuntimeException("Failed to create runtime views directory. Please check the permission.");
             }
         }

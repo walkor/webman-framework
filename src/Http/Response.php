@@ -63,11 +63,11 @@ class Response extends \Workerman\Protocols\Http\Response
      */
     protected function notModifiedSince(string $file): bool
     {
-        $ifModified_since = App::request()->header('if-modified-since');
-        if ($ifModified_since === null || !($mtime = \filemtime($file))) {
+        $ifModifiedSince = App::request()->header('if-modified-since');
+        if ($ifModifiedSince === null || !($mtime = \filemtime($file))) {
             return false;
         }
-        return $ifModified_since === \gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+        return $ifModifiedSince === \gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
     }
 
     /**
