@@ -98,4 +98,18 @@ class ExceptionHandler implements ExceptionHandlerInterface
         }
         return false;
     }
+
+    /**
+     * Compatible $this->_debug
+     *
+     * @param string $name
+     * @return mixed|null
+     */
+    public function __get($name)
+    {
+        if ($name === '_debug') {
+            return $this->debug;
+        }
+        return null;
+    }
 }
