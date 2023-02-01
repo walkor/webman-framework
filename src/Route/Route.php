@@ -15,6 +15,10 @@
 namespace Webman\Route;
 
 use Webman\Route as Router;
+use function array_merge;
+use function count;
+use function preg_replace_callback;
+use function str_replace;
 
 /**
  * Class Route
@@ -96,7 +100,7 @@ class Route
         if ($middleware === null) {
             return $this->middlewares;
         }
-        $this->middlewares = \array_merge($this->middlewares, is_array($middleware) ? $middleware : [$middleware]);
+        $this->middlewares = array_merge($this->middlewares, is_array($middleware) ? $middleware : [$middleware]);
         return $this;
     }
 
@@ -157,7 +161,7 @@ class Route
      */
     public function setParams(array $params): Route
     {
-        $this->params = \array_merge($this->params, $params);
+        $this->params = array_merge($this->params, $params);
         return $this;
     }
 
@@ -171,8 +175,8 @@ class Route
         if (empty($parameters)) {
             return $this->path;
         }
-        $path = \str_replace(['[', ']'], '', $this->path);
-        $path = \preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
+        $path = str_replace(['[', ']'], '', $this->path);
+        $path = preg_replace_callback('/\{(.*?)(?:\:[^\}]*?)*?\}/', function ($matches) use (&$parameters) {
             if (!$parameters) {
                 return $matches[0];
             }
@@ -189,7 +193,7 @@ class Route
             }
             return $matches[0];
         }, $path);
-        return \count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
+        return count($parameters) > 0 ? $path . '?' . http_build_query($parameters) : $path;
     }
 
 }

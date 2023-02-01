@@ -14,7 +14,6 @@
 
 namespace support;
 
-use Psr\Container\ContainerInterface;
 use Webman\Config;
 
 /**

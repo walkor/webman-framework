@@ -16,16 +16,17 @@ namespace support\bootstrap;
 
 use Illuminate\Container\Container as IlluminateContainer;
 use Illuminate\Database\Capsule\Manager as Capsule;
-use Illuminate\Database\Connection;
+use Illuminate\Database\MySqlConnection;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Pagination\Paginator;
 use Jenssegers\Mongodb\Connection as MongodbConnection;
-use support\Db;
 use support\Container;
 use Throwable;
 use Webman\Bootstrap;
 use Workerman\Timer;
 use Workerman\Worker;
+use function class_exists;
+use function config;
 
 /**
  * Class Laravel
@@ -44,7 +45,7 @@ class LaravelDb implements Bootstrap
             return;
         }
 
-        $config = \config('database', []);
+        $config = config('database', []);
         $connections = $config['connections'] ?? [];
         if (!$connections) {
             return;
@@ -67,7 +68,7 @@ class LaravelDb implements Bootstrap
             $capsule->addConnection($config, $name);
         }
 
-        if (\class_exists(Dispatcher::class) && !$capsule->getEventDispatcher()) {
+        if (class_exists(Dispatcher::class) && !$capsule->getEventDispatcher()) {
             $capsule->setEventDispatcher(Container::make(Dispatcher::class, [IlluminateContainer::getInstance()]));
         }
 
@@ -79,7 +80,7 @@ class LaravelDb implements Bootstrap
         if ($worker) {
             Timer::add(55, function () use ($default, $connections, $capsule) {
                 foreach ($capsule->getDatabaseManager()->getConnections() as $connection) {
-                    /* @var \Illuminate\Database\MySqlConnection $connection **/
+                    /* @var MySqlConnection $connection **/
                     if ($connection->getConfig('driver') == 'mysql') {
                         try {
                             $connection->select('select 1');

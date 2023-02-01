@@ -14,6 +14,20 @@
 
 namespace Webman;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use function array_replace_recursive;
+use function array_reverse;
+use function count;
+use function explode;
+use function in_array;
+use function is_array;
+use function is_dir;
+use function is_file;
+use function key;
+use function str_replace;
+
 class Config
 {
 
@@ -52,21 +66,21 @@ class Config
             return;
         }
         if ($key !== null) {
-            foreach (\array_reverse(\explode('.', $key)) as $k) {
+            foreach (array_reverse(explode('.', $key)) as $k) {
                 $config = [$k => $config];
             }
         }
-        static::$config = \array_replace_recursive(static::$config, $config);
+        static::$config = array_replace_recursive(static::$config, $config);
         static::formatConfig();
         static::$loaded = true;
     }
 
     /**
      * This deprecated method will certainly be removed in the future.
-     * @deprecated
      * @param string $configPath
      * @param array $excludeFile
      * @return void
+     * @deprecated
      */
     public static function reload(string $configPath, array $excludeFile = [])
     {
@@ -97,7 +111,7 @@ class Config
                 }
             }
             foreach ($projects as $name => $project) {
-                if (!\is_array($project)) {
+                if (!is_array($project)) {
                     continue;
                 }
                 foreach ($project['log'] ?? [] as $key => $item) {
@@ -113,7 +127,7 @@ class Config
                 }
             }
             foreach ($projects as $name => $project) {
-                if (!\is_array($project)) {
+                if (!is_array($project)) {
                     continue;
                 }
                 foreach ($project['database']['connections'] ?? [] as $key => $connection) {
@@ -132,7 +146,7 @@ class Config
                 }
             }
             foreach ($projects as $name => $project) {
-                if (!\is_array($project)) {
+                if (!is_array($project)) {
                     continue;
                 }
                 foreach ($project['thinkorm']['connections'] ?? [] as $key => $connection) {
@@ -141,7 +155,7 @@ class Config
             }
         }
         if (!empty($config['thinkorm']['connections'])) {
-            $config['thinkorm']['default'] = $config['thinkorm']['default'] ?? \key($config['thinkorm']['connections']);
+            $config['thinkorm']['default'] = $config['thinkorm']['default'] ?? key($config['thinkorm']['connections']);
         }
         // Merge redis config
         foreach ($config['plugin'] ?? [] as $firm => $projects) {
@@ -151,7 +165,7 @@ class Config
                 }
             }
             foreach ($projects as $name => $project) {
-                if (!\is_array($project)) {
+                if (!is_array($project)) {
                     continue;
                 }
                 foreach ($project['redis'] ?? [] as $key => $connection) {
@@ -171,20 +185,20 @@ class Config
     public static function loadFromDir(string $configPath, array $excludeFile = []): array
     {
         $allConfig = [];
-        $dirIterator = new \RecursiveDirectoryIterator($configPath, \FilesystemIterator::FOLLOW_SYMLINKS);
-        $iterator = new \RecursiveIteratorIterator($dirIterator);
+        $dirIterator = new RecursiveDirectoryIterator($configPath, FilesystemIterator::FOLLOW_SYMLINKS);
+        $iterator = new RecursiveIteratorIterator($dirIterator);
         foreach ($iterator as $file) {
             /** var SplFileInfo $file */
-            if (\is_dir($file) || $file->getExtension() != 'php' || \in_array($file->getBaseName('.php'), $excludeFile)) {
+            if (is_dir($file) || $file->getExtension() != 'php' || in_array($file->getBaseName('.php'), $excludeFile)) {
                 continue;
             }
             $appConfigFile = $file->getPath() . '/app.php';
-            if (!\is_file($appConfigFile)) {
+            if (!is_file($appConfigFile)) {
                 continue;
             }
-            $relativePath = \str_replace($configPath . DIRECTORY_SEPARATOR, '', substr($file, 0, -4));
-            $explode = \array_reverse(\explode(DIRECTORY_SEPARATOR, $relativePath));
-            if (\count($explode) >= 2) {
+            $relativePath = str_replace($configPath . DIRECTORY_SEPARATOR, '', substr($file, 0, -4));
+            $explode = array_reverse(explode(DIRECTORY_SEPARATOR, $relativePath));
+            if (count($explode) >= 2) {
                 $appConfig = include $appConfigFile;
                 if (empty($appConfig['enable'])) {
                     continue;
@@ -196,7 +210,7 @@ class Config
                 $tmp[$section] = $config;
                 $config = $tmp;
             }
-            $allConfig = \array_replace_recursive($allConfig, $config);
+            $allConfig = array_replace_recursive($allConfig, $config);
         }
         return $allConfig;
     }
@@ -212,7 +226,7 @@ class Config
         if ($key === null) {
             return static::$config;
         }
-        $keyArray = \explode('.', $key);
+        $keyArray = explode('.', $key);
         $value = static::$config;
         $found = true;
         foreach ($keyArray as $index) {
@@ -243,14 +257,14 @@ class Config
         if ($path === '') {
             return $default;
         }
-        $keys = $keyArray = \explode('.', $key);
+        $keys = $keyArray = explode('.', $key);
         foreach ($keyArray as $index => $section) {
             unset($keys[$index]);
-            if (\is_file($file = "$path/$section.php")) {
+            if (is_file($file = "$path/$section.php")) {
                 $config = include $file;
                 return static::find($keys, $config, $default);
             }
-            if (!\is_dir($path = "$path/$section")) {
+            if (!is_dir($path = "$path/$section")) {
                 return $default;
             }
         }
@@ -266,7 +280,7 @@ class Config
      */
     protected static function find(array $keyArray, $stack, $default)
     {
-        if (!\is_array($stack)) {
+        if (!is_array($stack)) {
             return $default;
         }
         $value = $stack;

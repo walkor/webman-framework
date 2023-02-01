@@ -14,8 +14,16 @@
 
 namespace Webman\Http;
 
-use Webman\App;
 use Webman\Route\Route;
+use function current;
+use function filter_var;
+use function ip2long;
+use function is_array;
+use function strpos;
+use const FILTER_FLAG_IPV4;
+use const FILTER_FLAG_NO_PRIV_RANGE;
+use const FILTER_FLAG_NO_RES_RANGE;
+use const FILTER_VALIDATE_IP;
 
 /**
  * Class Request
@@ -108,7 +116,7 @@ class Request extends \Workerman\Protocols\Http\Request
      * @param string|null $name
      * @return null|UploadFile[]|UploadFile
      */
-    public function file(string $name = null)
+    public function file($name = null)
     {
         $files = parent::file($name);
         if (null === $files) {
@@ -116,7 +124,7 @@ class Request extends \Workerman\Protocols\Http\Request
         }
         if ($name !== null) {
             // Multi files
-            if (\is_array(\current($files))) {
+            if (is_array(current($files))) {
                 return $this->parseFiles($files);
             }
             return $this->parseFile($files);
@@ -124,7 +132,7 @@ class Request extends \Workerman\Protocols\Http\Request
         $uploadFiles = [];
         foreach ($files as $name => $file) {
             // Multi files
-            if (\is_array(\current($file))) {
+            if (is_array(current($file))) {
                 $uploadFiles[$name] = $this->parseFiles($file);
             } else {
                 $uploadFiles[$name] = $this->parseFile($file);
@@ -152,7 +160,7 @@ class Request extends \Workerman\Protocols\Http\Request
     {
         $uploadFiles = [];
         foreach ($files as $key => $file) {
-            if (\is_array(\current($file))) {
+            if (is_array(current($file))) {
                 $uploadFiles[$key] = $this->parseFiles($file);
             } else {
                 $uploadFiles[$key] = $this->parseFile($file);
@@ -264,7 +272,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function acceptJson(): bool
     {
-        return false !== \strpos($this->header('accept', ''), 'json');
+        return false !== strpos($this->header('accept', ''), 'json');
     }
 
     /**
@@ -275,15 +283,15 @@ class Request extends \Workerman\Protocols\Http\Request
     public static function isIntranetIp(string $ip): bool
     {
         // Not validate ip .
-        if (!\filter_var($ip, \FILTER_VALIDATE_IP)) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
             return false;
         }
         // Is intranet ip ? For IPv4, the result of false may not be accurate, so we need to check it manually later .
-        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_NO_PRIV_RANGE | \FILTER_FLAG_NO_RES_RANGE)) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
             return true;
         }
         // Manual check only for IPv4 .
-        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4)) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             return false;
         }
         // Manual check .
@@ -297,7 +305,7 @@ class Request extends \Workerman\Protocols\Http\Request
             3405803776 => 3405804031, // 203.0.113.0 - 203.0.113.255
             3758096384 => 4026531839, // 224.0.0.0 - 239.255.255.255
         ];
-        $ipLong = \ip2long($ip);
+        $ipLong = ip2long($ip);
         foreach ($reservedIps as $ipStart => $ipEnd) {
             if (($ipLong >= $ipStart) && ($ipLong <= $ipEnd)) {
                 return true;

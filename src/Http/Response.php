@@ -14,8 +14,10 @@
 
 namespace Webman\Http;
 
-use Webman\App;
 use Throwable;
+use Webman\App;
+use function filemtime;
+use function gmdate;
 
 /**
  * Class Response
@@ -64,10 +66,10 @@ class Response extends \Workerman\Protocols\Http\Response
     protected function notModifiedSince(string $file): bool
     {
         $ifModifiedSince = App::request()->header('if-modified-since');
-        if ($ifModifiedSince === null || !($mtime = \filemtime($file))) {
+        if ($ifModifiedSince === null || !($mtime = filemtime($file))) {
             return false;
         }
-        return $ifModifiedSince === \gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+        return $ifModifiedSince === gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
     }
 
     /**

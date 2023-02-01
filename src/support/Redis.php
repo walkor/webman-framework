@@ -16,10 +16,12 @@ namespace support;
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Redis\Connections\Connection;
-use Illuminate\Redis\Events\CommandExecuted;
 use Illuminate\Redis\RedisManager;
 use Workerman\Timer;
 use Workerman\Worker;
+use function class_exists;
+use function config;
+use function in_array;
 
 
 /**
@@ -237,10 +239,10 @@ class Redis
     public static function instance(): ?RedisManager
     {
         if (!static::$instance) {
-            $config = \config('redis');
+            $config = config('redis');
             $client = $config['client'] ?? self::PHPREDIS_CLIENT;
 
-            if (!\in_array($client, static::$allowClient)) {
+            if (!in_array($client, static::$allowClient)) {
                 $client = self::PHPREDIS_CLIENT;
             }
 
@@ -262,7 +264,7 @@ class Redis
             $timers[$name] = Worker::getAllWorkers() ? Timer::add(55, function () use ($connection) {
                 $connection->get('ping');
             }) : 1;
-            if (\class_exists(Dispatcher::class)) {
+            if (class_exists(Dispatcher::class)) {
                 $connection->setEventDispatcher(new Dispatcher());
             }
         }
@@ -276,6 +278,6 @@ class Redis
      */
     public static function __callStatic(string $name, array $arguments)
     {
-        return static::connection('default')->{$name}(... $arguments);
+        return static::connection()->{$name}(... $arguments);
     }
 }

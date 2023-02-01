@@ -15,6 +15,12 @@
 namespace Webman;
 
 
+use RuntimeException;
+use function array_merge;
+use function array_reverse;
+use function is_array;
+use function method_exists;
+
 class Middleware
 {
 
@@ -24,21 +30,21 @@ class Middleware
     protected static $instances = [];
 
     /**
-     * @param array $allMiddlewares
+     * @param mixed $allMiddlewares
      * @param string $plugin
      * @return void
      */
     public static function load($allMiddlewares, string $plugin = '')
     {
-        if (!\is_array($allMiddlewares)) {
+        if (!is_array($allMiddlewares)) {
             return;
         }
         foreach ($allMiddlewares as $appName => $middlewares) {
-            if (!\is_array($middlewares)) {
-                throw new \RuntimeException('Bad middleware config');
+            if (!is_array($middlewares)) {
+                throw new RuntimeException('Bad middleware config');
             }
             foreach ($middlewares as $className) {
-                if (\method_exists($className, 'process')) {
+                if (method_exists($className, 'process')) {
                     static::$instances[$plugin][$appName][] = [$className, 'process'];
                 } else {
                     // @todo Log
@@ -58,15 +64,15 @@ class Middleware
     {
         $globalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
         if ($appName === '') {
-            return \array_reverse($globalMiddleware);
+            return array_reverse($globalMiddleware);
         }
         $appMiddleware = static::$instances[$plugin][$appName] ?? [];
-        return \array_reverse(\array_merge($globalMiddleware, $appMiddleware));
+        return array_reverse(array_merge($globalMiddleware, $appMiddleware));
     }
 
     /**
-     * @deprecated
      * @return void
+     * @deprecated
      */
     public static function container($_)
     {

@@ -16,8 +16,8 @@ use Dotenv\Dotenv;
 use support\Log;
 use Webman\Bootstrap;
 use Webman\Config;
-use Webman\Route;
 use Webman\Middleware;
+use Webman\Route;
 use Webman\Util;
 
 $worker = $worker ?? null;
@@ -67,20 +67,20 @@ foreach (config('plugin', []) as $firm => $projects) {
     }
 }
 
-Middleware::load(config('middleware', []), '');
+Middleware::load(config('middleware', []));
 foreach (config('plugin', []) as $firm => $projects) {
     foreach ($projects as $name => $project) {
         if (!is_array($project) || $name === 'static') {
             continue;
         }
-        Middleware::load($project['middleware'] ?? [], '');
+        Middleware::load($project['middleware'] ?? []);
     }
     Middleware::load($projects['middleware'] ?? [], $firm);
     if ($staticMiddlewares = config("plugin.$firm.static.middleware")) {
         Middleware::load(['__static__' => $staticMiddlewares], $firm);
     }
 }
-Middleware::load(['__static__' => config('static.middleware', [])], '');
+Middleware::load(['__static__' => config('static.middleware', [])]);
 
 foreach (config('bootstrap', []) as $className) {
     if (!class_exists($className)) {
@@ -110,6 +110,7 @@ foreach (config('plugin', []) as $firm => $projects) {
         }
     }
     foreach ($projects['bootstrap'] ?? [] as $className) {
+        /** @var string $className */
         if (!class_exists($className)) {
             $log = "Warning: Class $className setting in plugin/$firm/config/bootstrap.php not found\r\n";
             echo $log;

@@ -15,12 +15,16 @@
 
 namespace Webman;
 
-use StdClass;
+use ArrayObject;
+use Fiber;
 use SplObjectStorage;
+use StdClass;
+use Swow\Coroutine;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
 use Workerman\Worker;
+use function property_exists;
 
 /**
  * Class Context
@@ -42,7 +46,7 @@ class Context
     /**
      * @return StdClass
      */
-    protected static function getObject()
+    protected static function getObject(): StdClass
     {
         if (!static::$objectStorage) {
             static::$objectStorage = new SplObjectStorage();
@@ -59,24 +63,24 @@ class Context
     }
 
     /**
-     * @return \ArrayObject|\Fiber|\Swow\Coroutine|null
+     * @return ArrayObject|Fiber|Coroutine|null
      */
     protected static function getCoroutine()
     {
         switch (Worker::$eventLoopClass) {
             case Revolt::class:
-                return \Fiber::getCurrent();
+                return Fiber::getCurrent();
             case Swoole::class:
                 return \Swoole\Coroutine::getContext();
             case Swow::class:
-                return \Swow\Coroutine::getCurrent();
+                return Coroutine::getCurrent();
         }
         return null;
     }
 
     /**
      * @param string|null $key
-     * @return StdClass|null
+     * @return mixed
      */
     public static function get(string $key = null)
     {
@@ -112,10 +116,10 @@ class Context
      * @param string $key
      * @return bool
      */
-    public static function has(string $key)
+    public static function has(string $key): bool
     {
         $obj = static::getObject();
-        return \property_exists($obj, $key);
+        return property_exists($obj, $key);
     }
 
     /**

@@ -15,6 +15,7 @@
 namespace Webman\Http;
 
 use Webman\File;
+use function pathinfo;
 
 /**
  * Class UploadFile
@@ -73,11 +74,11 @@ class UploadFile extends File
 
     /**
      * GetUploadExtension
-     * @return mixed
+     * @return string
      */
-    public function getUploadExtension()
+    public function getUploadExtension(): string
     {
-        return \pathinfo($this->uploadName, PATHINFO_EXTENSION);
+        return pathinfo($this->uploadName, PATHINFO_EXTENSION);
     }
 
     /**
@@ -100,8 +101,8 @@ class UploadFile extends File
 
     /**
      * GetUploadMineType
-     * @deprecated
      * @return string
+     * @deprecated
      */
     public function getUploadMineType(): ?string
     {

@@ -4,6 +4,8 @@ namespace Webman;
 
 use Psr\Container\ContainerInterface;
 use Webman\Exception\NotFoundException;
+use function array_key_exists;
+use function class_exists;
 
 /**
  * Class Container
@@ -17,7 +19,7 @@ class Container implements ContainerInterface
      */
     protected $instances = [];
     /**
-     * @var array 
+     * @var array
      */
     protected $definitions = [];
 
@@ -33,7 +35,7 @@ class Container implements ContainerInterface
             if (isset($this->definitions[$name])) {
                 $this->instances[$name] = call_user_func($this->definitions[$name], $this);
             } else {
-                if (!\class_exists($name)) {
+                if (!class_exists($name)) {
                     throw new NotFoundException("Class '$name' not found");
                 }
                 $this->instances[$name] = new $name();
@@ -49,7 +51,7 @@ class Container implements ContainerInterface
      */
     public function has(string $name): bool
     {
-        return \array_key_exists($name, $this->instances)
+        return array_key_exists($name, $this->instances)
             || array_key_exists($name, $this->definitions);
     }
 
@@ -62,7 +64,7 @@ class Container implements ContainerInterface
      */
     public function make(string $name, array $constructor = [])
     {
-        if (!\class_exists($name)) {
+        if (!class_exists($name)) {
             throw new NotFoundException("Class '$name' not found");
         }
         return new $name(... array_values($constructor));

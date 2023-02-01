@@ -16,6 +16,13 @@ namespace support;
 
 use Symfony\Component\Translation\Translator;
 use Webman\Exception\NotFoundException;
+use function basename;
+use function config;
+use function get_realpath;
+use function glob;
+use function pathinfo;
+use function request;
+use function substr;
 
 /**
  * Class Translation
@@ -41,9 +48,9 @@ class Translation
     public static function instance(string $plugin = ''): Translator
     {
         if (!isset(static::$instance[$plugin])) {
-            $config = \config($plugin ? "plugin.$plugin.translation" : 'translation', []);
+            $config = config($plugin ? "plugin.$plugin.translation" : 'translation', []);
             // Phar support. Compatible with the 'realpath' function in the phar file.
-            if (!$translationsPath = \get_realpath($config['path'])) {
+            if (!$translationsPath = get_realpath($config['path'])) {
                 throw new NotFoundException("File {$config['path']} not found");
             }
 
@@ -63,10 +70,10 @@ class Translation
 
             foreach ($classes as $class => $opts) {
                 $translator->addLoader($opts['format'], new $class);
-                foreach (\glob($translationsPath . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*' . $opts['extension']) as $file) {
-                    $domain = \basename($file, $opts['extension']);
-                    $dirName = \pathinfo($file, PATHINFO_DIRNAME);
-                    $locale = \substr(strrchr($dirName, DIRECTORY_SEPARATOR), 1);
+                foreach (glob($translationsPath . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*' . $opts['extension']) as $file) {
+                    $domain = basename($file, $opts['extension']);
+                    $dirName = pathinfo($file, PATHINFO_DIRNAME);
+                    $locale = substr(strrchr($dirName, DIRECTORY_SEPARATOR), 1);
                     if ($domain && $locale) {
                         $translator->addResource($opts['format'], $file, $locale, $domain);
                     }
@@ -84,7 +91,7 @@ class Translation
      */
     public static function __callStatic(string $name, array $arguments)
     {
-        $request = \request();
+        $request = request();
         $plugin = $request->plugin ?? '';
         return static::instance($plugin)->{$name}(... $arguments);
     }

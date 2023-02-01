@@ -4,9 +4,9 @@
  */
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Dotenv\Dotenv;
 use process\Monitor;
 use support\App;
-use Dotenv\Dotenv;
 use Workerman\Worker;
 
 ini_set('display_errors', 'on');
@@ -52,7 +52,7 @@ foreach (config('plugin', []) as $firm => $projects) {
     }
 }
 
-function write_process_file($runtimeProcessPath, $processName, $firm)
+function write_process_file($runtimeProcessPath, $processName, $firm): string
 {
     $processParam = $firm ? "plugin.$firm.$processName" : $processName;
     $configParam = $firm ? "config('plugin.$firm.process')['$processName']" : "config('process')['$processName']";

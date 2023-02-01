@@ -3,11 +3,17 @@
 namespace support;
 
 use Dotenv\Dotenv;
+use RuntimeException;
 use Webman\Config;
 use Webman\Util;
 use Workerman\Connection\TcpConnection;
-use Workerman\Protocols\Http;
 use Workerman\Worker;
+use function base_path;
+use function call_user_func;
+use function is_dir;
+use function opcache_get_status;
+use function opcache_invalidate;
+use const DIRECTORY_SEPARATOR;
 
 class App
 {
@@ -41,23 +47,23 @@ class App
         $runtimeLogsPath = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
         if (!file_exists($runtimeLogsPath) || !is_dir($runtimeLogsPath)) {
             if (!mkdir($runtimeLogsPath, 0777, true)) {
-                throw new \RuntimeException("Failed to create runtime logs directory. Please check the permission.");
+                throw new RuntimeException("Failed to create runtime logs directory. Please check the permission.");
             }
         }
 
         $runtimeViewsPath = runtime_path() . DIRECTORY_SEPARATOR . 'views';
         if (!file_exists($runtimeViewsPath) || !is_dir($runtimeViewsPath)) {
             if (!mkdir($runtimeViewsPath, 0777, true)) {
-                throw new \RuntimeException("Failed to create runtime views directory. Please check the permission.");
+                throw new RuntimeException("Failed to create runtime views directory. Please check the permission.");
             }
         }
 
         Worker::$onMasterReload = function () {
             if (function_exists('opcache_get_status')) {
-                if ($status = \opcache_get_status()) {
+                if ($status = opcache_get_status()) {
                     if (isset($status['scripts']) && $scripts = $status['scripts']) {
                         foreach (array_keys($scripts) as $file) {
-                            \opcache_invalidate($file, true);
+                            opcache_invalidate($file, true);
                         }
                     }
                 }
@@ -95,15 +101,15 @@ class App
             }
 
             $worker->onWorkerStart = function ($worker) {
-                require_once \base_path() . '/support/bootstrap.php';
+                require_once base_path() . '/support/bootstrap.php';
                 $app = new \Webman\App(config('app.request_class', Request::class), Log::channel('default'), app_path(), public_path());
                 $worker->onMessage = [$app, 'onMessage'];
-                \call_user_func([$app, 'onWorkerStart'], $worker);
+                call_user_func([$app, 'onWorkerStart'], $worker);
             };
         }
 
         // Windows does not support custom processes.
-        if (\DIRECTORY_SEPARATOR === '/') {
+        if (DIRECTORY_SEPARATOR === '/') {
             foreach (config('process', []) as $processName => $config) {
                 worker_start($processName, $config);
             }
@@ -136,7 +142,7 @@ class App
         $directory = base_path() . '/plugin';
         foreach (Util::scanDir($directory, false) as $name) {
             $dir = "$directory/$name/config";
-            if (\is_dir($dir)) {
+            if (is_dir($dir)) {
                 Config::load($dir, $excludes, "plugin.$name");
             }
         }
