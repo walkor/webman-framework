@@ -51,6 +51,7 @@ use function end;
 use function explode;
 use function file_get_contents;
 use function get_class_methods;
+use function gettype;
 use function implode;
 use function in_array;
 use function is_a;
@@ -352,8 +353,8 @@ class App
                     return static::exceptionResponse($e, $request);
                 }
                 if (!$response instanceof Response) {
-                    if (is_array($response)) {
-                        $response = 'Array';
+                    if (!is_string($response)) {
+                        $response = static::stringify($response);
                     }
                     $response = new Response(200, [], $response);
                 }
@@ -900,5 +901,29 @@ class App
     protected static function config(string $plugin, string $key, $default = null)
     {
         return Config::get($plugin ? "plugin.$plugin.$key" : $key, $default);
+    }
+
+
+    /**
+     * @param $data
+     * @return string
+     */
+    protected static function stringify($data): string
+    {
+        $type = gettype($data);
+        switch ($type) {
+            case 'boolean':
+                return  $data ? 'true' : 'false';
+            case 'NULL':
+                return 'NULL';
+            case 'array':
+                return 'Array';
+            case 'object':
+                if (!method_exists($data, '__toString')) {
+                    return 'Object';
+                }
+            default:
+                return (string)$data;
+        }
     }
 }
