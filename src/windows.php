@@ -93,9 +93,9 @@ if ($monitorConfig = config('process.monitor.constructor')) {
 
 function popen_processes($processFiles)
 {
-    $cmd = "php " . implode(' ', $processFiles);
+    $cmd = '"' . PHP_BINARY . '" ' . implode(' ', $processFiles);
     $descriptorspec = [STDIN, STDOUT, STDOUT];
-    $resource = proc_open($cmd, $descriptorspec, $pipes);
+    $resource = proc_open($cmd, $descriptorspec, $pipes, null, null, ['bypass_shell' => true]);
     if (!$resource) {
         exit("Can not execute $cmd\r\n");
     }
