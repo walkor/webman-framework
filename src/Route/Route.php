@@ -124,9 +124,9 @@ class Route
 
     /**
      * GetCallback.
-     * @return callable
+     * @return callable|null
      */
-    public function getCallback(): ?callable
+    public function getCallback()//:?callable fix: null|callable|array
     {
         return $this->callback;
     }
