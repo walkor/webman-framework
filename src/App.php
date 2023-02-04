@@ -415,11 +415,10 @@ class App
             }
         }
         if (!$firstParameter->hasType()) {
-            if (count($args) <= count($reflectionParameters)) {
-                return false;
-            }
-            return true;
-        } elseif (!is_a(static::$requestClass, $firstParameter->getType()->getName())) {
+            return count($args) > count($reflectionParameters);
+        }
+
+        if (!is_a(static::$requestClass, $firstParameter->getType()->getName())) {
             return true;
         }
 
@@ -536,13 +535,13 @@ class App
      */
     protected static function findRoute(TcpConnection $connection, string $path, string $key, $request): bool
     {
-        $ret = Route::dispatch($request->method(), $path);
-        if ($ret[0] === Dispatcher::FOUND) {
-            $ret[0] = 'route';
-            $callback = $ret[1]['callback'];
-            $route = clone $ret[1]['route'];
+        $routeInfo = Route::dispatch($request->method(), $path);
+        if ($routeInfo[0] === Dispatcher::FOUND) {
+            $routeInfo[0] = 'route';
+            $callback = $routeInfo[1]['callback'];
+            $route = clone $routeInfo[1]['route'];
             $app = $controller = $action = '';
-            $args = !empty($ret[2]) ? $ret[2] : null;
+            $args = !empty($routeInfo[2]) ? $routeInfo[2] : null;
             if ($args) {
                 $route->setParams($args);
             }
@@ -905,7 +904,7 @@ class App
 
 
     /**
-     * @param $data
+     * @param mixed $data
      * @return string
      */
     protected static function stringify($data): string
