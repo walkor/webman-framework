@@ -93,7 +93,7 @@ class Context
      * @param $value
      * @return void
      */
-    public static function set(string $key, $value)
+    public static function set(string $key, $value): void
     {
         $obj = static::getObject();
         $obj->$key = $value;
@@ -103,7 +103,7 @@ class Context
      * @param string $key
      * @return void
      */
-    public static function delete(string $key)
+    public static function delete(string $key): void
     {
         $obj = static::getObject();
         unset($obj->$key);
@@ -122,7 +122,7 @@ class Context
     /**
      * @return void
      */
-    public static function destroy()
+    public static function destroy(): void
     {
         unset(static::$objectStorage[static::getKey()]);
     }
