@@ -20,6 +20,7 @@ use Fiber;
 use SplObjectStorage;
 use StdClass;
 use Swow\Coroutine;
+use WeakMap;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
@@ -34,7 +35,7 @@ class Context
 {
 
     /**
-     * @var SplObjectStorage;
+     * @var SplObjectStorage|WeakMap
      */
     protected static $objectStorage;
 
@@ -49,7 +50,7 @@ class Context
     protected static function getObject(): StdClass
     {
         if (!static::$objectStorage) {
-            static::$objectStorage = new SplObjectStorage();
+            static::$objectStorage = class_exists(WeakMap::class) ? new WeakMap() : new SplObjectStorage();
             static::$object = new StdClass;
         }
         $coroutine = static::getCoroutine();
