@@ -37,8 +37,8 @@ if ($worker) {
 }
 
 if (class_exists('Dotenv\Dotenv') && file_exists(base_path() . '/.env')) {
-    if (method_exists('Dotenv\Dotenv', 'createUnsafeImmutable')) {
-        Dotenv::createUnsafeImmutable(base_path())->load();
+    if (method_exists('Dotenv\Dotenv', 'createUnsafeMutable')) {
+        Dotenv::createUnsafeMutable(base_path())->load();
     } else {
         Dotenv::createMutable(base_path())->load();
     }
