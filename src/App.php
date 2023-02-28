@@ -153,6 +153,7 @@ class App
             $controllerAndAction = static::parseControllerAction($path);
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
             if (!$controllerAndAction || Route::hasDisableDefaultRoute($plugin)) {
+                $request->plugin = $plugin;
                 $callback = static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
