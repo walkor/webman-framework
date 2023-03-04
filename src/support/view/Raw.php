@@ -53,12 +53,13 @@ class Raw implements View
      * @param string $template
      * @param array $vars
      * @param string|null $app
+     * @param string|null $plugin
      * @return false|string
      */
-    public static function render(string $template, array $vars, string $app = null): string
+    public static function render(string $template, array $vars, string $app = null, string $plugin = null): string
     {
         $request = request();
-        $plugin = $request->plugin ?? '';
+        $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $viewSuffix = config("{$configPrefix}view.options.view_suffix", 'html');
         $app = $app === null ? $request->app : $app;

@@ -192,14 +192,15 @@ function redirect(string $location, int $status = 302, array $headers = []): Res
  * @param string $template
  * @param array $vars
  * @param string|null $app
+ * @param string|null $plugin
  * @return Response
  */
-function view(string $template, array $vars = [], string $app = null): Response
+function view(string $template, array $vars = [], string $app = null, string $plugin = null): Response
 {
     $request = \request();
-    $plugin = $request->plugin ?? '';
+    $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
     $handler = \config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
-    return new Response(200, [], $handler::render($template, $vars, $app));
+    return new Response(200, [], $handler::render($template, $vars, $app, $plugin));
 }
 
 /**
