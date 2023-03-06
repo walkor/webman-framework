@@ -236,6 +236,22 @@ class Route
     }
 
     /**
+     * @param string $name
+     * @param string $controller
+     * @param array $except_options
+     * @return void
+     */
+    public static function apiResource(string $name, string $controller, array $except_options = [])
+    {
+        $only_options = ['index', 'show', 'store', 'update', 'destroy'];
+
+        if (!empty($except_options)) {
+            $only_options = array_diff($only_options, $except_options);
+        }
+        static::resource($name, $controller, $only_options);
+    }
+
+    /**
      * @return RouteObject[]
      */
     public static function getRoutes(): array
