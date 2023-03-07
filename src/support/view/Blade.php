@@ -62,7 +62,7 @@ class Blade implements View
         $app = $app === null ? $request->app : $app;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
-        $key = "$plugin-$request->app";
+        $key = "$plugin-$app";
         if (!isset($views[$key])) {
             $viewPath = $app === '' ? "$baseViewPath/view" : "$baseViewPath/$app/view";
             $views[$key] = new BladeView($viewPath, runtime_path() . '/views');
