@@ -29,9 +29,6 @@ use Webman\Config;
 use Webman\Route;
 use Workerman\Worker;
 
-// Webman version
-const WEBMAN_VERSION = '1.4';
-
 // Project base path
 define('BASE_PATH', dirname(__DIR__));
 
@@ -422,7 +419,8 @@ function worker_bind($worker, $class)
         'onBufferFull',
         'onBufferDrain',
         'onWorkerStop',
-        'onWebSocketConnect'
+        'onWebSocketConnect',
+        'onWorkerReload'
     ];
     foreach ($callbackMap as $name) {
         if (method_exists($class, $name)) {
