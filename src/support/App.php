@@ -86,14 +86,18 @@ class App
         if ($config['listen']) {
             $worker = new Worker($config['listen'], $config['context']);
             $propertyMap = [
-                'name',
                 'count',
+                'name',
                 'user',
                 'group',
                 'reusePort',
                 'transport',
                 'protocol'
             ];
+            if (DIRECTORY_SEPARATOR === '\\') {
+                $worker->count = 1;
+                unset($propertyMap[0]); //remove key:`count`
+            }
             foreach ($propertyMap as $property) {
                 if (isset($config[$property])) {
                     $worker->$property = $config[$property];
@@ -147,5 +151,4 @@ class App
             }
         }
     }
-
 }

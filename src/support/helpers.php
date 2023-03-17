@@ -451,6 +451,10 @@ function worker_start($processName, $config)
         'protocol',
     ];
     $worker->name = $processName;
+    if (DIRECTORY_SEPARATOR === '\\') {
+        $worker->count = 1;
+        unset($propertyMap[0]); //remove key:`count`
+    }
     foreach ($propertyMap as $property) {
         if (isset($config[$property])) {
             $worker->$property = $config[$property];
