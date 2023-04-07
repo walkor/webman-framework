@@ -11,55 +11,83 @@ class Plugin
 {
     /**
      * Install.
-     * @param $event
+     * @param mixed $event
      * @return void
      */
     public static function install($event)
     {
         static::findHelper();
-        $operation = $event->getOperation();
-        $autoload = method_exists($operation, 'getPackage') ? $operation->getPackage()->getAutoload() : $operation->getTargetPackage()->getAutoload();
-        if (!isset($autoload['psr-4'])) {
-            return;
-        }
-        foreach ($autoload['psr-4'] as $namespace => $path) {
-            $installFunction = "\\{$namespace}Install::install";
+        $psr4 = static::getPsr4($event);
+        foreach ($psr4 as $namespace => $path) {
             $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
-            if (defined($pluginConst) && is_callable($installFunction)) {
-                $installFunction();
+            if (!defined($pluginConst)) {
+                continue;
+            }
+            $installFunction = "\\{$namespace}Install::install";
+            if (is_callable($installFunction)) {
+                $installFunction(true);
             }
         }
     }
 
     /**
      * Update.
-     * @param $event
+     * @param mixed $event
      * @return void
      */
     public static function update($event)
     {
-        static::install($event);
+        static::findHelper();
+        $psr4 = static::getPsr4($event);
+        foreach ($psr4 as $namespace => $path) {
+            $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
+            if (!defined($pluginConst)) {
+                continue;
+            }
+            $updateFunction = "\\{$namespace}Install::update";
+            if (is_callable($updateFunction)) {
+                $updateFunction();
+                continue;
+            }
+            $installFunction = "\\{$namespace}Install::install";
+            if (is_callable($installFunction)) {
+                $installFunction(false);
+            }
+        }
     }
 
     /**
      * Uninstall.
-     * @param $event
+     * @param mixed $event
      * @return void
      */
     public static function uninstall($event)
     {
         static::findHelper();
-        $autoload = $event->getOperation()->getPackage()->getAutoload();
-        if (!isset($autoload['psr-4'])) {
-            return;
-        }
-        foreach ($autoload['psr-4'] as $namespace => $path) {
-            $uninstallFunction = "\\{$namespace}Install::uninstall";
+        $psr4 = static::getPsr4($event);
+        foreach ($psr4 as $namespace => $path) {
             $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
-            if (defined($pluginConst) && is_callable($uninstallFunction)) {
+            if (!defined($pluginConst)) {
+                continue;
+            }
+            $uninstallFunction = "\\{$namespace}Install::uninstall";
+            if (is_callable($uninstallFunction)) {
                 $uninstallFunction();
             }
         }
+    }
+
+    /**
+     * Get psr-4 info
+     *
+     * @param mixed $event
+     * @return array
+     */
+    protected static function getPsr4($event)
+    {
+        $operation = $event->getOperation();
+        $autoload = method_exists($operation, 'getPackage') ? $operation->getPackage()->getAutoload() : $operation->getTargetPackage()->getAutoload();
+        return $autoload['psr-4'] ?? [];
     }
 
     /**
@@ -77,5 +105,4 @@ class Plugin
         // Plugin.php in webman
         require_once __DIR__ . '/helpers.php';
     }
-
 }
