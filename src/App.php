@@ -654,7 +654,7 @@ class App
      */
     protected static function parseControllerAction(string $path)
     {
-        $path = str_replace('-', '', $path);
+        // $path = str_replace('-', '', $path);
         $pathExplode = explode('/', trim($path, '/'));
         $isPlugin = isset($pathExplode[1]) && $pathExplode[0] === 'app';
         $configPrefix = $isPlugin ? "plugin.$pathExplode[1]." : '';
@@ -687,27 +687,38 @@ class App
      */
     protected static function guessControllerAction($pathExplode, $action, $suffix, $classPrefix)
     {
-        $map[] = trim("$classPrefix\\app\\controller\\" . implode('\\', $pathExplode), '\\');
+        array_unshift($pathExplode, 'app');
+        $map = [];
+        $map2 = [];
         foreach ($pathExplode as $index => $section) {
             $tmp = $pathExplode;
-            array_splice($tmp, $index, 1, [$section, 'controller']);
-            $map[] = trim("$classPrefix\\" . implode('\\', array_merge(['app'], $tmp)), '\\');
-        }
-        foreach ($map as $item) {
-            $map[] = $item . '\\index';
-        }
-
-        foreach ($map as $controllerClass) {
-            // Remove xx\xx\controller
-            if (substr($controllerClass, -11) === '\\controller') {
+            array_splice($tmp, $index + 1, 0, 'controller');
+            $map2[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\Index';
+            $controller = array_pop($tmp);
+            if ($controller === 'controller') {
                 continue;
             }
+            $controller = static::kebab2camel($controller);
+            $map[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\' . $controller;
+        }
+
+        $map = array_merge($map, $map2);
+
+        foreach ($map as $controllerClass) {
             $controllerClass .= $suffix;
             if ($controllerAction = static::getControllerAction($controllerClass, $action)) {
                 return $controllerAction;
             }
         }
         return false;
+    }
+
+    public static function kebab2camel($name)
+    {
+        $name = preg_replace_callback('/-([a-z]+)/', function($m) {
+            return ucfirst($m[1]);
+        }, $name);
+        return ucfirst($name);
     }
 
     /**
@@ -745,37 +756,30 @@ class App
         if (class_exists($controllerClass)) {
             return (new ReflectionClass($controllerClass))->name;
         }
-        $explodes = explode('\\', strtolower(ltrim($controllerClass, '\\')));
-        $basePath = $explodes[0] === 'plugin' ? BASE_PATH . '/plugin' : static::$appPath;
-        unset($explodes[0]);
-        $fileName = array_pop($explodes) . '.php';
-        $found = true;
-        foreach ($explodes as $pathSection) {
-            if (!$found) {
-                break;
+
+        $basePath = '';
+        $file = '';
+        if (0 === strpos($controllerClass, 'plugin\\')) {
+            if (!BASE_PATH) {
+                return false;
             }
-            $dirs = Util::scanDir($basePath, false);
-            $found = false;
-            foreach ($dirs as $name) {
-                $path = "$basePath/$name";
-                if (is_dir($path) && strtolower($name) === $pathSection) {
-                    $basePath = $path;
-                    $found = true;
-                    break;
-                }
+            $basePath = BASE_PATH . '/plugin';
+            $file = $basePath . str_replace('\\', '/', substr($controllerClass, 6)) . '.php';
+        } else {
+            if (!static::$appPath) {
+                return false;
             }
+            $basePath = static::$appPath;
+            $file = $basePath . str_replace('\\', '/', substr($controllerClass, 3)) . '.php';
         }
-        if (!$found) {
-            return false;
-        }
-        foreach (scandir($basePath) ?: [] as $name) {
-            if (strtolower($name) === $fileName) {
-                require_once "$basePath/$name";
-                if (class_exists($controllerClass, false)) {
-                    return (new ReflectionClass($controllerClass))->name;
-                }
+   
+        if (is_file($file)) {
+            require_once $file;
+            if (class_exists($controllerClass, false)) {
+                return (new ReflectionClass($controllerClass))->name;
             }
         }
+
         return false;
     }
 
