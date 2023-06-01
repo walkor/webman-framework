@@ -655,6 +655,7 @@ class App
     protected static function parseControllerAction(string $path)
     {
         // $path = str_replace('-', '', $path);
+        
         $pathExplode = explode('/', trim($path, '/'));
         $isPlugin = isset($pathExplode[1]) && $pathExplode[0] === 'app';
         $configPrefix = $isPlugin ? "plugin.$pathExplode[1]." : '';
@@ -664,7 +665,7 @@ class App
         $relativePath = trim(substr($path, strlen($pathPrefix)), '/');
         $pathExplode = $relativePath ? explode('/', $relativePath) : [];
 
-        $action = 'index';
+        /*$action = 'index';
         if ($controllerAction = static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix)) {
             return $controllerAction;
         }
@@ -673,20 +674,8 @@ class App
         }
         $action = end($pathExplode);
         unset($pathExplode[count($pathExplode) - 1]);
-        return static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix);
-    }
+        return static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix);*/
 
-    /**
-     * GuessControllerAction.
-     * @param $pathExplode
-     * @param $action
-     * @param $suffix
-     * @param $classPrefix
-     * @return array|false
-     * @throws ReflectionException
-     */
-    protected static function guessControllerAction($pathExplode, $action, $suffix, $classPrefix)
-    {
         $basePath = '';
         $isPlugin = false;
         if (0 === strpos($classPrefix, 'plugin\\')) {
@@ -698,6 +687,42 @@ class App
             $basePath = static::$appPath;
         }
 
+        $action = 'index';
+        list($map1, $map2) = static::getControllerMaps($pathExplode, $classPrefix);
+        $map = array_merge($map1, $map2);
+        if ($controllerClass = static::findControllerClass($map, $suffix)) {
+            if ($info = static::getControllerActionInfo($controllerClass, $action)) {
+                return $info;
+            }
+
+            // action not exists
+            return false;
+        }
+
+        if (count($pathExplode) <= 1) {
+            return false;
+        }
+
+        $action = end($pathExplode);
+        $action = static::kebab2camel($action, $big = false);
+        unset($pathExplode[count($pathExplode) - 1]);
+
+        list($map1, $map2) = static::getControllerMaps($pathExplode, $classPrefix);
+        $map = array_merge($map1, $map2);
+        if ($controllerClass = static::findControllerClass($map, $suffix)) {
+            if ($info = static::getControllerActionInfo($controllerClass, $action)) {
+                return $info;
+            }
+
+            // action not exists
+            return false;
+        }
+
+        return static::guessControllerActionBySandir($basePath, $map1, $action, $suffix, $isPlugin);
+    }
+
+    protected static function getControllerMaps($pathExplode, $classPrefix)
+    {
         array_unshift($pathExplode, 'app');
         $map1 = [];
         $map2 = [];
@@ -713,18 +738,26 @@ class App
             $map1[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\' . $controller;
         }
 
-        $map = array_merge($map1, $map2);
-        
-        $action = static::kebab2camel($action, $big = false);
+        return [$map1, $map2];
+    }
 
-        foreach ($map as $controllerClass) {
+    public static function findControllerClass($controllerClassMap, $suffix)
+    {
+        foreach ($controllerClassMap as $controllerClass) {
             $controllerClass .= $suffix;
-            if ($controllerAction = static::getControllerAction($controllerClass, $action)) {
-                return $controllerAction;
+            if ($controllerAction = static::getController($controllerClass)) {
+                return $controllerClass;
             }
         }
 
-        foreach ($map1 as $controllerClass) {
+        return false;
+    }
+
+    public static function guessControllerActionBySandir($basePath, $controllerClassMap, $action, $suffix, $isPlugin = false)
+    {
+        $foundControllerClass = '';
+        $foundAction = '';
+        foreach ($controllerClassMap as $controllerClass) {
             $pos = strrpos($controllerClass, '\\');
             $namespace = substr($controllerClass, 0, $pos);
 
@@ -745,12 +778,17 @@ class App
                     $controllerClass = $namespace . '\\' . $name;
                     require_once "$dir/$filename";
                     if (class_exists($controllerClass, false)) {
-                        return (new ReflectionClass($controllerClass))->name;
+                        $foundControllerClass = (new ReflectionClass($controllerClass))->name;
+                        break;
                     }
                 }
             }
         }
-        
+
+        if ($foundControllerClass) {
+            return static::getControllerActionInfo($foundControllerClass, $action);
+        }
+
         return false;
     }
 
@@ -760,6 +798,69 @@ class App
             return ucfirst($m[1]);
         }, $name);
         return $big ? ucfirst($name) : $name;
+    }
+
+    /**
+     * getControllerActionInfo.
+     * @param string $controllerClass
+     * @param string $action
+     * @return array|false
+     * @throws ReflectionException
+     */
+    protected static function getControllerActionInfo(string $controllerClass, string $action)
+    {
+        // Disable calling magic methods
+        if (strpos($action, '__') === 0) {
+            return false;
+        }
+
+        if ($action = static::getAction($controllerClass, $action)) {
+            return [
+                'plugin' => static::getPluginByClass($controllerClass),
+                'app' => static::getAppByController($controllerClass),
+                'controller' => $controllerClass,
+                'action' => $action
+            ];
+        }
+        return false;
+    }
+
+    /**
+     * GuessControllerAction.
+     * @param $pathExplode
+     * @param $action
+     * @param $suffix
+     * @param $classPrefix
+     * @return array|false
+     * @throws ReflectionException
+     */
+    protected static function guessControllerAction($pathExplode, $action, $suffix, $classPrefix)
+    {
+        array_unshift($pathExplode, 'app');
+        $map1 = [];
+        $map2 = [];
+        foreach ($pathExplode as $index => $section) {
+            $tmp = $pathExplode;
+            array_splice($tmp, $index + 1, 0, 'controller');
+            $map2[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\Index';
+            $controller = array_pop($tmp);
+            if ($controller === 'controller') {
+                continue;
+            }
+            $controller = static::kebab2camel($controller);
+            $map1[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\' . $controller;
+        }
+
+        $map = array_merge($map1, $map2);
+
+        foreach ($map as $controllerClass) {
+            $controllerClass .= $suffix;
+            if ($controllerAction = static::getControllerAction($controllerClass, $action)) {
+                return $controllerAction;
+            }
+        }
+
+        return false;
     }
 
     /**
