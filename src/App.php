@@ -687,8 +687,19 @@ class App
      */
     protected static function guessControllerAction($pathExplode, $action, $suffix, $classPrefix)
     {
+        $basePath = '';
+        $isPlugin = false;
+        if (0 === strpos($classPrefix, 'plugin\\')) {
+            if (!BASE_PATH) {  return false; }
+            $basePath = BASE_PATH . '/plugin';
+            $isPlugin = true;
+        } else {
+            if (!static::$appPath) { return false; }
+            $basePath = static::$appPath;
+        }
+
         array_unshift($pathExplode, 'app');
-        $map = [];
+        $map1 = [];
         $map2 = [];
         foreach ($pathExplode as $index => $section) {
             $tmp = $pathExplode;
@@ -699,10 +710,12 @@ class App
                 continue;
             }
             $controller = static::kebab2camel($controller);
-            $map[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\' . $controller;
+            $map1[] = trim("$classPrefix\\" . implode('\\', $tmp), '\\') . '\\' . $controller;
         }
 
-        $map = array_merge($map, $map2);
+        $map = array_merge($map1, $map2);
+        
+        $action = static::kebab2camel($action, $big = false);
 
         foreach ($map as $controllerClass) {
             $controllerClass .= $suffix;
@@ -710,15 +723,43 @@ class App
                 return $controllerAction;
             }
         }
+
+        foreach ($map1 as $controllerClass) {
+            $pos = strrpos($controllerClass, '\\');
+            $namespace = substr($controllerClass, 0, $pos);
+
+            $subLen = $isPlugin ? 6 : 3;
+            $part = str_replace('\\', '/', substr($controllerClass, $subLen));
+            $className = basename($part);
+            $dir = $basePath . dirname($part);
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            foreach (scandir($dir) ?: [] as $filename) {
+                $name = pathinfo($filename, PATHINFO_FILENAME);
+                if (pathinfo($filename, PATHINFO_EXTENSION) == 'php'
+                    && strtolower($name) == strtolower($className . $suffix)
+                ) {
+                    //renormalize class names
+                    $controllerClass = $namespace . '\\' . $name;
+                    require_once "$dir/$filename";
+                    if (class_exists($controllerClass, false)) {
+                        return (new ReflectionClass($controllerClass))->name;
+                    }
+                }
+            }
+        }
+        
         return false;
     }
 
-    public static function kebab2camel($name)
+    public static function kebab2camel($name, $big = true)
     {
         $name = preg_replace_callback('/-([a-z]+)/', function($m) {
             return ucfirst($m[1]);
         }, $name);
-        return ucfirst($name);
+        return $big ? ucfirst($name) : $name;
     }
 
     /**
