@@ -704,7 +704,7 @@ class App
             return false;
         }
 
-        return static::irDir($basePath, $map1, $action, $suffix, $isPlugin);
+        return static::guessControllerActionBySandir($basePath, $map1, $action, $suffix, $isPlugin);
     }
 
     /**
