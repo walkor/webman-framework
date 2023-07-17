@@ -654,8 +654,6 @@ class App
      */
     protected static function parseControllerAction(string $path)
     {
-        // $path = str_replace('-', '', $path);
-        
         $pathExplode = explode('/', trim($path, '/'));
         $isPlugin = isset($pathExplode[1]) && $pathExplode[0] === 'app';
         $configPrefix = $isPlugin ? "plugin.$pathExplode[1]." : '';
@@ -665,18 +663,6 @@ class App
         $relativePath = trim(substr($path, strlen($pathPrefix)), '/');
         $pathExplode = $relativePath ? explode('/', $relativePath) : [];
 
-        /*$action = 'index';
-        if ($controllerAction = static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix)) {
-            return $controllerAction;
-        }
-        if (count($pathExplode) <= 1) {
-            return false;
-        }
-        $action = end($pathExplode);
-        unset($pathExplode[count($pathExplode) - 1]);
-        return static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix);*/
-
-        $basePath = '';
         $isPlugin = false;
         if (0 === strpos($classPrefix, 'plugin\\')) {
             if (!BASE_PATH) {  return false; }
@@ -718,10 +704,16 @@ class App
             return false;
         }
 
-        return static::guessControllerActionBySandir($basePath, $map1, $action, $suffix, $isPlugin);
+        return static::irDir($basePath, $map1, $action, $suffix, $isPlugin);
     }
 
-    protected static function getControllerMaps($pathExplode, $classPrefix)
+    /**
+     * GetControllerMaps.
+     * @param $pathExplode
+     * @param $classPrefix
+     * @return array[]
+     */
+    protected static function getControllerMaps($pathExplode, $classPrefix): array
     {
         array_unshift($pathExplode, 'app');
         $map1 = [];
@@ -741,6 +733,13 @@ class App
         return [$map1, $map2];
     }
 
+    /**
+     * FindControllerClass.
+     * @param $controllerClassMap
+     * @param $suffix
+     * @return false|string
+     * @throws ReflectionException
+     */
     public static function findControllerClass($controllerClassMap, $suffix)
     {
         foreach ($controllerClassMap as $controllerClass) {
@@ -753,7 +752,17 @@ class App
         return false;
     }
 
-    public static function guessControllerActionBySandir($basePath, $controllerClassMap, $action, $suffix, $isPlugin = false)
+    /**
+     * GuessControllerActionBySanDir.
+     * @param $basePath
+     * @param $controllerClassMap
+     * @param $action
+     * @param $suffix
+     * @param $isPlugin
+     * @return array|false
+     * @throws ReflectionException
+     */
+    public static function guessControllerActionBySanDir($basePath, $controllerClassMap, $action, $suffix, $isPlugin = false)
     {
         $foundControllerClass = '';
         $foundAction = '';
@@ -792,7 +801,13 @@ class App
         return false;
     }
 
-    public static function kebab2camel($name, $big = true)
+    /**
+     * Kebab2camel.
+     * @param $name
+     * @param bool $big
+     * @return array|string|string[]|null
+     */
+    public static function kebab2camel($name, bool $big = true)
     {
         $name = preg_replace_callback('/-([a-z]+)/', function($m) {
             return ucfirst($m[1]);
@@ -801,7 +816,7 @@ class App
     }
 
     /**
-     * getControllerActionInfo.
+     * GetControllerActionInfo.
      * @param string $controllerClass
      * @param string $action
      * @return array|false
