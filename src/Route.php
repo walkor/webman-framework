@@ -87,6 +87,11 @@ class Route
     protected $routes = [];
 
     /**
+     * @var Route[]
+     */
+    protected $children = [];
+
+    /**
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -190,10 +195,14 @@ class Route
         }
         $previousGroupPrefix = static::$groupPrefix;
         static::$groupPrefix = $previousGroupPrefix . $path;
+        $previousInstance = static::$instance;
         $instance = static::$instance = new static;
         static::$collector->addGroup($path, $callback);
-        static::$instance = null;
         static::$groupPrefix = $previousGroupPrefix;
+        static::$instance = $previousInstance;
+        if ($previousInstance) {
+            $previousInstance->addChild($instance);
+        }
         return $instance;
     }
 
@@ -271,6 +280,9 @@ class Route
         foreach ($this->routes as $route) {
             $route->middleware($middleware);
         }
+        foreach ($this->getChildren() as $child) {
+            $child->middleware($middleware);
+        }
         return $this;
     }
 
@@ -300,6 +312,22 @@ class Route
         return static::$nameList[$name] ?? null;
     }
 
+    /**
+     * @param Route $route
+     * @return void
+     */
+    public function addChild(Route $route)
+    {
+        $this->children[] = $route;
+    }
+
+    /**
+     * @return Route[]
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
 
     /**
      * @param string $method
