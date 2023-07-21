@@ -655,6 +655,10 @@ class App
     protected static function parseControllerAction(string $path)
     {
         $path = str_replace('-', '', $path);
+        static $cache = [];
+        if (isset($cache[$path])) {
+            return $cache[$path];
+        }
         $pathExplode = explode('/', trim($path, '/'));
         $isPlugin = isset($pathExplode[1]) && $pathExplode[0] === 'app';
         $configPrefix = $isPlugin ? "plugin.$pathExplode[1]." : '';
@@ -665,15 +669,21 @@ class App
         $pathExplode = $relativePath ? explode('/', $relativePath) : [];
 
         $action = 'index';
-        if ($controllerAction = static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix)) {
-            return $controllerAction;
+        if (!$controllerAction = static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix)) {
+            if (count($pathExplode) <= 1) {
+                return false;
+            }
+            $action = end($pathExplode);
+            unset($pathExplode[count($pathExplode) - 1]);
+            $controllerAction = static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix);
         }
-        if (count($pathExplode) <= 1) {
-            return false;
+        if ($controllerAction && !isset($path[256])) {
+            $cache[$path] = $controllerAction;
+            if (count($cache) > 1024) {
+                unset($cache[key($cache)]);
+            }
         }
-        $action = end($pathExplode);
-        unset($pathExplode[count($pathExplode) - 1]);
-        return static::guessControllerAction($pathExplode, $action, $suffix, $classPrefix);
+        return $controllerAction;
     }
 
     /**
