@@ -27,6 +27,7 @@ use Twig\Error\SyntaxError;
 use Webman\App;
 use Webman\Config;
 use Webman\Route;
+use Workerman\Protocols\Http\Session;
 use Workerman\Worker;
 
 // Project base path
@@ -300,7 +301,7 @@ function route(string $name, ...$parameters): string
  * Session
  * @param mixed $key
  * @param mixed $default
- * @return mixed
+ * @return mixed|bool|Session
  */
 function session($key = null, $default = null)
 {
