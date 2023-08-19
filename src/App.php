@@ -146,18 +146,16 @@ class App
                 static::send($connection, $response, $request);
                 return null;
             }
-            $routeRes = static::findRoute($connection, $path, $key, $request);
             if (
                 static::unsafeUri($connection, $path, $request) ||
                 static::findFile($connection, $path, $key, $request) ||
-                $routeRes !== false
+                ($routeRes = static::findRoute($connection, $path, $key, $request)) !== false
             ) {
-                if ($routeRes === null) {
+                if (isset($routeRes) and $routeRes === null) {
                     return;
                 }
                 return null;
             }
-
             $controllerAndAction = static::parseControllerAction($path);
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
             if (!$controllerAndAction || Route::hasDisableDefaultRoute($plugin)) {
