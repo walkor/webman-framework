@@ -42,12 +42,20 @@ class LongPollingResponse extends Response
         parent::__construct($status, $headers, $body);
 
         if ($this->_wait > 0) {
+            self::$_count ++;
             Timer::add($wait, function () {
-                self::$_count ++;
-                \Webman\App::send($this->_request->connection, $this, $this->_request);
-                self::$_count --;
+                $this->send();
             }, [], false);
         }
+    }
+
+    /**
+     * @return void
+     */
+    public function send()
+    {
+        \Webman\App::send($this->_request->connection, $this, $this->_request);
+        self::$_count --;
     }
 
     /**
