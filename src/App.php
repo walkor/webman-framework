@@ -28,6 +28,7 @@ use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use support\LongPollingResponse;
 use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
@@ -138,15 +139,22 @@ class App
             $key = $request->method() . $path;
             if (isset(static::$callbacks[$key])) {
                 [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
-                static::send($connection, $callback($request), $request);
+                $response = $callback($request);
+                if ($response instanceof LongPollingResponse) {
+                    return;
+                }
+                static::send($connection, $response, $request);
                 return null;
             }
-
+            $routeRes = static::findRoute($connection, $path, $key, $request);
             if (
                 static::unsafeUri($connection, $path, $request) ||
                 static::findFile($connection, $path, $key, $request) ||
-                static::findRoute($connection, $path, $key, $request)
+                $routeRes !== false
             ) {
+                if ($routeRes === null) {
+                    return;
+                }
                 return null;
             }
 
@@ -156,7 +164,11 @@ class App
                 $request->plugin = $plugin;
                 $callback = static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
-                static::send($connection, $callback($request), $request);
+                $response = $callback($request);
+                if ($response instanceof LongPollingResponse) {
+                    return;
+                }
+                static::send($connection, $response, $request);
                 return null;
             }
             $app = $controllerAndAction['app'];
@@ -165,8 +177,16 @@ class App
             $callback = static::getCallback($plugin, $app, [$controller, $action]);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
-            static::send($connection, $callback($request), $request);
+            $response = $callback($request);
+            if ($response instanceof LongPollingResponse) {
+                return;
+            }
+            static::send($connection, $response, $request);
         } catch (Throwable $e) {
+            $response =static::exceptionResponse($e, $request);
+            if ($response instanceof LongPollingResponse) {
+                return;
+            }
             static::send($connection, static::exceptionResponse($e, $request), $request);
         }
         return null;
@@ -529,12 +549,12 @@ class App
      * @param string $path
      * @param string $key
      * @param Request|mixed $request
-     * @return bool
+     * @return bool|null
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected static function findRoute(TcpConnection $connection, string $path, string $key, $request): bool
+    protected static function findRoute(TcpConnection $connection, string $path, string $key, $request): ?bool
     {
         $routeInfo = Route::dispatch($request->method(), $path);
         if ($routeInfo[0] === Dispatcher::FOUND) {
@@ -557,7 +577,11 @@ class App
             $callback = static::getCallback($plugin, $app, $callback, $args, true, $route);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller ?: '', $action, $route]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
-            static::send($connection, $callback($request), $request);
+            $response = $callback($request);
+            if ($response instanceof LongPollingResponse) {
+                return null;
+            }
+            static::send($connection, $response, $request);
             return true;
         }
         return false;
@@ -633,7 +657,7 @@ class App
      * @param Request|mixed $request
      * @return void
      */
-    protected static function send($connection, $response, $request)
+    public static function send($connection, $response, $request)
     {
         $keepAlive = $request->header('connection');
         Context::destroy();
