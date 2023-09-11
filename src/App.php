@@ -287,7 +287,7 @@ class App
         $args = $args === null ? null : array_values($args);
         $middlewares = [];
         if ($route) {
-            $routeMiddlewares = array_reverse($route->getMiddleware());
+            $routeMiddlewares = $route->getMiddleware();
             foreach ($routeMiddlewares as $className) {
                 $middlewares[] = [$className, 'process'];
             }
