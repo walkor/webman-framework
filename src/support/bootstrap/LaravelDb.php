@@ -19,6 +19,8 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\MySqlConnection;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Pagination\CursorPaginator;
+use Illuminate\Pagination\Cursor;
 use Jenssegers\Mongodb\Connection as MongodbConnection;
 use support\Container;
 use Throwable;
@@ -109,6 +111,9 @@ class LaravelDb implements Bootstrap
                 }
                 $page = (int)($request->input($pageName, 1));
                 return $page > 0 ? $page : 1;
+            });
+            CursorPaginator::currentCursorResolver(function ($cursorName = 'cursor') {
+                return Cursor::fromEncoded(request()->input($cursorName));
             });
         }
     }
