@@ -62,6 +62,11 @@ class Route
     protected static $fallback = [];
 
     /**
+     * @var null|callable
+     */
+    protected static $methodNotAllowedFallback = [];
+
+    /**
      * @var array
      */
     protected static $nameList = [];
@@ -456,6 +461,27 @@ class Route
     public static function getFallback(string $plugin = ''): ?callable
     {
         return static::$fallback[$plugin] ?? null;
+    }
+
+    /**
+     * methodNotAllowedFallback.
+     * @param callable|mixed $callback
+     * @param string $plugin
+     * @return void
+     */
+    public static function methodNotAllowedFallback(callable $callback, string $plugin = '')
+    {
+        static::$methodNotAllowedFallback[$plugin] = $callback;
+    }
+
+    /**
+     * GetMethodNotAllowedFallback.
+     * @param string $plugin
+     * @return callable|null
+     */
+    public static function getMethodNotAllowedFallback(string $plugin = ''): ?callable
+    {
+        return static::$methodNotAllowedFallback[$plugin] ?? null;
     }
 
     /**

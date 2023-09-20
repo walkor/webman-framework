@@ -110,6 +110,15 @@ class App
     protected static $requestClass = '';
 
     /**
+     * @var bool
+     */
+    protected static $methodNotAllowed = false;
+    /**
+     * @var string
+     */
+    public static $allowedMethods = '';
+
+    /**
      * App constructor.
      * @param string $requestClass
      * @param Logger $logger
@@ -154,7 +163,7 @@ class App
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
             if (!$controllerAndAction || Route::hasDisableDefaultRoute($plugin)) {
                 $request->plugin = $plugin;
-                $callback = static::getFallback($plugin);
+                $callback =  self::$methodNotAllowed ? static::getMethodNotAllowedFallback($plugin) : static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
                 return null;
@@ -235,6 +244,24 @@ class App
                 $notFoundContent = '404 Not Found';
             }
             return new Response(404, [], $notFoundContent);
+        };
+    }
+
+    /**
+     * GetMethodNotAllowedFallback.
+     * @param string $plugin
+     * @return Closure
+     */
+    protected static function getMethodNotAllowedFallback(string $plugin = ''): Closure
+    {
+
+        return Route::getMethodNotAllowedFallback($plugin) ?: function () {
+            try {
+                $notFoundContent = file_get_contents(static::$publicPath . '/405.html');
+            } catch (Throwable $e) {
+                $notFoundContent = '405 Method Not Allowed';
+            }
+            return new Response(405, [], $notFoundContent);
         };
     }
 
@@ -559,6 +586,11 @@ class App
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
             static::send($connection, $callback($request), $request);
             return true;
+        }
+
+        if ($routeInfo[0] === Dispatcher::METHOD_NOT_ALLOWED and !in_array('OPTIONS' , $routeInfo[1])){
+            static::$methodNotAllowed = true;
+            static::$allowedMethods = implode(',' , $routeInfo[1] ?? []);
         }
         return false;
     }
