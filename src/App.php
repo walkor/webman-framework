@@ -163,9 +163,10 @@ class App
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
             if (!$controllerAndAction || Route::hasDisableDefaultRoute($plugin)) {
                 $request->plugin = $plugin;
-                $callback =  self::$methodNotAllowed ? static::getMethodNotAllowedFallback($plugin) : static::getFallback($plugin);
+                $callback =  static::$methodNotAllowed ? static::getMethodNotAllowedFallback($plugin) : static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
                 static::send($connection, $callback($request), $request);
+                static::$methodNotAllowed = false;
                 return null;
             }
             $app = $controllerAndAction['app'];
@@ -588,7 +589,10 @@ class App
             return true;
         }
 
-        if ($routeInfo[0] === Dispatcher::METHOD_NOT_ALLOWED and !in_array('OPTIONS' , $routeInfo[1])){
+        if (
+            $routeInfo[0] === Dispatcher::METHOD_NOT_ALLOWED and
+            count(array_diff($routeInfo[1], ['OPTIONS'])) > 0
+        ){
             static::$methodNotAllowed = true;
             static::$allowedMethods = implode(',' , $routeInfo[1] ?? []);
         }
