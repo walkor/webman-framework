@@ -69,7 +69,7 @@ class ThinkPHP implements View
             'cache_path' => runtime_path() . '/views/',
             'view_suffix' => $viewSuffix
         ];
-        $options = $defaultOptions + config("{$configPrefix}view.options", []);
+        $options = array_merge($defaultOptions, config("{$configPrefix}view.options", []));
         $views = new Template($options);
         ob_start();
         $vars = array_merge(static::$vars, $vars);
