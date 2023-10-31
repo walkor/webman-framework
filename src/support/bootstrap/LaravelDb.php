@@ -21,7 +21,8 @@ use Illuminate\Events\Dispatcher;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\Cursor;
-use Jenssegers\Mongodb\Connection as MongodbConnection;
+use Jenssegers\Mongodb\Connection as JenssegersMongodbConnection;
+use MongoDB\Laravel\Connection as LaravelMongodbConnection;
 use support\Container;
 use Throwable;
 use Webman\Bootstrap;
@@ -57,7 +58,7 @@ class LaravelDb implements Bootstrap
 
         $capsule->getDatabaseManager()->extend('mongodb', function ($config, $name) {
             $config['name'] = $name;
-            return new MongodbConnection($config);
+            return class_exists(LaravelMongodbConnection::class) ? new LaravelMongodbConnection($config) : new JenssegersMongodbConnection($config);
         });
 
         $default = $config['default'] ?? false;
