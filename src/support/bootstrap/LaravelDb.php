@@ -113,9 +113,11 @@ class LaravelDb implements Bootstrap
                 $page = (int)($request->input($pageName, 1));
                 return $page > 0 ? $page : 1;
             });
-            CursorPaginator::currentCursorResolver(function ($cursorName = 'cursor') {
-                return Cursor::fromEncoded(request()->input($cursorName));
-            });
+            if (class_exists(CursorPaginator::class)) {
+                CursorPaginator::currentCursorResolver(function ($cursorName = 'cursor') {
+                    return Cursor::fromEncoded(request()->input($cursorName));
+                });
+            }
         }
     }
 }
