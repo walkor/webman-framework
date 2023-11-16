@@ -14,12 +14,15 @@
 
 namespace support;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RegexIterator;
 use Symfony\Component\Translation\Translator;
 use Webman\Exception\NotFoundException;
 use function basename;
 use function config;
 use function get_realpath;
-use function glob;
 use function pathinfo;
 use function request;
 use function substr;
@@ -70,7 +73,10 @@ class Translation
 
             foreach ($classes as $class => $opts) {
                 $translator->addLoader($opts['format'], new $class);
-                foreach (glob($translationsPath . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*' . $opts['extension']) as $file) {
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($translationsPath, FilesystemIterator::SKIP_DOTS));
+                $files = new RegexIterator($iterator, '/^.+' . preg_quote($opts['extension']) . '$/i', RegexIterator::GET_MATCH);
+                foreach ($files as $file) {
+                    $file = $file[0];
                     $domain = basename($file, $opts['extension']);
                     $dirName = pathinfo($file, PATHINFO_DIRNAME);
                     $locale = substr(strrchr($dirName, DIRECTORY_SEPARATOR), 1);
