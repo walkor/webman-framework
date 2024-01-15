@@ -43,6 +43,9 @@ class Middleware
             if (!is_array($middlewares)) {
                 throw new RuntimeException('Bad middleware config');
             }
+            if ($appName === '@') {
+                $plugin = '';
+            }
             if (strpos($appName, 'plugin.') !== false) {
                 $explode = explode('.', $appName, 4);
                 $plugin = $explode[1];
