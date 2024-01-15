@@ -43,6 +43,11 @@ class Middleware
             if (!is_array($middlewares)) {
                 throw new RuntimeException('Bad middleware config');
             }
+            if (strpos($appName, 'plugin.') !== false) {
+                $explode = explode('.', $appName, 4);
+                $plugin = $explode[1];
+                $appName = $explode[2] ?? '';
+            }
             foreach ($middlewares as $className) {
                 if (method_exists($className, 'process')) {
                     static::$instances[$plugin][$appName][] = [$className, 'process'];
