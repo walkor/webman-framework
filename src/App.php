@@ -586,8 +586,8 @@ class App
         $pathExplodes = explode('/', trim($path, '/'));
         $plugin = '';
         if (isset($pathExplodes[1]) && $pathExplodes[0] === 'app') {
-            $publicDir = static::config($plugin, 'app.public_path') ?: BASE_PATH . "/plugin/$pathExplodes[1]/public";
             $plugin = $pathExplodes[1];
+            $publicDir = static::config($plugin, 'app.public_path') ?: BASE_PATH . "/plugin/$pathExplodes[1]/public";
             $path = substr($path, strlen("/app/$pathExplodes[1]/"));
         } else {
             $publicDir = static::$publicPath;
