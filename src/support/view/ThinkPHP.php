@@ -33,18 +33,14 @@ use function runtime_path;
 class ThinkPHP implements View
 {
     /**
-     * @var array
-     */
-    protected static $vars = [];
-
-    /**
      * Assign.
      * @param string|array $name
      * @param mixed $value
      */
     public static function assign($name, $value = null)
     {
-        static::$vars = array_merge(static::$vars, is_array($name) ? $name : [$name => $value]);
+        $request = request();
+        $request->_view_vars = array_merge((array) $request->_view_vars, is_array($name) ? $name : [$name => $value]);
     }
 
     /**
@@ -72,10 +68,8 @@ class ThinkPHP implements View
         $options = array_merge($defaultOptions, config("{$configPrefix}view.options", []));
         $views = new Template($options);
         ob_start();
-        $vars = array_merge(static::$vars, $vars);
+        $vars = array_merge((array) $request->_view_vars, $vars);
         $views->fetch($template, $vars);
-        $content = ob_get_clean();
-        static::$vars = [];
-        return $content;
+        return ob_get_clean();
     }
 }
