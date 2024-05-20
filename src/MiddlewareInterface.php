@@ -14,8 +14,8 @@
 
 namespace Webman;
 
-use Webman\Http\Request;
-use Webman\Http\Response;
+use suppoet\Request;
+use support\Response;
 
 interface MiddlewareInterface
 {
