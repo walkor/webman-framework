@@ -219,6 +219,7 @@ class Request extends \Workerman\Protocols\Http\Request
         $ip = $this->header('x-real-ip', $this->header('x-forwarded-for',
             $this->header('client-ip', $this->header('x-client-ip',
                 $this->header('via', $remoteIp)))));
+        $ip = current(explode(',',$ip));
         return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : $remoteIp;
     }
 
