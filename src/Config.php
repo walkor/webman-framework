@@ -226,6 +226,9 @@ class Config
         if ($key === null) {
             return static::$config;
         }
+        if (strpos($key,'.') === false) {
+            $key = 'app.' . $key;
+        }
         $keyArray = explode('.', $key);
         $value = static::$config;
         $found = true;
