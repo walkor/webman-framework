@@ -58,11 +58,13 @@ class Raw implements View
         $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $viewSuffix = config("{$configPrefix}view.options.view_suffix", 'html');
-        $app = $app === null ? $request->app : $app;
+        $app = $app === null ? ($request->app ?? '') : $app;
         $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
         $__template_path__ = $app === '' ? "$baseViewPath/view/$template.$viewSuffix" : "$baseViewPath/$app/view/$template.$viewSuffix";
 
-        extract((array) $request->_view_vars);
+        if(isset($request->_view_vars)) {
+            extract((array)$request->_view_vars);
+        }
         extract($vars);
         ob_start();
         // Try to include php file.
