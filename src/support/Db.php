@@ -16,7 +16,7 @@ namespace support;
 
 use Closure;
 use Illuminate\Database\Capsule\Manager;
-use Illuminate\Database\MySqlConnection;
+use Illuminate\Database\Connection;
 
 /**
  * Class Db
@@ -42,7 +42,7 @@ class Db extends Manager
     }
 
     /**
-     * @return MySqlConnection[]
+     * @return Connection[]
      */
     public static function getConnections()
     {
