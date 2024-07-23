@@ -208,7 +208,9 @@ class App
     {
         if (
             !$path ||
+            $path[0] !== '/' ||
             strpos($path, '/../') !== false ||
+            substr($path, -3) === '/..' ||
             strpos($path, "\\") !== false ||
             strpos($path, "\0") !== false
         ) {
