@@ -57,7 +57,7 @@ class Twig implements View
         static $views = [];
         $request = request();
         $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
-        $app = $app === null ? $request->app : $app;
+        $app = $app === null ? ($request->app ?? '') : $app;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $viewSuffix = config("{$configPrefix}view.options.view_suffix", 'html');
         $key = "$plugin-$app";
@@ -70,7 +70,9 @@ class Twig implements View
                 $extension($views[$key]);
             }
         }
-        $vars = array_merge((array) $request->_view_vars, $vars);
+        if(isset($request->_view_vars)) {
+            $vars = array_merge((array)$request->_view_vars, $vars);
+        }
         return $views[$key]->render("$template.$viewSuffix", $vars);
     }
 }

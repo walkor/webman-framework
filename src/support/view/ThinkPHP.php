@@ -55,7 +55,7 @@ class ThinkPHP implements View
     {
         $request = request();
         $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
-        $app = $app === null ? $request->app : $app;
+        $app = $app === null ? ($request->app ?? '') : $app;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $viewSuffix = config("{$configPrefix}view.options.view_suffix", 'html');
         $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
@@ -68,7 +68,9 @@ class ThinkPHP implements View
         $options = array_merge($defaultOptions, config("{$configPrefix}view.options", []));
         $views = new Template($options);
         ob_start();
-        $vars = array_merge((array) $request->_view_vars, $vars);
+        if(isset($request->_view_vars)) {
+            $vars = array_merge((array)$request->_view_vars, $vars);
+        }
         $views->fetch($template, $vars);
         return ob_get_clean();
     }

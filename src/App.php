@@ -654,7 +654,7 @@ class App
      */
     protected static function parseControllerAction(string $path)
     {
-        $path = str_replace('-', '', $path);
+        $path = str_replace(['-', '//'], ['', '/'], $path);
         static $cache = [];
         if (isset($cache[$path])) {
             return $cache[$path];
