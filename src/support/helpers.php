@@ -83,9 +83,9 @@ function public_path(string $path = '', string $plugin = null): string
     if (isset($publicPaths[$plugin])) {
         $publicPath = $publicPaths[$plugin];
     } else {
-        $prefix = $plugin ? "plugin.$plugin" : '';
+        $prefix = $plugin ? "plugin.$plugin." : '';
         $pathPrefix = $plugin ? 'plugin' . DIRECTORY_SEPARATOR . $plugin . DIRECTORY_SEPARATOR : '';
-        $publicPath = \config("$prefix.app.public_path", run_path("{$pathPrefix}public"));
+        $publicPath = \config("{$prefix}app.public_path", run_path("{$pathPrefix}public"));
         if (count($publicPaths) > 32) {
             $publicPaths = [];
         }
