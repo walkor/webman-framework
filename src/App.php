@@ -142,10 +142,11 @@ class App
                 return null;
             }
 
+            $status = 200;
             if (
                 static::unsafeUri($connection, $path, $request) ||
                 static::findFile($connection, $path, $key, $request) ||
-                static::findRoute($connection, $path, $key, $request)
+                static::findRoute($connection, $path, $key, $request, $status)
             ) {
                 return null;
             }
@@ -156,7 +157,7 @@ class App
                 $request->plugin = $plugin;
                 $callback = static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
-                static::send($connection, $callback($request), $request);
+                static::send($connection, $callback($request, $status), $request);
                 return null;
             }
             $app = $controllerAndAction['app'];
@@ -216,7 +217,7 @@ class App
         ) {
             $callback = static::getFallback();
             $request->plugin = $request->app = $request->controller = $request->action = '';
-            static::send($connection, $callback($request), $request);
+            static::send($connection, $callback($request, 400), $request);
             return true;
         }
         return false;
@@ -530,16 +531,18 @@ class App
      * @param TcpConnection $connection
      * @param string $path
      * @param string $key
-     * @param Request|mixed $request
+     * @param $request
+     * @param $status
      * @return bool
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected static function findRoute(TcpConnection $connection, string $path, string $key, $request): bool
+    protected static function findRoute(TcpConnection $connection, string $path, string $key, $request, &$status): bool
     {
         $routeInfo = Route::dispatch($request->method(), $path);
         if ($routeInfo[0] === Dispatcher::FOUND) {
+            $status = 200;
             $routeInfo[0] = 'route';
             $callback = $routeInfo[1]['callback'];
             $route = clone $routeInfo[1]['route'];
@@ -562,6 +565,7 @@ class App
             static::send($connection, $callback($request), $request);
             return true;
         }
+        $status = $routeInfo[0] === Dispatcher::METHOD_NOT_ALLOWED ? 405 : 404;
         return false;
     }
 
@@ -618,7 +622,7 @@ class App
         static::collectCallbacks($key, [static::getCallback($plugin, '__static__', function ($request) use ($file, $plugin) {
             clearstatcache(true, $file);
             if (!is_file($file)) {
-                $callback = static::getFallback($plugin);
+                $callback = static::getFallback($plugin, 404);
                 return $callback($request);
             }
             return (new Response())->file($file);
