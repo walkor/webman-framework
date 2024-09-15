@@ -59,9 +59,12 @@ class Cache
                 case 'array':
                     $adapter = new ArrayAdapter(0, $stores[$name]['serialize'] ?? false, 0, 0);
                     break;
-                case 'database':
+                /**
+                 * Pdo can not reconnect when the connection is lost. So we can not use pdo as cache.
+                 */
+                /*case 'database':
                     $adapter = new PdoAdapter(Db::connection($stores[$name]['connection'])->getPdo());
-                    break;
+                    break;*/
                 default:
                     throw new InvalidArgumentException("cache.store.$name.driver=$driver is not supported.");
             }
