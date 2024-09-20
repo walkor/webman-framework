@@ -60,8 +60,7 @@ class Raw implements View
         $viewSuffix = config("{$configPrefix}view.options.view_suffix", 'html');
         $app = $app === null ? ($request->app ?? '') : $app;
         $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
-        $__template_path__ = $app === '' ? "$baseViewPath/view/$template.$viewSuffix" : "$baseViewPath/$app/view/$template.$viewSuffix";
-
+        $__template_path__ = $template[0] === '/' ? base_path() . "$template.$viewSuffix" : ($app === '' ? "$baseViewPath/view/$template.$viewSuffix" : "$baseViewPath/$app/view/$template.$viewSuffix");
         if(isset($request->_view_vars)) {
             extract((array)$request->_view_vars);
         }

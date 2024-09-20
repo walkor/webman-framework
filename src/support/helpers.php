@@ -197,15 +197,15 @@ function redirect(string $location, int $status = 302, array $headers = []): Res
 
 /**
  * View response
- * @param string $template
+ * @param mixed $template
  * @param array $vars
- * @param string|null $app
- * @param string|null $plugin
+ * @param string $app
+ * @param string $plugin
  * @return Response
  */
-function view(string $template, array $vars = [], string $app = null, string $plugin = null): Response
+function view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
 {
-    $request = \request();
+    [$template, $vars] = get_template_vars($template, $vars);
     $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
     $handler = \config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
     return new Response(200, [], $handler::render($template, $vars, $app, $plugin));
@@ -213,51 +213,59 @@ function view(string $template, array $vars = [], string $app = null, string $pl
 
 /**
  * Raw view response
- * @param string $template
+ * @param mixed $template
  * @param array $vars
- * @param string|null $app
+ * @param string $app
+ * @param string $plugin
  * @return Response
  * @throws Throwable
  */
-function raw_view(string $template, array $vars = [], string $app = null): Response
+function raw_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
 {
-    return new Response(200, [], Raw::render($template, $vars, $app));
+    [$template, $vars] = get_template_vars($template, $vars);
+    return new Response(200, [], Raw::render($template, $vars, $app, $plugin));
 }
 
 /**
  * Blade view response
- * @param string $template
+ * @param mixed $template
  * @param array $vars
  * @param string|null $app
+ * @param string $plugin
  * @return Response
  */
-function blade_view(string $template, array $vars = [], string $app = null): Response
+function blade_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
 {
-    return new Response(200, [], Blade::render($template, $vars, $app));
+    [$template, $vars] = get_template_vars($template, $vars);
+    return new Response(200, [], Blade::render($template, $vars, $app, $plugin));
 }
 
 /**
  * Think view response
- * @param string $template
+ * @param mixed $template
  * @param array $vars
  * @param string|null $app
+ * @param string $plugin
  * @return Response
  */
-function think_view(string $template, array $vars = [], string $app = null): Response
+function think_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
 {
-    return new Response(200, [], ThinkPHP::render($template, $vars, $app));
+    [$template, $vars] = get_template_vars($template, $vars);
+    return new Response(200, [], ThinkPHP::render($template, $vars, $app, $plugin));
 }
 
 /**
  * Twig view response
- * @param string $template
+ * @param mixed $template
  * @param array $vars
- * @param string|null $app
+ * @param string $app
+ * @param string $plugin
  * @return Response
  */
-function twig_view(string $template, array $vars = [], string $app = null): Response
+function twig_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
 {
-    return new Response(200, [], Twig::render($template, $vars, $app));
+    [$template, $vars] = get_template_vars($template, $vars);
+    return new Response(200, [], Twig::render($template, $vars, $app, $plugin));
 }
 
 /**
@@ -309,6 +317,7 @@ function route(string $name, ...$parameters): string
  * @param mixed $key
  * @param mixed $default
  * @return mixed|bool|Session
+ * @throws Exception
  */
 function session($key = null, $default = null)
 {
@@ -503,6 +512,27 @@ function is_phar(): bool
 }
 
 /**
+ * Get template vars
+ * @param mixed $template
+ * @param array $vars
+ * @return array
+ */
+function get_template_vars($template = null, array $vars = []): array
+{
+    if (is_array($template)) {
+        $vars = $template;
+        $template = null;
+    }
+    $request = \request();
+    if ($template === null && $controller = $request->controller) {
+        $controllerName = substr($controller, 0, -strlen(config('app.controller_suffix', '')));
+        $path = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', substr(strrchr($controllerName, '\\'), 1)));
+        $template = "$path/" . strtolower($request->action);
+    }
+    return [$template, $vars];
+}
+
+/**
  * Get cpu count
  * @return int
  */
@@ -526,6 +556,7 @@ function cpu_count(): int
     }
     return $count > 0 ? $count : 4;
 }
+
 
 /**
  * Get request parameters, if no parameter name is passed, an array of all values is returned, default values is supported

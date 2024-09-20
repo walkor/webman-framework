@@ -60,19 +60,23 @@ class Twig implements View
         $app = $app === null ? ($request->app ?? '') : $app;
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $viewSuffix = config("{$configPrefix}view.options.view_suffix", 'html');
-        $key = "$plugin-$app";
-        if (!isset($views[$key])) {
-            $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
+        $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
+        if ($template[0] === '/') {
+            $viewPath = base_path();
+            $template = substr($template, 1);
+        } else {
             $viewPath = $app === '' ? "$baseViewPath/view/" : "$baseViewPath/$app/view/";
-            $views[$key] = new Environment(new FilesystemLoader($viewPath), config("{$configPrefix}view.options", []));
+        }
+        if (!isset($views[$viewPath])) {
+            $views[$viewPath] = new Environment(new FilesystemLoader($viewPath), config("{$configPrefix}view.options", []));
             $extension = config("{$configPrefix}view.extension");
             if ($extension) {
-                $extension($views[$key]);
+                $extension($views[$viewPath]);
             }
         }
         if(isset($request->_view_vars)) {
             $vars = array_merge((array)$request->_view_vars, $vars);
         }
-        return $views[$key]->render("$template.$viewSuffix", $vars);
+        return $views[$viewPath]->render("$template.$viewSuffix", $vars);
     }
 }
