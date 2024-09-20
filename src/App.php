@@ -635,9 +635,10 @@ class App
     /**
      * Send.
      * @param TcpConnection|mixed $connection
-     * @param mixed $response
+     * @param mixed|Response $response
      * @param Request|mixed $request
      * @return void
+     * @throws Throwable
      */
     protected static function send($connection, $response, $request)
     {
@@ -645,6 +646,7 @@ class App
         Context::destroy();
         if (($keepAlive === null && $request->protocolVersion() === '1.1')
             || $keepAlive === 'keep-alive' || $keepAlive === 'Keep-Alive'
+            || (is_a($response, Response::class) && $response->getHeader('Transfer-Encoding') === 'chunked')
         ) {
             $connection->send($response);
             return;
