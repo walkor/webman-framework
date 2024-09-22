@@ -199,13 +199,14 @@ function redirect(string $location, int $status = 302, array $headers = []): Res
  * View response
  * @param mixed $template
  * @param array $vars
- * @param string $app
- * @param string $plugin
+ * @param string|null $app
+ * @param string|null $plugin
  * @return Response
  */
-function view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
+function view($template = null, array $vars = [], string $app = null, string $plugin = null): Response
 {
     [$template, $vars] = get_template_vars($template, $vars);
+    $request = request();
     $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
     $handler = \config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
     return new Response(200, [], $handler::render($template, $vars, $app, $plugin));
@@ -215,12 +216,12 @@ function view($template = null, array $vars = [], string $app = '', string $plug
  * Raw view response
  * @param mixed $template
  * @param array $vars
- * @param string $app
- * @param string $plugin
+ * @param string|null $app
+ * @param string|null $plugin
  * @return Response
  * @throws Throwable
  */
-function raw_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
+function raw_view($template = null, array $vars = [], string $app = null, string $plugin = null): Response
 {
     [$template, $vars] = get_template_vars($template, $vars);
     return new Response(200, [], Raw::render($template, $vars, $app, $plugin));
@@ -231,10 +232,10 @@ function raw_view($template = null, array $vars = [], string $app = '', string $
  * @param mixed $template
  * @param array $vars
  * @param string|null $app
- * @param string $plugin
+ * @param string|null $plugin
  * @return Response
  */
-function blade_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
+function blade_view($template = null, array $vars = [], string $app = null, string $plugin = null): Response
 {
     [$template, $vars] = get_template_vars($template, $vars);
     return new Response(200, [], Blade::render($template, $vars, $app, $plugin));
@@ -245,10 +246,10 @@ function blade_view($template = null, array $vars = [], string $app = '', string
  * @param mixed $template
  * @param array $vars
  * @param string|null $app
- * @param string $plugin
+ * @param string|null $plugin
  * @return Response
  */
-function think_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
+function think_view($template = null, array $vars = [], string $app = null, string $plugin = null): Response
 {
     [$template, $vars] = get_template_vars($template, $vars);
     return new Response(200, [], ThinkPHP::render($template, $vars, $app, $plugin));
@@ -258,11 +259,11 @@ function think_view($template = null, array $vars = [], string $app = '', string
  * Twig view response
  * @param mixed $template
  * @param array $vars
- * @param string $app
- * @param string $plugin
+ * @param string|null $app
+ * @param string|null $plugin
  * @return Response
  */
-function twig_view($template = null, array $vars = [], string $app = '', string $plugin = ''): Response
+function twig_view($template = null, array $vars = [], string $app = null, string $plugin = null): Response
 {
     [$template, $vars] = get_template_vars($template, $vars);
     return new Response(200, [], Twig::render($template, $vars, $app, $plugin));
@@ -317,7 +318,6 @@ function route(string $name, ...$parameters): string
  * @param mixed $key
  * @param mixed $default
  * @return mixed|bool|Session
- * @throws Exception
  */
 function session($key = null, $default = null)
 {
