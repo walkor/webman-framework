@@ -61,7 +61,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function all()
     {
-        return $this->post() + $this->get();
+        return $this->get() + $this->post();
     }
 
     /**
@@ -72,12 +72,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function input(string $name, $default = null)
     {
-        $post = $this->post();
-        if (isset($post[$name])) {
-            return $post[$name];
-        }
-        $get = $this->get();
-        return $get[$name] ?? $default;
+        return $this->get($name, $this->post($name, $default));
     }
 
     /**
