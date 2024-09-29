@@ -29,6 +29,8 @@ use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use stdClass;
+use support\exception\BusinessException;
+use support\Model;
 use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
@@ -320,7 +322,7 @@ class App
                     $call = function ($request) use ($call, $plugin, $args) {
                         $call[0] = static::container($plugin)->make($call[0]);
                         $reflector = static::getReflector($call);
-                        $args = static::resolveMethodDependencies($plugin, $request, $args, $reflector);
+                        $args = static::resolveMethodDependencies(static::container($plugin), $request, array_merge($request->all(), $args), $reflector);
                         return $call(...$args);
                     };
                     $needInject = false;
@@ -390,7 +392,7 @@ class App
     {
         return function (Request $request) use ($plugin, $call, $args) {
             $reflector = static::getReflector($call);
-            $args = static::resolveMethodDependencies($plugin, $request, $args, $reflector);
+            $args = static::resolveMethodDependencies(static::container($plugin), $request, array_merge($request->all(), $args), $reflector);
             return $call(...$args);
         };
     }
@@ -437,65 +439,81 @@ class App
 
     /**
      * Return dependent parameters
-     * @param string $plugin
+     * @param ContainerInterface $container
      * @param Request $request
-     * @param array $args
+     * @param array $inputs
      * @param ReflectionFunctionAbstract $reflector
      * @return array
+     * @throws BusinessException
+     * @throws ReflectionException
      */
-    protected static function resolveMethodDependencies(string $plugin, Request $request, array $args, ReflectionFunctionAbstract $reflector): array
+    protected static function resolveMethodDependencies(ContainerInterface $container, Request $request, array $inputs, ReflectionFunctionAbstract $reflector): array
     {
-        $args = array_merge($request->all(), $args);
-        // Specification parameter information
         $parameters = [];
-        // An array of reflection classes for loop parameters, with each $parameter representing a reflection object of parameters
         foreach ($reflector->getParameters() as $parameter) {
-            // Parameter quota consumption
+            $parameterName = $parameter->name;
             if ($parameter->hasType()) {
-                $name = $parameter->getType()->getName();
-                switch ($name) {
+                $type = $parameter->getType()->getName();
+                switch ($type) {
                     case 'int':
-                        $parameters[] = isset($args[$parameter->name]) ? (int)$args[$parameter->name] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : 0);
+                        $parameters[] = isset($inputs[$parameterName]) ? (int)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : 0);
                         break;
                     case 'bool':
-                        $parameters[] = isset($args[$parameter->name]) ? (bool)$args[$parameter->name] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : false);
+                        $parameters[] = isset($inputs[$parameterName]) ? (bool)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : false);
                         break;
                     case 'array':
-                        $parameters[] = isset($args[$parameter->name]) ? (array)$args[$parameter->name] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : []);
+                        $parameters[] = isset($inputs[$parameterName]) ? (array)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : []);
                         break;
                     case 'object':
-                        $parameters[] = isset($args[$parameter->name]) ? (object)$args[$parameter->name] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : new stdClass());
+                        $parameters[] = isset($inputs[$parameterName]) ? (object)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : new stdClass());
                         break;
                     case 'float':
-                        $parameters[] = isset($args[$parameter->name]) ? (float)$args[$parameter->name] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : 0);
+                        $parameters[] = isset($inputs[$parameterName]) ? (float)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : 0);
                         break;
                     case 'string':
-                        $parameters[] = $args[$parameter->name] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : '');
+                        $parameters[] = $inputs[$parameterName] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : '');
                         break;
                     case 'mixed':
                     case 'resource':
-                        $parameters[] = $args[$parameter->name] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null);
+                        $parameters[] = $inputs[$parameterName] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null);
                         break;
                     default:
-                        if (is_a($request, $name)) {
-                            //Inject Request
+                        if (is_a($request, $type)) {
                             $parameters[] = $request;
                         } else {
-                            $parameters[] = static::container($plugin)->make($name, $args[$parameter->name] ?? []);
+                            if (is_a($type, \Illuminate\Database\Eloquent\Model::class, true) || is_a($type, \think\Model::class, true)) {
+                                $pk = isset($inputs[$parameterName]) && is_scalar($inputs[$parameterName]) ? $inputs[$parameterName] : null;
+                                if ($pk !== null) {
+                                    $model = $type::find($pk);
+                                    if (!$model) {
+                                        if (!$parameter->isDefaultValueAvailable()) {
+                                            throw new BusinessException("Record not found", 404);
+                                        }
+                                        $model = $parameter->getDefaultValue();
+                                    }
+                                    $parameters[] = $model;
+                                } else {
+                                    $subInputs = $inputs[$parameterName] ?? [];
+                                    $parameters[] = $container->make($type, [
+                                        'attributes' => $subInputs,
+                                        'data' => $subInputs
+                                    ]);
+                                }
+                            } else {
+                                if ($constructor = (new ReflectionClass($type))->getConstructor()) {
+                                    $parameters[] = $container->make($type, static::resolveMethodDependencies($container, $request, $inputs[$parameterName] ?? [], $constructor));
+                                } else {
+                                    $parameters[] = $container->make($type);
+                                }
+                            }
                         }
                         break;
                 }
             } else {
-                // The variable parameter
-                if (isset($args[$parameter->name])) {
-                    $parameters[] = $args[$parameter->name];
-                } else {
-                    // Indicates whether the current parameter has a default value.  If yes, return true
-                    $parameters[] = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
-                }
+                $parameters[] = $inputs[$parameterName] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null);
             }
         }
-//var_dump($parameters);
+
         // Returns the result of parameters replacement
         return $parameters;
     }
