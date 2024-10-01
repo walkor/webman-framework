@@ -312,6 +312,7 @@ function route(string $name, ...$parameters): string
  * @param mixed $key
  * @param mixed $default
  * @return mixed|bool|Session
+ * @throws Exception
  */
 function session($key = null, $default = null)
 {
@@ -529,7 +530,8 @@ function template_inputs($template, array $vars, ?string $app, ?string $plugin):
         $controllerSuffix = config($plugin ? "plugin.$plugin.app.controller_suffix" : "app.controller_suffix", '');
         $controllerName = $controllerSuffix !== '' ? substr($controller, 0, -strlen($controllerSuffix)) : $controller;
         $path = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', substr(strrchr($controllerName, '\\'), 1)));
-        $template = $path ? "$path/" . strtolower($request->action) : strtolower($request->action);
+        $actionFileBaseName = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $request->action));
+        $template = "$path/$actionFileBaseName";
     }
     return [$template, $vars, $app, $plugin];
 }
