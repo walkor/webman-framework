@@ -189,6 +189,7 @@ class Route
      */
     public static function group($path, callable $callback = null): Route
     {
+        $path = strtolower($path);
         if ($callback === null) {
             $callback = $path;
             $path = '';
@@ -214,7 +215,7 @@ class Route
      */
     public static function resource(string $name, string $controller, array $options = [])
     {
-        $name = trim($name, '/');
+        $name = strtolower(trim($name, '/'));
         if (is_array($options) && !empty($options)) {
             $diffOptions = array_diff($options, ['index', 'create', 'store', 'update', 'show', 'edit', 'destroy', 'recovery']);
             if (!empty($diffOptions)) {
@@ -338,6 +339,7 @@ class Route
      */
     public static function dispatch(string $method, string $path): array
     {
+        $path = strtolower($path);
         return static::$dispatcher->dispatch($method, $path);
     }
 
@@ -377,6 +379,7 @@ class Route
      */
     protected static function addRoute($methods, string $path, $callback): RouteObject
     {
+        $path = strtolower($path);
         $route = new RouteObject($methods, static::$groupPrefix . $path, $callback);
         static::$allRoutes[] = $route;
 
