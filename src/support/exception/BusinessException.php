@@ -14,7 +14,7 @@
 
 namespace support\exception;
 
-use Exception;
+use RuntimeException;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use function json_encode;
@@ -23,13 +23,24 @@ use function json_encode;
  * Class BusinessException
  * @package support\exception
  */
-class BusinessException extends Exception
+class BusinessException extends RuntimeException
 {
+
+    /**
+     * @var array
+     */
+    public $data = [];
+
+    /**
+     * BusinessException constructor.
+     * @param Request $request
+     * @return Response|null
+     */
     public function render(Request $request): ?Response
     {
         if ($request->expectsJson()) {
             $code = $this->getCode();
-            $json = ['code' => $code ?: 500, 'msg' => $this->getMessage()];
+            $json = ['code' => $code ?: 500, 'msg' => $this->getMessage(), 'data' => $this->data];
             return new Response(200, ['Content-Type' => 'application/json'],
                 json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }

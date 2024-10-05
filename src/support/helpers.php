@@ -91,7 +91,7 @@ function public_path(string $path = '', string $plugin = null): string
         }
         $publicPaths[$plugin] = $publicPath;
     }
-    return path_combine($publicPath, $path);
+    return $path === '' ? $publicPath : path_combine($publicPath, $path);
 }
 
 /**

@@ -28,9 +28,8 @@ use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
-use stdClass;
 use support\exception\BusinessException;
-use support\Model;
+use support\Exception\DataNotFoundException;
 use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
@@ -43,7 +42,6 @@ use Workerman\Worker;
 use function array_merge;
 use function array_pop;
 use function array_reduce;
-use function array_reverse;
 use function array_splice;
 use function array_values;
 use function class_exists;
@@ -56,7 +54,6 @@ use function file_get_contents;
 use function get_class_methods;
 use function gettype;
 use function implode;
-use function in_array;
 use function is_a;
 use function is_array;
 use function is_dir;
@@ -64,7 +61,6 @@ use function is_file;
 use function is_string;
 use function key;
 use function method_exists;
-use function next;
 use function ob_get_clean;
 use function ob_start;
 use function pathinfo;
@@ -452,69 +448,79 @@ class App
         $parameters = [];
         foreach ($reflector->getParameters() as $parameter) {
             $parameterName = $parameter->name;
-            if ($parameter->hasType()) {
-                $type = $parameter->getType()->getName();
-                switch ($type) {
-                    case 'int':
-                        $parameters[$parameterName] = isset($inputs[$parameterName]) ? (int)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : 0);
-                        break;
-                    case 'bool':
-                        $parameters[$parameterName] = isset($inputs[$parameterName]) ? (bool)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : false);
-                        break;
-                    case 'array':
-                        $parameters[$parameterName] = isset($inputs[$parameterName]) ? (array)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : []);
-                        break;
-                    case 'object':
-                        $parameters[$parameterName] = isset($inputs[$parameterName]) ? (object)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : new stdClass());
-                        break;
-                    case 'float':
-                        $parameters[$parameterName] = isset($inputs[$parameterName]) ? (float)$inputs[$parameterName] : ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : 0);
-                        break;
-                    case 'string':
-                        $parameters[$parameterName] = $inputs[$parameterName] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : '');
-                        break;
-                    case 'mixed':
-                    case 'resource':
-                        $parameters[$parameterName] = $inputs[$parameterName] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null);
-                        break;
-                    default:
-                        if (is_a($request, $type)) {
-                            $parameters[$parameterName] = $request;
-                        } else {
-                            if (is_a($type, \Illuminate\Database\Eloquent\Model::class, true) || is_a($type, \think\Model::class, true)) {
-                                $pk = isset($inputs[$parameterName]) && is_scalar($inputs[$parameterName]) ? $inputs[$parameterName] : null;
-                                if ($pk !== null) {
-                                    $model = $type::find($pk);
-                                    if (!$model) {
-                                        if (!$parameter->isDefaultValueAvailable()) {
-                                            throw new BusinessException("Record not found", 404);
-                                        }
-                                        $model = $parameter->getDefaultValue();
-                                    }
-                                    $parameters[$parameterName] = $model;
-                                } else {
-                                    $subInputs = $inputs[$parameterName] ?? [];
-                                    $parameters[$parameterName] = $container->make($type, [
-                                        'attributes' => $subInputs,
-                                        'data' => $subInputs
-                                    ]);
-                                }
-                            } else {
-                                if ($constructor = (new ReflectionClass($type))->getConstructor()) {
-                                    $parameters[$parameterName] = $container->make($type, static::resolveMethodDependencies($container, $request, $inputs[$parameterName] ?? [], $constructor));
-                                } else {
-                                    $parameters[$parameterName] = $container->make($type);
-                                }
-                            }
-                        }
-                        break;
+            $type = $parameter->getType();
+            $typeName = $type ? $type->getName() : null;
+
+            if ($typeName && is_a($request, $typeName)) {
+                $parameters[$parameterName] = $request;
+                continue;
+            }
+
+            if (!array_key_exists($parameterName, $inputs)) {
+                if (!$parameter->isDefaultValueAvailable()) {
+                    throw new BusinessException('Missing input' . (static::config($request->plugin, 'app.debug') ? " [$parameterName]" : ''), 400);
                 }
-            } else {
-                $parameters[$parameterName] = $inputs[$parameterName] ?? ($parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null);
+                $parameters[$parameterName] = $parameter->getDefaultValue();
+                continue;
+            }
+
+            switch ($typeName) {
+                case 'int':
+                    $parameters[$parameterName] = (int)$inputs[$parameterName];
+                    break;
+                case 'bool':
+                    $parameters[$parameterName] = (bool)$inputs[$parameterName];
+                    break;
+                case 'array':
+                    $parameters[$parameterName] = (array)$inputs[$parameterName];
+                    break;
+                case 'object':
+                    $parameters[$parameterName] = (object)$inputs[$parameterName];
+                    break;
+                case 'float':
+                    $parameters[$parameterName] = (float)$inputs[$parameterName];
+                    break;
+                case 'string':
+                    $parameters[$parameterName] = (string)$inputs[$parameterName];
+                    break;
+                case 'mixed':
+                case 'resource':
+                case null:
+                    $parameters[$parameterName] = $inputs[$parameterName];
+                    break;
+                default:
+                    if (is_a($typeName, \Illuminate\Database\Eloquent\Model::class, true) || is_a($typeName, \think\Model::class, true)) {
+                        $pk = is_scalar($inputs[$parameterName]) ? $inputs[$parameterName] : null;
+                        if ($pk !== null) {
+                            if (!$model = $typeName::find($pk)) {
+                                if (!$parameter->isDefaultValueAvailable()) {
+                                    $exception = new DataNotFoundException();
+                                    if (static::config($request->plugin, 'app.debug')) {
+                                        $exception->setModel($typeName, [$pk]);
+                                    }
+                                    throw $exception;
+                                }
+                                $model = $parameter->getDefaultValue();
+                            }
+                            $parameters[$parameterName] = $model;
+                        } else {
+                            $subInputs = $inputs[$parameterName];
+                            $parameters[$parameterName] = $container->make($typeName, [
+                                'attributes' => $subInputs,
+                                'data' => $subInputs
+                            ]);
+                        }
+                    } else {
+                        if ($constructor = (new ReflectionClass($typeName))->getConstructor()) {
+                            $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $inputs[$parameterName], $constructor));
+                        } else {
+                            $parameters[$parameterName] = $container->make($typeName);
+                        }
+                    }
+                    break;
             }
         }
 
-        // Returns the result of parameters replacement
         return $parameters;
     }
 
