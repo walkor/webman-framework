@@ -452,11 +452,12 @@ function worker_bind($worker, $class)
  */
 function worker_start($processName, $config)
 {
-    if(isset($config['enable']) && !$config['enable']){
+    if (isset($config['enable']) && !$config['enable']) {
         return;
     }
-    
-    $worker = new Worker($config['listen'] ?? null, $config['context'] ?? []);
+    // feat：custom worker class [default: Workerman\Worker]
+    $class = is_a($class = $config['workerClass'] ?? '' , Worker::class, true) ? $class : Worker::class;
+    $worker = new $class($config['listen'] ?? null, $config['context'] ?? []);
     $propertyMap = [
         'count',
         'user',
