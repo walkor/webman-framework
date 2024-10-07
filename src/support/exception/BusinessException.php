@@ -15,6 +15,7 @@
 namespace support\exception;
 
 use RuntimeException;
+use Throwable;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use function json_encode;
@@ -29,10 +30,10 @@ class BusinessException extends RuntimeException
     /**
      * @var array
      */
-    public $data = [];
+    protected $data = [];
 
     /**
-     * BusinessException constructor.
+     * Render an exception into an HTTP response.
      * @param Request $request
      * @return Response|null
      */
@@ -46,4 +47,45 @@ class BusinessException extends RuntimeException
         }
         return new Response(200, [], $this->getMessage());
     }
+
+    /**
+     * Set data.
+     * @param array $data
+     * @return $this
+     */
+    public function setData(array $data): BusinessException
+    {
+        $this->data = $data;
+        return $this;
+    }
+
+    /**
+     * Get data.
+     * @return array
+     */
+    public function getData(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * Translate message.
+     * @param string $message
+     * @param array $parameters
+     * @param string|null $domain
+     * @param string|null $locale
+     * @return string
+     */
+    protected function trans(string $message, array $parameters = [], string $domain = null, string $locale = null): string
+    {
+        try {
+            $message = trans($message, $parameters, $domain, $locale);
+        } catch (Throwable $e) {
+            foreach ($parameters as $key => $value) {
+                $message = str_replace($key, $value, $message);
+            }
+        }
+        return $message;
+    }
+
 }

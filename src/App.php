@@ -18,6 +18,9 @@ namespace Webman;
 use Closure;
 use Exception;
 use FastRoute\Dispatcher;
+use Illuminate\Database\Eloquent\Model;
+use support\exception\PageNotFoundException;
+use think\Model as ThinkModel;
 use InvalidArgumentException;
 use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
@@ -29,7 +32,9 @@ use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use support\exception\BusinessException;
-use support\Exception\DataNotFoundException;
+use support\exception\MissingInputException;
+use support\exception\RecordNotFoundException;
+use support\exception\InvalidInputTypeException;
 use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
@@ -58,6 +63,7 @@ use function is_a;
 use function is_array;
 use function is_dir;
 use function is_file;
+use function is_numeric;
 use function is_string;
 use function key;
 use function method_exists;
@@ -232,12 +238,7 @@ class App
     {
         // When route, controller and action not found, try to use Route::fallback
         return Route::getFallback($plugin) ?: function () {
-            try {
-                $notFoundContent = file_get_contents(static::$publicPath . '/404.html');
-            } catch (Throwable $e) {
-                $notFoundContent = '404 Not Found';
-            }
-            return new Response(404, [], $notFoundContent);
+            throw new PageNotFoundException();
         };
     }
 
@@ -310,7 +311,7 @@ class App
             $middlewares[$key][0] = $middleware;
         }
 
-        $needInject = static::isNeedInject($call);
+        $needInject = static::isNeedInject($call, $args);
         if (is_array($call) && is_string($call[0])) {
             $controllerReuse = static::config($plugin, 'app.controller_reuse', true);
             if (!$controllerReuse) {
@@ -348,11 +349,7 @@ class App
                 };
             }, function ($request) use ($call, $anonymousArgs) {
                 try {
-                    if ($anonymousArgs) {
-                        $response = $call($request);
-                    } else {
-                        $response = $call($request, ...$anonymousArgs);
-                    }
+                    $response = $call($request, ...$anonymousArgs);
                 } catch (Throwable $e) {
                     return static::exceptionResponse($e, $request);
                 }
@@ -396,10 +393,11 @@ class App
     /**
      * Check whether inject is required.
      * @param $call
+     * @param array $args
      * @return bool
      * @throws ReflectionException
      */
-    protected static function isNeedInject($call): bool
+    protected static function isNeedInject($call, array $args): bool
     {
         if (is_array($call) && !method_exists($call[0], $call[1])) {
             return false;
@@ -409,13 +407,24 @@ class App
         if (!$reflectionParameters) {
             return false;
         }
-        if (count($reflectionParameters) > 1) {
-            return true;
-        }
         $firstParameter = current($reflectionParameters);
-        if ($firstParameter->hasType() && !is_a(static::$requestClass, $firstParameter->getType()->getName())) {
+        unset($reflectionParameters[key($reflectionParameters)]);
+        $adaptersList = ['int', 'string', 'bool', 'array', 'object', 'float', 'mixed', 'resource'];
+        $keys = [];
+        foreach ($reflectionParameters as $parameter) {
+            $keys[] = $parameter->name;
+            if ($parameter->hasType() && !in_array($parameter->getType()->getName(), $adaptersList)) {
+                return true;
+            }
+        }
+        if (!$firstParameter->hasType()) {
+            return array_keys($args) !== $keys;
+        }
+
+        if (!is_a(static::$requestClass, $firstParameter->getType()->getName())) {
             return true;
         }
+
         return false;
     }
 
@@ -458,64 +467,58 @@ class App
 
             if (!array_key_exists($parameterName, $inputs)) {
                 if (!$parameter->isDefaultValueAvailable()) {
-                    throw new BusinessException('Missing input' . (static::config($request->plugin, 'app.debug') ? " [$parameterName]" : ''), 400);
+                    if (!$typeName || !class_exists($typeName)) {
+                        throw (new MissingInputException())->setData([
+                            'parameter' => $parameterName,
+                        ]);
+                    }
+                } else {
+                    $parameters[$parameterName] = $parameter->getDefaultValue();
+                    continue;
                 }
-                $parameters[$parameterName] = $parameter->getDefaultValue();
-                continue;
             }
 
             switch ($typeName) {
                 case 'int':
-                    $parameters[$parameterName] = (int)$inputs[$parameterName];
+                case 'float':
+                    if (!is_numeric($inputs[$parameterName])) {
+                        throw (new InvalidInputTypeException())->setData([
+                            'parameter' => $parameterName,
+                        ]);
+                    }
+                    $parameters[$parameterName] = $typeName === 'float' ? (float)$inputs[$parameterName] :  (int)$inputs[$parameterName];
                     break;
                 case 'bool':
                     $parameters[$parameterName] = (bool)$inputs[$parameterName];
                     break;
                 case 'array':
-                    $parameters[$parameterName] = (array)$inputs[$parameterName];
-                    break;
                 case 'object':
-                    $parameters[$parameterName] = (object)$inputs[$parameterName];
-                    break;
-                case 'float':
-                    $parameters[$parameterName] = (float)$inputs[$parameterName];
+                    if (!is_array($inputs[$parameterName])) {
+                        throw (new InvalidInputTypeException())->setData([
+                            'parameter' => $parameterName,
+                        ]);
+                    }
+                    $parameters[$parameterName] = $typeName === 'object' ? (object)$inputs[$parameterName] : $inputs[$parameterName];
                     break;
                 case 'string':
-                    $parameters[$parameterName] = (string)$inputs[$parameterName];
-                    break;
                 case 'mixed':
                 case 'resource':
                 case null:
                     $parameters[$parameterName] = $inputs[$parameterName];
                     break;
                 default:
-                    if (is_a($typeName, \Illuminate\Database\Eloquent\Model::class, true) || is_a($typeName, \think\Model::class, true)) {
-                        $pk = is_scalar($inputs[$parameterName]) ? $inputs[$parameterName] : null;
-                        if ($pk !== null) {
-                            if (!$model = $typeName::find($pk)) {
-                                if (!$parameter->isDefaultValueAvailable()) {
-                                    $exception = new DataNotFoundException();
-                                    if (static::config($request->plugin, 'app.debug')) {
-                                        $exception->setModel($typeName, [$pk]);
-                                    }
-                                    throw $exception;
-                                }
-                                $model = $parameter->getDefaultValue();
-                            }
-                            $parameters[$parameterName] = $model;
-                        } else {
-                            $subInputs = $inputs[$parameterName];
-                            $parameters[$parameterName] = $container->make($typeName, [
-                                'attributes' => $subInputs,
-                                'data' => $subInputs
-                            ]);
-                        }
+                    $subInputs = isset($inputs[$parameterName]) && is_array($inputs[$parameterName]) ? $inputs[$parameterName] : [];
+                    if (is_a($typeName, Model::class, true) || is_a($typeName, ThinkModel::class, true)) {
+                        $parameters[$parameterName] = $container->make($typeName, [
+                            'attributes' => $subInputs,
+                            'data' => $subInputs
+                        ]);
+                        break;
+                    }
+                    if (is_array($subInputs) && $constructor = (new ReflectionClass($typeName))->getConstructor()) {
+                        $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $subInputs, $constructor));
                     } else {
-                        if ($constructor = (new ReflectionClass($typeName))->getConstructor()) {
-                            $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $inputs[$parameterName], $constructor));
-                        } else {
-                            $parameters[$parameterName] = $container->make($typeName);
-                        }
+                        $parameters[$parameterName] = $container->make($typeName);
                     }
                     break;
             }
@@ -649,7 +652,7 @@ class App
         static::collectCallbacks($key, [static::getCallback($plugin, '__static__', function ($request) use ($file, $plugin) {
             clearstatcache(true, $file);
             if (!is_file($file)) {
-                $callback = static::getFallback($plugin, 404);
+                $callback = static::getFallback($plugin);
                 return $callback($request);
             }
             return (new Response())->file($file);
@@ -741,7 +744,6 @@ class App
         foreach ($map as $item) {
             $map[] = $item . '\\index';
         }
-
         foreach ($map as $controllerClass) {
             // Remove xx\xx\controller
             if (substr($controllerClass, -11) === '\\controller') {
@@ -803,6 +805,7 @@ class App
             $found = false;
             foreach ($dirs as $name) {
                 $path = "$basePath/$name";
+
                 if (is_dir($path) && strtolower($name) === $pathSection) {
                     $basePath = $path;
                     $found = true;
