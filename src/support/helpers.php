@@ -456,7 +456,7 @@ function worker_start($processName, $config)
         return;
     }
     // feat：custom worker class [default: Workerman\Worker]
-    $class = is_a($class = $config['worker_class'] ?? '' , Worker::class, true) ? $class : Worker::class;
+    $class = is_a($class = $config['workerClass'] ?? '' , Worker::class, true) ? $class : Worker::class;
     $worker = new $class($config['listen'] ?? null, $config['context'] ?? []);
     $propertyMap = [
         'count',
