@@ -4,6 +4,7 @@ namespace support;
 
 use Dotenv\Dotenv;
 use RuntimeException;
+use Throwable;
 use Webman\Config;
 use Webman\Util;
 use Workerman\Connection\TcpConnection;
@@ -20,6 +21,7 @@ class App
     /**
      * Run.
      * @return void
+     * @throws Throwable
      */
     public static function run()
     {
