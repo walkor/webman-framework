@@ -417,10 +417,12 @@ class App
                 return true;
             }
         }
-        if (!$firstParameter->hasType()) {
-            return array_keys($args) !== $keys;
+        if (array_keys($args) !== $keys) {
+            return true;
         }
-
+        if (!$firstParameter->hasType()) {
+            return $firstParameter->getName() !== 'request';
+        }
         if (!is_a(static::$requestClass, $firstParameter->getType()->getName(), true)) {
             return true;
         }
