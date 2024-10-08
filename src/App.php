@@ -421,7 +421,7 @@ class App
             return array_keys($args) !== $keys;
         }
 
-        if (!is_a(static::$requestClass, $firstParameter->getType()->getName())) {
+        if (!is_a(static::$requestClass, $firstParameter->getType()->getName(), true)) {
             return true;
         }
 
