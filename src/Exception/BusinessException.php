@@ -1,0 +1,91 @@
+<?php
+/**
+ * This file is part of webman.
+ *
+ * Licensed under The MIT License
+ * For full copyright and license information, please see the MIT-LICENSE.txt
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @author    walkor<walkor@workerman.net>
+ * @copyright walkor<walkor@workerman.net>
+ * @link      http://www.workerman.net/
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT License
+ */
+
+namespace Webman\Exception;
+
+use RuntimeException;
+use Throwable;
+use Webman\Http\Request;
+use Webman\Http\Response;
+use function json_encode;
+
+/**
+ * Class BusinessException
+ * @package support\exception
+ */
+class BusinessException extends RuntimeException
+{
+
+    /**
+     * @var array
+     */
+    protected $data = [];
+
+    /**
+     * Render an exception into an HTTP response.
+     * @param Request $request
+     * @return Response|null
+     */
+    public function render(Request $request): ?Response
+    {
+        if ($request->expectsJson()) {
+            $code = $this->getCode();
+            $json = ['code' => $code ?: 500, 'msg' => $this->getMessage(), 'data' => $this->data];
+            return new Response(200, ['Content-Type' => 'application/json'],
+                json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        }
+        return new Response(200, [], $this->getMessage());
+    }
+
+    /**
+     * Set data.
+     * @param array $data
+     * @return $this
+     */
+    public function setData(array $data): BusinessException
+    {
+        $this->data = $data;
+        return $this;
+    }
+
+    /**
+     * Get data.
+     * @return array
+     */
+    public function getData(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * Translate message.
+     * @param string $message
+     * @param array $parameters
+     * @param string|null $domain
+     * @param string|null $locale
+     * @return string
+     */
+    protected function trans(string $message, array $parameters = [], string $domain = null, string $locale = null): string
+    {
+        try {
+            $message = trans($message, $parameters, $domain, $locale);
+        } catch (Throwable $e) {
+            foreach ($parameters as $key => $value) {
+                $message = str_replace($key, $value, $message);
+            }
+        }
+        return $message;
+    }
+
+}
