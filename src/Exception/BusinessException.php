@@ -78,12 +78,16 @@ class BusinessException extends RuntimeException
      */
     protected function trans(string $message, array $parameters = [], string $domain = null, string $locale = null): string
     {
+        $args = [];
+        foreach ($parameters as $key => $parameter) {
+            $args[":$key"] = $parameter;
+        }
         try {
-            $message = trans($message, $parameters, $domain, $locale);
+            $message = trans($message, $args, $domain, $locale);
         } catch (Throwable $e) {
-            foreach ($parameters as $key => $value) {
-                $message = str_replace($key, $value, $message);
-            }
+        }
+        foreach ($parameters as $key => $value) {
+            $message = str_replace(":$key", $value, $message);
         }
         return $message;
     }

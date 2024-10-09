@@ -45,8 +45,7 @@ class PageNotFoundException extends NotFoundException
     public function render(Request $request): ?Response
     {
         $code = $this->getCode() ?: 404;
-        $debug = config($request->plugin ? "plugin.$request->plugin.app.debug" : 'app.debug');
-        $data = $debug ? $this->data : [];
+        $data = $this->data;
         $message = $this->trans($this->getMessage(), $data);
         if ($request->expectsJson()) {
             $json = ['code' => $code, 'msg' => $message, 'data' => $data];
