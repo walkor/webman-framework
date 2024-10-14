@@ -608,7 +608,7 @@ class App
      */
     protected static function findRoute(TcpConnection $connection, string $path, string $key, $request, &$status): bool
     {
-        $routeInfo = Route::dispatch($request->method(), strtolower($path));
+        $routeInfo = Route::dispatch($request->method(), $path);
         if ($routeInfo[0] === Dispatcher::FOUND) {
             $status = 200;
             $routeInfo[0] = 'route';
