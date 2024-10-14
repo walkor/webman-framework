@@ -77,7 +77,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
      */
     public function render(Request $request, Throwable $exception): Response
     {
-        if(($exception instanceof BusinessException) && ($response = $exception->render($request))) {
+        if (method_exists($exception, 'render') && ($response = $exception->render($request))) {
             return $response;
         }
         $code = $exception->getCode();
