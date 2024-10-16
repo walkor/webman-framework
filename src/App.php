@@ -253,7 +253,13 @@ class App
             $app = $request->app ?: '';
             $plugin = $request->plugin ?: '';
             $exceptionConfig = static::config($plugin, 'exception');
-            $defaultException = $exceptionConfig[''] ?? ExceptionHandler::class;
+            $appExceptionConfig = static::config("", 'exception');
+            if (!isset($exceptionConfig['']) && isset($appExceptionConfig['@'])) {
+                //如果插件没有配置自己的异常处理器并且配置了全局@异常处理器 则使用全局异常处理器
+                $defaultException = $appExceptionConfig['@'] ?? ExceptionHandler::class;
+            } else {
+                $defaultException = $exceptionConfig[''] ?? ExceptionHandler::class;
+            }
             $exceptionHandlerClass = $exceptionConfig[$app] ?? $defaultException;
 
             /** @var ExceptionHandlerInterface $exceptionHandler */
