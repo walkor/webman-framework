@@ -74,7 +74,17 @@ class Route
     /**
      * @var bool
      */
-    protected static $disableDefaultRoute = [];
+    protected static $disabledDefaultRoutes = [];
+
+    /**
+     * @var array
+     */
+    protected static $disabledDefaultRouteControllers = [];
+
+    /**
+     * @var array
+     */
+    protected static $disabledDefaultRouteActions = [];
 
     /**
      * @var RouteObject[]
@@ -257,20 +267,66 @@ class Route
     /**
      * disableDefaultRoute.
      *
-     * @return void
+     * @param string|array $plugin
+     * @param string|null $app
+     * @return bool
      */
-    public static function disableDefaultRoute($plugin = '')
+    public static function disableDefaultRoute($plugin = '', string $app = null): bool
     {
-        static::$disableDefaultRoute[$plugin] = true;
+        // Is [controller action]
+        if (is_array($plugin)) {
+            $controllerAction = $plugin;
+            if (!isset($controllerAction[0]) || !is_string($controllerAction[0]) ||
+                !isset($controllerAction[1]) || !is_string($controllerAction[1])) {
+                return false;
+            }
+            $controller = $controllerAction[0];
+            $action = $controllerAction[1];
+            static::$disabledDefaultRouteActions[$controller][$action] = $action;
+            return true;
+        }
+        // Is plugin
+        if (is_string($plugin) && (preg_match('/^[a-zA-Z0-9_]+$/', $plugin) || $plugin === '')) {
+            if (!isset(static::$disabledDefaultRoutes[$plugin])) {
+                static::$disabledDefaultRoutes[$plugin] = [];
+            }
+            $app = $app ?? '*';
+            static::$disabledDefaultRoutes[$plugin][$app] = $app;
+            return true;
+        }
+        // Is controller
+        if (is_string($plugin) && class_exists($plugin)) {
+            static::$disabledDefaultRouteControllers[$plugin] = $plugin;
+            return true;
+        }
+        return false;
     }
 
     /**
-     * @param string $plugin
+     * @param string|array $plugin
+     * @param string|null $app
      * @return bool
      */
-    public static function hasDisableDefaultRoute(string $plugin = ''): bool
+    public static function isDefaultRouteDisabled($plugin = '', string $app = null): bool
     {
-        return static::$disableDefaultRoute[$plugin] ?? false;
+        // Is [controller action]
+        if (is_array($plugin)) {
+            if (!isset($plugin[0]) || !is_string($plugin[0]) ||
+                !isset($plugin[1]) || !is_string($plugin[1])) {
+                return false;
+            }
+            return isset(static::$disabledDefaultRouteActions[$plugin[0]][$plugin[1]]);
+        }
+        // Is plugin
+        if (is_string($plugin) && (preg_match('/^[a-zA-Z0-9_]+$/', $plugin) || $plugin === '')) {
+            $app = $app ?? '*';
+            return isset(static::$disabledDefaultRoutes[$plugin]['*']) || isset(static::$disabledDefaultRoutes[$plugin][$app]);
+        }
+        // Is controller
+        if (is_string($plugin) && class_exists($plugin)) {
+            return isset(static::$disabledDefaultRouteControllers[$plugin]);
+        }
+        return false;
     }
 
     /**

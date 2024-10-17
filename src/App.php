@@ -158,7 +158,9 @@ class App
 
             $controllerAndAction = static::parseControllerAction($path);
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
-            if (!$controllerAndAction || Route::hasDisableDefaultRoute($plugin)) {
+            if (!$controllerAndAction || Route::isDefaultRouteDisabled($plugin, $controllerAndAction['app'] ?: '*') ||
+                Route::isDefaultRouteDisabled($controllerAndAction['controller']) ||
+                Route::isDefaultRouteDisabled([$controllerAndAction['controller'], $controllerAndAction['action']])) {
                 $request->plugin = $plugin;
                 $callback = static::getFallback($plugin);
                 $request->app = $request->controller = $request->action = '';
