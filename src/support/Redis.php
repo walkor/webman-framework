@@ -276,7 +276,7 @@ class Redis
     /**
      * Connection.
      * @param string $name
-     * @return Connection
+     * @return Connection|\Redis
      */
     public static function connection(string $name = 'default'): Connection
     {
