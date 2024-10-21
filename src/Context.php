@@ -43,15 +43,23 @@ class Context
      */
     protected static $object;
 
+
     /**
-     * @return StdClass
+     * @return void
      */
-    protected static function getObject(): StdClass
+    public static function init()
     {
         if (!static::$objectStorage) {
             static::$objectStorage = class_exists(WeakMap::class) ? new WeakMap() : new SplObjectStorage();
             static::$object = new StdClass;
         }
+    }
+
+    /**
+     * @return StdClass
+     */
+    protected static function getObject(): StdClass
+    {
         $key = static::getKey();
         if (!isset(static::$objectStorage[$key])) {
             static::$objectStorage[$key] = new StdClass;

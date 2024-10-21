@@ -189,6 +189,7 @@ class App
     {
         static::$worker = $worker;
         Http::requestClass(static::$requestClass);
+        Context::init();
     }
 
     /**
