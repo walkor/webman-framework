@@ -36,14 +36,18 @@ class App
             }
         }
 
-        static::loadAllConfig(['route', 'container']);
+        if (!$appConfigFile = config_path('app.php')) {
+            throw new RuntimeException('Config file not found: app.php');
+        }
+        $appConfig = require $appConfigFile;
+        if ($timezone = $appConfig['default_timezone'] ?? '') {
+            date_default_timezone_set($timezone);
+        }
 
+        static::loadAllConfig(['route', 'container']);
         $errorReporting = config('app.error_reporting');
         if (isset($errorReporting)) {
             error_reporting($errorReporting);
-        }
-        if ($timezone = config('app.default_timezone')) {
-            date_default_timezone_set($timezone);
         }
 
         $runtimeLogsPath = runtime_path() . DIRECTORY_SEPARATOR . 'logs';
