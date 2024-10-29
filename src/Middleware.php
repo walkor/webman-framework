@@ -70,7 +70,7 @@ class Middleware
      */
     public static function getMiddleware(string $plugin, string $appName, bool $withGlobalMiddleware = true)
     {
-        $globalMiddleware = static::$instances['']['@'] ?? [];
+        $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
         $appGlobalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
         if ($appName === '') {
             return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware));

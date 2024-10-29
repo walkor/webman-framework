@@ -162,9 +162,9 @@ class App
                 Route::isDefaultRouteDisabled($controllerAndAction['controller']) ||
                 Route::isDefaultRouteDisabled([$controllerAndAction['controller'], $controllerAndAction['action']])) {
                 $request->plugin = $plugin;
-                $callback = static::getFallback($plugin);
+                $callback = static::getFallback($plugin, $status);
                 $request->app = $request->controller = $request->action = '';
-                static::send($connection, $callback($request, $status), $request);
+                static::send($connection, $callback($request), $request);
                 return null;
             }
             $app = $controllerAndAction['app'];
@@ -223,7 +223,7 @@ class App
             strpos($path, "\\") !== false ||
             strpos($path, "\0") !== false
         ) {
-            $callback = static::getFallback();
+            $callback = static::getFallback('', 400);
             $request->plugin = $request->app = $request->controller = $request->action = '';
             static::send($connection, $callback($request, 400), $request);
             return true;
@@ -234,12 +234,16 @@ class App
     /**
      * GetFallback.
      * @param string $plugin
+     * @param int $status
      * @return Closure
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
-    protected static function getFallback(string $plugin = ''): Closure
+    protected static function getFallback(string $plugin = '', int $status = 404): Closure
     {
         // When route, controller and action not found, try to use Route::fallback
-        return Route::getFallback($plugin) ?: function () {
+        return Route::getFallback($plugin, $status) ?: function () {
             throw new PageNotFoundException();
         };
     }
@@ -294,7 +298,7 @@ class App
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected static function getCallback(string $plugin, string $app, $call, array $args = [], bool $withGlobalMiddleware = true, RouteObject $route = null)
+    public static function getCallback(string $plugin, string $app, $call, array $args = [], bool $withGlobalMiddleware = true, RouteObject $route = null)
     {
         $middlewares = [];
         if ($route) {

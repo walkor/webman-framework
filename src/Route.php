@@ -17,8 +17,11 @@ namespace Webman;
 use FastRoute\Dispatcher\GroupCountBased;
 use FastRoute\RouteCollector;
 use FilesystemIterator;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionException;
 use Webman\Route\Route as RouteObject;
 use function array_diff;
 use function array_values;
@@ -57,7 +60,12 @@ class Route
     protected static $collector = null;
 
     /**
-     * @var null|callable
+     * @var RouteObject[]
+     */
+    protected static $fallbackRoutes = [];
+
+    /**
+     * @var array
      */
     protected static $fallback = [];
 
@@ -503,17 +511,28 @@ class Route
      */
     public static function fallback(callable $callback, string $plugin = '')
     {
-        static::$fallback[$plugin] = $callback;
+        $route = new RouteObject([], '', $callback);
+        static::$fallbackRoutes[$plugin] = $route;
+        return $route;
     }
 
     /**
      * GetFallBack.
      * @param string $plugin
+     * @param int $status
      * @return callable|null
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
-    public static function getFallback(string $plugin = ''): ?callable
+    public static function getFallback(string $plugin = '', int $status = 404)
     {
-        return static::$fallback[$plugin] ?? null;
+        if (!isset(static::$fallback[$plugin])) {
+            $callback = null;
+            $route = static::$fallbackRoutes[$plugin] ?? null;
+            static::$fallback[$plugin] = App::getCallback($plugin, 'NOT_FOUND', $route->getCallback(), ['status' => $status], false, $route);
+        }
+        return static::$fallback[$plugin];
     }
 
     /**
