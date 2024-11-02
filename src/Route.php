@@ -530,7 +530,7 @@ class Route
         if (!isset(static::$fallback[$plugin])) {
             $callback = null;
             $route = static::$fallbackRoutes[$plugin] ?? null;
-            static::$fallback[$plugin] = App::getCallback($plugin, 'NOT_FOUND', $route->getCallback(), ['status' => $status], false, $route);
+            static::$fallback[$plugin] = $route ? App::getCallback($plugin, 'NOT_FOUND', $route->getCallback(), ['status' => $status], false, $route) : null;
         }
         return static::$fallback[$plugin];
     }
