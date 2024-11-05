@@ -15,6 +15,7 @@
 namespace Webman;
 
 
+use ReflectionClass;
 use RuntimeException;
 use function array_merge;
 use function array_reverse;
@@ -65,18 +66,32 @@ class Middleware
     /**
      * @param string $plugin
      * @param string $appName
+     * @param string $controller
      * @param bool $withGlobalMiddleware
-     * @return array|mixed
+     * @return array
      */
-    public static function getMiddleware(string $plugin, string $appName, bool $withGlobalMiddleware = true)
+    public static function getMiddleware(string $plugin, string $appName, string $controller, bool $withGlobalMiddleware = true)
     {
         $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
         $appGlobalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
+        $controllerMiddleware = [];
+        if ($controller && class_exists($controller)) {
+            $reflectionClass = new ReflectionClass($controller);
+            if ($reflectionClass->hasProperty('middleware')) {
+                $defaultProperties = $reflectionClass->getDefaultProperties();
+                $controllerMiddlewareClasses = $defaultProperties['middleware'];
+                foreach ((array)$controllerMiddlewareClasses as $className) {
+                    if (method_exists($className, 'process')) {
+                        $controllerMiddleware[] = [$className, 'process'];
+                    }
+                }
+            }
+        }
         if ($appName === '') {
-            return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware));
+            return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $controllerMiddleware));
         }
         $appMiddleware = static::$instances[$plugin][$appName] ?? [];
-        return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $appMiddleware));
+        return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $appMiddleware, $controllerMiddleware));
     }
 
     /**

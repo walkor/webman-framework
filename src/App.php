@@ -307,7 +307,8 @@ class App
                 $middlewares[] = [$className, 'process'];
             }
         }
-        $middlewares = array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $withGlobalMiddleware));
+        $isController = is_array($call) && is_string($call[0]);
+        $middlewares = array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $isController ? $call[0] : '', $withGlobalMiddleware));
 
         $container = static::container($plugin) ?? static::container('');
         foreach ($middlewares as $key => $item) {
@@ -325,7 +326,7 @@ class App
 
         $needInject = static::isNeedInject($call, $args);
         $anonymousArgs = array_values($args);
-        if (is_array($call) && is_string($call[0])) {
+        if ($isController) {
             $controllerReuse = static::config($plugin, 'app.controller_reuse', true);
             if (!$controllerReuse) {
                 if ($needInject) {

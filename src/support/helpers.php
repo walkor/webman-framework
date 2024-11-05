@@ -458,7 +458,7 @@ function worker_start($processName, $config)
     // feat：custom worker class [default: Workerman\Worker]
     $class = is_a($class = $config['workerClass'] ?? '' , Worker::class, true) ? $class : Worker::class;
     $worker = new $class($config['listen'] ?? null, $config['context'] ?? []);
-    $propertyMap = [
+    $properties = [
         'count',
         'user',
         'group',
@@ -466,9 +466,10 @@ function worker_start($processName, $config)
         'reusePort',
         'transport',
         'protocol',
+        'eventLoop',
     ];
     $worker->name = $processName;
-    foreach ($propertyMap as $property) {
+    foreach ($properties as $property) {
         if (isset($config[$property])) {
             $worker->$property = $config[$property];
         }
