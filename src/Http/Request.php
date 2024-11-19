@@ -329,7 +329,11 @@ class Request extends \Workerman\Protocols\Http\Request
     public function setGet(array $get): Request
     {
         $this->isDirty = true;
-        $this->data['get'] = $get;
+        if (isset($this->data)) {
+            $this->data['get'] = $get;
+        } else {
+            $this->_data['get'] = $get;
+        }
         return $this;
     }
 
@@ -341,7 +345,11 @@ class Request extends \Workerman\Protocols\Http\Request
     public function setPost(array $post): Request
     {
         $this->isDirty = true;
-        $this->data['post'] = $post;
+        if (isset($this->data)) {
+            $this->data['post'] = $post;
+        } else {
+            $this->_data['post'] = $post;
+        }
         return $this;
     }
 
@@ -353,7 +361,11 @@ class Request extends \Workerman\Protocols\Http\Request
     public function setHeaders(array $headers): Request
     {
         $this->isDirty = true;
-        $this->data['headers'] = $headers;
+        if (isset($this->data)) {
+            $this->data['headers'] = $headers;
+        } else {
+            $this->_data['headers'] = $headers;
+        }
         return $this;
     }
 
