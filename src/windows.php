@@ -27,9 +27,17 @@ if (isset($errorReporting)) {
 }
 
 $runtimeProcessPath = runtime_path() . DIRECTORY_SEPARATOR . '/windows';
-if (!is_dir($runtimeProcessPath)) {
-    mkdir($runtimeProcessPath);
+$paths = [
+    $runtimeProcessPath,
+    runtime_path('logs'),
+    runtime_path('views')
+];
+foreach ($paths as $path) {
+    if (!is_dir($path)) {
+        mkdir($path, 0777, true);
+    }
 }
+
 $processFiles = [];
 if (config('server.listen')) {
     $processFiles[] = __DIR__ . DIRECTORY_SEPARATOR . 'start.php';
