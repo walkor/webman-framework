@@ -5,9 +5,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Dotenv\Dotenv;
-use process\Monitor;
 use support\App;
-use Workerman\Worker;
 
 ini_set('display_errors', 'on');
 error_reporting(E_ALL);
@@ -90,7 +88,8 @@ EOF;
 }
 
 if ($monitorConfig = config('process.monitor.constructor')) {
-    $monitor = new Monitor(...array_values($monitorConfig));
+    $monitorHandler = config('process.monitor.handler');
+    $monitor = new $monitorHandler(...array_values($monitorConfig));
 }
 
 function popen_processes($processFiles)
