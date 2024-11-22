@@ -29,9 +29,10 @@ $runtimeProcessPath = runtime_path() . DIRECTORY_SEPARATOR . '/windows';
 if (!is_dir($runtimeProcessPath)) {
     mkdir($runtimeProcessPath);
 }
-$processFiles = [
-    __DIR__ . DIRECTORY_SEPARATOR . 'start.php'
-];
+$processFiles = [];
+if (config('server.listen')) {
+    $processFiles[] = __DIR__ . DIRECTORY_SEPARATOR . 'start.php';
+}
 foreach (config('process', []) as $processName => $config) {
     $processFiles[] = write_process_file($runtimeProcessPath, $processName, '');
 }
