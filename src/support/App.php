@@ -83,7 +83,7 @@ class App
             Worker::$stopTimeout = $config['stop_timeout'] ?? 2;
         }
 
-        if ($config['listen']) {
+        if ($config['listen'] ?? false) {
             $worker = new Worker($config['listen'], $config['context']);
             $propertyMap = [
                 'name',
