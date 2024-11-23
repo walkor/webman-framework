@@ -87,7 +87,7 @@ class Context
      * @param string|null $key
      * @return mixed
      */
-    public static function get(string $key = null)
+    public static function get(?string $key = null)
     {
         $obj = static::getObject();
         if ($key === null) {

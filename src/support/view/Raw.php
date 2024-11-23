@@ -38,7 +38,7 @@ class Raw implements View
      * @param string|array $name
      * @param mixed $value
      */
-    public static function assign($name, $value = null)
+    public static function assign(string|array $name, mixed $value = null): void
     {
         $request = request();
         $request->_view_vars = array_merge((array) $request->_view_vars, is_array($name) ? $name : [$name => $value]);
@@ -50,7 +50,7 @@ class Raw implements View
      * @param array $vars
      * @param string|null $app
      * @param string|null $plugin
-     * @return false|string
+     * @return string
      */
     public static function render(string $template, array $vars, string $app = null, string $plugin = null): string
     {

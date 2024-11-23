@@ -76,7 +76,7 @@ class BusinessException extends RuntimeException
      * @param string|null $locale
      * @return string
      */
-    protected function trans(string $message, array $parameters = [], string $domain = null, string $locale = null): string
+    protected function trans(string $message, array $parameters = [], ?string $domain = null, ?string $locale = null): string
     {
         $args = [];
         foreach ($parameters as $key => $parameter) {

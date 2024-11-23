@@ -73,9 +73,9 @@ class Request extends \Workerman\Protocols\Http\Request
      * Input
      * @param string $name
      * @param mixed $default
-     * @return mixed|null
+     * @return mixed
      */
-    public function input(string $name, $default = null)
+    public function input(string $name, mixed $default = null)
     {
         return $this->get($name, $this->post($name, $default));
     }
@@ -116,7 +116,7 @@ class Request extends \Workerman\Protocols\Http\Request
      * @param string|null $name
      * @return null|UploadFile[]|UploadFile
      */
-    public function file($name = null)
+    public function file(?string $name = null)
     {
         $files = parent::file($name);
         if (null === $files) {

@@ -205,7 +205,7 @@ class Route
      * @param callable|null $callback
      * @return static
      */
-    public static function group($path, callable $callback = null): Route
+    public static function group($path, ?callable $callback = null): Route
     {
         if ($callback === null) {
             $callback = $path;
@@ -275,11 +275,11 @@ class Route
     /**
      * disableDefaultRoute.
      *
-     * @param string|array $plugin
+     * @param array|string $plugin
      * @param string|null $app
      * @return bool
      */
-    public static function disableDefaultRoute($plugin = '', string $app = null): bool
+    public static function disableDefaultRoute(array|string $plugin = '', ?string $app = null): bool
     {
         // Is [controller action]
         if (is_array($plugin)) {
@@ -311,11 +311,11 @@ class Route
     }
 
     /**
-     * @param string|array $plugin
+     * @param array|string $plugin
      * @param string|null $app
      * @return bool
      */
-    public static function isDefaultRouteDisabled($plugin = '', string $app = null): bool
+    public static function isDefaultRouteDisabled(array|string $plugin = '', ?string $app = null): bool
     {
         // Is [controller action]
         if (is_array($plugin)) {
