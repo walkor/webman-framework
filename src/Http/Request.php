@@ -175,7 +175,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function getRemoteIp(): string
     {
-        return $this->connection->getRemoteIp();
+        return $this->connection ? $this->connection->getRemoteIp() : '0.0.0.0';
     }
 
     /**
@@ -184,7 +184,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function getRemotePort(): int
     {
-        return $this->connection->getRemotePort();
+        return $this->connection ? $this->connection->getRemotePort() : 0;
     }
 
     /**
@@ -193,7 +193,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function getLocalIp(): string
     {
-        return $this->connection->getLocalIp();
+        return $this->connection ? $this->connection->getLocalIp() : '0.0.0.0';
     }
 
     /**
@@ -202,7 +202,7 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function getLocalPort(): int
     {
-        return $this->connection->getLocalPort();
+        return $this->connection ? $this->connection->getLocalPort() : 0;
     }
 
     /**
