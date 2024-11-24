@@ -114,9 +114,9 @@ class Request extends \Workerman\Protocols\Http\Request
     /**
      * File
      * @param string|null $name
-     * @return null|UploadFile[]|UploadFile
+     * @return UploadFile|UploadFile[]|null
      */
-    public function file($name = null)
+    public function file(?string $name = null): array|null|UploadFile
     {
         $files = parent::file($name);
         if (null === $files) {
