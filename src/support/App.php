@@ -28,11 +28,6 @@ class App
         ini_set('display_errors', 'on');
         error_reporting(E_ALL);
 
-        if (DIRECTORY_SEPARATOR === '\\') {
-            echo "Please run 'php windows.php' on windows system." . PHP_EOL;
-            exit;
-        }
-
         if (class_exists(Dotenv::class) && file_exists(run_path('.env'))) {
             if (method_exists(Dotenv::class, 'createUnsafeImmutable')) {
                 Dotenv::createUnsafeImmutable(run_path())->load();
@@ -50,6 +45,12 @@ class App
         }
 
         static::loadAllConfig(['route', 'container']);
+
+        if (DIRECTORY_SEPARATOR === '\\' && empty(config('server.listen'))) {
+            echo "Please run 'php windows.php' on windows system." . PHP_EOL;
+            exit;
+        }
+
         $errorReporting = config('app.error_reporting');
         if (isset($errorReporting)) {
             error_reporting($errorReporting);
