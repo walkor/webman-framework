@@ -52,7 +52,7 @@ class Raw implements View
      * @param string|null $plugin
      * @return string
      */
-    public static function render(string $template, array $vars, string $app = null, string $plugin = null): string
+    public static function render(string $template, array $vars, ?string $app = null, ?string $plugin = null): string
     {
         $request = request();
         $plugin = $plugin === null ? ($request->plugin ?? '') : $plugin;
