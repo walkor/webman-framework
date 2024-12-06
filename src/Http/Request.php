@@ -256,6 +256,26 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
+     * IsGet
+     * @return bool
+     */
+    public function isGet(): bool
+    {
+        return $this->method() === 'GET';
+    }
+
+
+    /**
+     * IsPost
+     * @return bool
+     */
+    public function isPost(): bool
+    {
+        return $this->method() === 'POST';
+    }
+
+
+    /**
      * IsPjax
      * @return bool
      */
