@@ -33,6 +33,11 @@ class BusinessException extends RuntimeException
     protected $data = [];
 
     /**
+     * @var bool
+     */
+    protected $debug = false;
+
+    /**
      * Render an exception into an HTTP response.
      * @param Request $request
      * @return Response|null
@@ -50,12 +55,29 @@ class BusinessException extends RuntimeException
 
     /**
      * Set data.
-     * @param array $data
-     * @return $this
+     * @param array|null $data
+     * @return array|$this
      */
-    public function setData(array $data): BusinessException
+    public function data(?array $data = null): array|static
     {
+        if ($data === null) {
+            return $this->data;
+        }
         $this->data = $data;
+        return $this;
+    }
+
+    /**
+     * Set debug.
+     * @param bool|null $value
+     * @return $this|bool
+     */
+    public function debug(?bool $value = null): bool|static
+    {
+        if ($value === null) {
+            return $this->debug;
+        }
+        $this->debug = $value;
         return $this;
     }
 

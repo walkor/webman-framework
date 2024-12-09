@@ -574,3 +574,14 @@ function input(?string $param = null, mixed $default = null): mixed
 {
     return is_null($param) ? request()->all() : request()->input($param, $default);
 }
+
+
+/**
+ * This is for compatibility with PHP 8.0, which does not support enums.
+ */
+if (!function_exists('enum_exists')) {
+    function enum_exists(): bool
+    {
+        return false;
+    }
+}

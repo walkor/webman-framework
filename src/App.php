@@ -19,6 +19,8 @@ use Closure;
 use Exception;
 use FastRoute\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
+use ReflectionEnum;
+use support\exception\InputValueException;
 use support\exception\PageNotFoundException;
 use think\Model as ThinkModel;
 use InvalidArgumentException;
@@ -333,7 +335,7 @@ class App
                     $call = function ($request) use ($call, $plugin, $args, $container) {
                         $call[0] = $container->make($call[0]);
                         $reflector = static::getReflector($call);
-                        $args = array_values(static::resolveMethodDependencies($container, $request, array_merge($request->all(), $args), $reflector));
+                        $args = array_values(static::resolveMethodDependencies($container, $request, array_merge($request->all(), $args), $reflector, static::config($plugin, 'app.debug')));
                         return $call(...$args);
                     };
                     $needInject = false;
@@ -399,7 +401,8 @@ class App
     {
         return function (Request $request) use ($plugin, $call, $args) {
             $reflector = static::getReflector($call);
-            $args = array_values(static::resolveMethodDependencies(static::container($plugin), $request, array_merge($request->all(), $args), $reflector));
+            $args = array_values(static::resolveMethodDependencies(static::container($plugin), $request,
+                array_merge($request->all(), $args), $reflector, static::config($plugin, 'app.debug')));
             return $call(...$args);
         };
     }
@@ -497,17 +500,17 @@ class App
      * @param Request $request
      * @param array $inputs
      * @param ReflectionFunctionAbstract $reflector
+     * @param bool $debug
      * @return array
-     * @throws BusinessException
      * @throws ReflectionException
      */
-    protected static function resolveMethodDependencies(ContainerInterface $container, Request $request, array $inputs, ReflectionFunctionAbstract $reflector): array
+    protected static function resolveMethodDependencies(ContainerInterface $container, Request $request, array $inputs, ReflectionFunctionAbstract $reflector, bool $debug): array
     {
         $parameters = [];
         foreach ($reflector->getParameters() as $parameter) {
             $parameterName = $parameter->name;
             $type = $parameter->getType();
-            $typeName = $type ? $type->getName() : null;
+            $typeName = $type?->getName();
 
             if ($typeName && is_a($request, $typeName)) {
                 $parameters[$parameterName] = $request;
@@ -516,10 +519,10 @@ class App
 
             if (!array_key_exists($parameterName, $inputs)) {
                 if (!$parameter->isDefaultValueAvailable()) {
-                    if (!$typeName || !class_exists($typeName)) {
-                        throw (new MissingInputException())->setData([
+                    if (!$typeName || (!class_exists($typeName) && !enum_exists($typeName)) || enum_exists($typeName)) {
+                        throw (new MissingInputException())->data([
                             'parameter' => $parameterName,
-                        ]);
+                        ])->debug($debug);
                     }
                 } else {
                     $parameters[$parameterName] = $parameter->getDefaultValue();
@@ -527,40 +530,42 @@ class App
                 }
             }
 
+            $parameterValue = $inputs[$parameterName] ?? null;
+
             switch ($typeName) {
                 case 'int':
                 case 'float':
-                    if (!is_numeric($inputs[$parameterName])) {
-                        throw (new InputTypeException())->setData([
+                    if (!is_numeric($parameterValue)) {
+                        throw (new InputTypeException())->data([
                             'parameter' => $parameterName,
                             'exceptType' => $typeName,
-                            'actualType' => gettype($inputs[$parameterName]),
-                        ]);
+                            'actualType' => gettype($parameterValue),
+                        ])->debug($debug);
                     }
-                    $parameters[$parameterName] = $typeName === 'float' ? (float)$inputs[$parameterName] :  (int)$inputs[$parameterName];
+                    $parameters[$parameterName] = $typeName === 'float' ? (float)$parameterValue :  (int)$parameterValue;
                     break;
                 case 'bool':
-                    $parameters[$parameterName] = (bool)$inputs[$parameterName];
+                    $parameters[$parameterName] = (bool)$parameterValue;
                     break;
                 case 'array':
                 case 'object':
-                    if (!is_array($inputs[$parameterName])) {
-                        throw (new InputTypeException())->setData([
+                    if (!is_array($parameterValue)) {
+                        throw (new InputTypeException())->data([
                             'parameter' => $parameterName,
                             'exceptType' => $typeName,
-                            'actualType' => gettype($inputs[$parameterName]),
-                        ]);
+                            'actualType' => gettype($parameterValue),
+                        ])->debug($debug);
                     }
-                    $parameters[$parameterName] = $typeName === 'object' ? (object)$inputs[$parameterName] : $inputs[$parameterName];
+                    $parameters[$parameterName] = $typeName === 'object' ? (object)$parameterValue : $parameterValue;
                     break;
                 case 'string':
                 case 'mixed':
                 case 'resource':
                 case null:
-                    $parameters[$parameterName] = $inputs[$parameterName];
+                    $parameters[$parameterName] = $parameterValue;
                     break;
                 default:
-                    $subInputs = isset($inputs[$parameterName]) && is_array($inputs[$parameterName]) ? $inputs[$parameterName] : [];
+                    $subInputs = is_array($parameterValue) ? $parameterValue : [];
                     if (is_a($typeName, Model::class, true) || is_a($typeName, ThinkModel::class, true)) {
                         $parameters[$parameterName] = $container->make($typeName, [
                             'attributes' => $subInputs,
@@ -568,15 +573,35 @@ class App
                         ]);
                         break;
                     }
+                    if (enum_exists($typeName)) {
+                        $reflection = new ReflectionEnum($typeName);
+                        if ($reflection->hasCase($parameterValue)) {
+                            $parameters[$parameterName] = $reflection->getCase($parameterValue)->getValue();
+                            break;
+                        } elseif ($reflection->isBacked()) {
+                            foreach ($reflection->getCases() as $case) {
+                                if ($case->getValue()->value == $parameterValue) {
+                                    $parameters[$parameterName] = $case->getValue();
+                                    break;
+                                }
+                            }
+                        }
+                        if (!array_key_exists($parameterName, $parameters)) {
+                            throw (new InputValueException())->data([
+                                'parameter' => $parameterName,
+                                'enum' => $typeName
+                            ])->debug($debug);
+                        }
+                        break;
+                    }
                     if (is_array($subInputs) && $constructor = (new ReflectionClass($typeName))->getConstructor()) {
-                        $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $subInputs, $constructor));
+                        $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $subInputs, $constructor, $debug));
                     } else {
                         $parameters[$parameterName] = $container->make($typeName);
                     }
                     break;
             }
         }
-
         return $parameters;
     }
 
