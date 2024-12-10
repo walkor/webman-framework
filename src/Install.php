@@ -13,7 +13,6 @@ class Install
         'start.php' => 'start.php',
         'windows.php' => 'windows.php',
         'support/bootstrap.php' => 'support/bootstrap.php',
-        'support/helpers.php' => 'support/helpers.php',
     ];
 
     /**
