@@ -34,13 +34,7 @@ use Workerman\Worker;
  * Get the base path of the application
  */
 if (!defined('BASE_PATH')) {
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-    $file = end($backtrace)['file'];
-    if (str_contains($file, 'runtime\\windows')) {
-        define('BASE_PATH', dirname(end($backtrace)['file'], 3));
-    } else {
-        define('BASE_PATH', dirname(end($backtrace)['file']));
-    }
+    define('BASE_PATH', getcwd());
 }
 
 if (!function_exists('run_path')) {
