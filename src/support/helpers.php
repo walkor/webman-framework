@@ -34,7 +34,7 @@ use Workerman\Worker;
  * Get the base path of the application
  */
 if (!defined('BASE_PATH')) {
-    define('BASE_PATH', getcwd());
+    define('BASE_PATH', Phar::running() ?: getcwd());
 }
 
 if (!function_exists('run_path')) {
