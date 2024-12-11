@@ -34,7 +34,19 @@ use Workerman\Worker;
  * Get the base path of the application
  */
 if (!defined('BASE_PATH')) {
-    define('BASE_PATH', Phar::running() ?: getcwd());
+    if (!$basePath = Phar::running()) {
+        $basePath = getcwd();
+        while ($basePath !== dirname($basePath)) {
+            if (is_dir("$basePath/vendor") && is_file("$basePath/start.php")) {
+                break;
+            }
+            $basePath = dirname($basePath);
+        }
+        if ($basePath === dirname($basePath)) {
+            $basePath = __DIR__ . '/../../../../../';
+        }
+    }
+    define('BASE_PATH', realpath($basePath) ?: $basePath);
 }
 
 if (!function_exists('run_path')) {
