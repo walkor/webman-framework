@@ -18,6 +18,7 @@ use Throwable;
 use Webman\Exception\ExceptionHandler;
 use Webman\Http\Request;
 use Webman\Http\Response;
+use Webman\Exception\BusinessException;
 
 /**
  * Class Handler
