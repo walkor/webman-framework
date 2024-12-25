@@ -90,7 +90,7 @@ class Middleware
             $attributes = $reflectionClass->getAttributes();
             foreach ($attributes as $attribute) {
                 $className = $attribute->getName();
-                if (method_exists($className, 'process') && isset(class_implements($className)[MiddlewareInterface::class])) {
+                if (method_exists($className, 'process') && str_ends_with($className,'Middleware')) {
                     $controllerMiddleware[] = [$className, 'process'];
                 }
             }
@@ -99,7 +99,7 @@ class Middleware
                 $methodAttributes = $reflectionMethod->getAttributes();
                 foreach ($methodAttributes as $attribute) {
                     $className = $attribute->getName();
-                    if (method_exists($className, 'process') && isset(class_implements($className)[MiddlewareInterface::class])) {
+                    if (method_exists($className, 'process') && str_ends_with($className,'Middleware')) {
                         $controllerMiddleware[] = [$className, 'process'];
                     }
                 }
