@@ -310,7 +310,7 @@ class App
             }
         }
         $isController = is_array($call) && is_string($call[0]);
-        $middlewares = array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $isController ? $call[0] : '', $withGlobalMiddleware));
+        $middlewares = array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $call, $withGlobalMiddleware));
 
         $container = static::container($plugin) ?? static::container('');
         foreach ($middlewares as $key => $item) {

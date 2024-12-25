@@ -15,6 +15,7 @@
 namespace Webman;
 
 
+use ReflectionAttribute;
 use ReflectionClass;
 use RuntimeException;
 use function array_merge;
@@ -70,13 +71,14 @@ class Middleware
      * @param bool $withGlobalMiddleware
      * @return array
      */
-    public static function getMiddleware(string $plugin, string $appName, string $controller, bool $withGlobalMiddleware = true)
+    public static function getMiddleware(string $plugin, string $appName, $controller, bool $withGlobalMiddleware = true): array
     {
+        $isController = is_array($controller) && is_string($controller[0]);
         $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
         $appGlobalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
         $controllerMiddleware = [];
-        if ($controller && class_exists($controller)) {
-            $reflectionClass = new ReflectionClass($controller);
+        if ($isController && $controller[0] && class_exists($controller[0])) {
+            $reflectionClass = new ReflectionClass($controller[0]);
             if ($reflectionClass->hasProperty('middleware')) {
                 $defaultProperties = $reflectionClass->getDefaultProperties();
                 $controllerMiddlewareClasses = $defaultProperties['middleware'];
@@ -86,12 +88,43 @@ class Middleware
                     }
                 }
             }
+            $attributes = $reflectionClass->getAttributes();
+            $middlewareAttribute = $reflectionClass->getAttributes(Annotation\Middleware::class);
+            self::prepareAttributeMiddlewares($controllerMiddleware, $attributes, $middlewareAttribute[0] ?? null);
+            if ($reflectionClass->hasMethod($controller[1])) {
+                $reflectionMethod = $reflectionClass->getMethod($controller[1]);
+                $methodAttributes = $reflectionMethod->getAttributes();
+                $methodMiddlewareAttribute = $reflectionMethod->getAttributes(Annotation\Middleware::class);
+                self::prepareAttributeMiddlewares($controllerMiddleware, $methodAttributes, $methodMiddlewareAttribute[0] ?? null);
+            }
         }
         if ($appName === '') {
             return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $controllerMiddleware));
         }
         $appMiddleware = static::$instances[$plugin][$appName] ?? [];
         return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $appMiddleware, $controllerMiddleware));
+    }
+
+    /**
+     * @param array $middlewares
+     * @param ReflectionAttribute[] $attributes
+     * @return void
+     */
+    private static function prepareAttributeMiddlewares(array &$middlewares, array $attributes, ?ReflectionAttribute $middlewareAttribute): void
+    {
+        foreach ($attributes as $attribute) {
+            $className = $attribute->getName();
+            if (method_exists($className, 'process') && str_ends_with($className, 'Middleware')) {
+                $middlewares[] = [$className, 'process'];
+            }
+        }
+        if ($middlewareAttribute) {
+            /**
+             * @var Annotation\Middleware $middlewareAttributeInstance
+             */
+            $middlewareAttributeInstance = $middlewareAttribute->newInstance();
+            $middlewares = array_merge($middlewares, $middlewareAttributeInstance->getMiddlewares());
+        }
     }
 
     /**
