@@ -21,7 +21,9 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use ReflectionException;
+use Webman\Annotation\DisableDefaultRoute;
 use Webman\Route\Route as RouteObject;
 use function array_diff;
 use function array_values;
@@ -323,7 +325,7 @@ class Route
                 !isset($plugin[1]) || !is_string($plugin[1])) {
                 return false;
             }
-            return isset(static::$disabledDefaultRouteActions[$plugin[0]][$plugin[1]]);
+            return isset(static::$disabledDefaultRouteActions[$plugin[0]][$plugin[1]]) || static::isDefaultRouteDisabledByAnnotation($plugin[0], $plugin[1]);
         }
         // Is plugin
         if (is_string($plugin) && (preg_match('/^[a-zA-Z0-9_]+$/', $plugin) || $plugin === '')) {
@@ -333,6 +335,28 @@ class Route
         // Is controller
         if (is_string($plugin) && class_exists($plugin)) {
             return isset(static::$disabledDefaultRouteControllers[$plugin]);
+        }
+        return false;
+    }
+
+    /**
+     * @param string $controller
+     * @param string|null $action
+     * @return bool
+     */
+    protected static function isDefaultRouteDisabledByAnnotation(string $controller, ?string $action = null): bool
+    {
+        if (class_exists($controller)) {
+            $reflectionClass = new ReflectionClass($controller);
+            if ($reflectionClass->getAttributes(DisableDefaultRoute::class)) {
+                return true;
+            }
+            if ($action && $reflectionClass->hasMethod($action)) {
+                $reflectionMethod = $reflectionClass->getMethod($action);
+                if ($reflectionMethod->getAttributes(DisableDefaultRoute::class)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
