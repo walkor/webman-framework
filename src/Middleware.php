@@ -70,18 +70,36 @@ class Middleware
      * @param bool $withGlobalMiddleware
      * @return array
      */
-    public static function getMiddleware(string $plugin, string $appName, string $controller, bool $withGlobalMiddleware = true)
+    public static function getMiddleware(string $plugin, string $appName, $controller, bool $withGlobalMiddleware = true)
     {
+        $isController = is_array($controller) && is_string($controller[0]);
         $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
         $appGlobalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
         $controllerMiddleware = [];
-        if ($controller && class_exists($controller)) {
-            $reflectionClass = new ReflectionClass($controller);
+        if ($isController && $controller[0] && class_exists($controller[0])) {
+            $reflectionClass = new ReflectionClass($controller[0]);
             if ($reflectionClass->hasProperty('middleware')) {
                 $defaultProperties = $reflectionClass->getDefaultProperties();
                 $controllerMiddlewareClasses = $defaultProperties['middleware'];
                 foreach ((array)$controllerMiddlewareClasses as $className) {
                     if (method_exists($className, 'process')) {
+                        $controllerMiddleware[] = [$className, 'process'];
+                    }
+                }
+            }
+            $attributes = $reflectionClass->getAttributes();
+            foreach ($attributes as $attribute) {
+                $className = $attribute->getName();
+                if (method_exists($className, 'process') && in_array(MiddlewareInterface::class, class_implements($className))) {
+                    $controllerMiddleware[] = [$className, 'process'];
+                }
+            }
+            if ($reflectionClass->hasMethod($controller[1])){
+                $reflectionMethod = $reflectionClass->getMethod($controller[1]);
+                $methodAttributes = $reflectionMethod->getAttributes();
+                foreach ($methodAttributes as $attribute) {
+                    $className = $attribute->getName();
+                    if (method_exists($className, 'process') && in_array(MiddlewareInterface::class, class_implements($className))) {
                         $controllerMiddleware[] = [$className, 'process'];
                     }
                 }
