@@ -15,6 +15,7 @@
 namespace Webman;
 
 
+use Closure;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
@@ -68,11 +69,11 @@ class Middleware
     /**
      * @param string $plugin
      * @param string $appName
-     * @param string|array $controller
+     * @param string|array|Closure $controller
      * @param bool $withGlobalMiddleware
      * @return array
      */
-    public static function getMiddleware(string $plugin, string $appName, string|array $controller, bool $withGlobalMiddleware = true): array
+    public static function getMiddleware(string $plugin, string $appName, string|array|Closure $controller, bool $withGlobalMiddleware = true): array
     {
         $isController = is_array($controller) && is_string($controller[0]);
         $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
