@@ -320,9 +320,6 @@ class App
             } elseif ($middleware instanceof Closure) {
                 $middleware = call_user_func($middleware, $container);
             }
-            if (!$middleware instanceof MiddlewareInterface) {
-                throw new InvalidArgumentException('Not support middleware type');
-            }
             $middlewares[$key][0] = $middleware;
         }
 

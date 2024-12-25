@@ -17,6 +17,7 @@ namespace Webman;
 
 use ReflectionAttribute;
 use ReflectionClass;
+use ReflectionMethod;
 use RuntimeException;
 use function array_merge;
 use function array_reverse;
@@ -67,35 +68,31 @@ class Middleware
     /**
      * @param string $plugin
      * @param string $appName
-     * @param string $controller
+     * @param string|array $controller
      * @param bool $withGlobalMiddleware
      * @return array
      */
-    public static function getMiddleware(string $plugin, string $appName, $controller, bool $withGlobalMiddleware = true): array
+    public static function getMiddleware(string $plugin, string $appName, string|array $controller, bool $withGlobalMiddleware = true): array
     {
         $isController = is_array($controller) && is_string($controller[0]);
         $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
         $appGlobalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
         $controllerMiddleware = [];
         if ($isController && $controller[0] && class_exists($controller[0])) {
+            // Controller middleware annotation
             $reflectionClass = new ReflectionClass($controller[0]);
+            self::prepareAttributeMiddlewares($controllerMiddleware, $reflectionClass);
+            // Controller middleware property
             if ($reflectionClass->hasProperty('middleware')) {
                 $defaultProperties = $reflectionClass->getDefaultProperties();
                 $controllerMiddlewareClasses = $defaultProperties['middleware'];
                 foreach ((array)$controllerMiddlewareClasses as $className) {
-                    if (method_exists($className, 'process')) {
-                        $controllerMiddleware[] = [$className, 'process'];
-                    }
+                    $controllerMiddleware[] = [$className, 'process'];
                 }
             }
-            $attributes = $reflectionClass->getAttributes();
-            $middlewareAttribute = $reflectionClass->getAttributes(Annotation\Middleware::class);
-            self::prepareAttributeMiddlewares($controllerMiddleware, $attributes, $middlewareAttribute[0] ?? null);
+            // Method middleware
             if ($reflectionClass->hasMethod($controller[1])) {
-                $reflectionMethod = $reflectionClass->getMethod($controller[1]);
-                $methodAttributes = $reflectionMethod->getAttributes();
-                $methodMiddlewareAttribute = $reflectionMethod->getAttributes(Annotation\Middleware::class);
-                self::prepareAttributeMiddlewares($controllerMiddleware, $methodAttributes, $methodMiddlewareAttribute[0] ?? null);
+                self::prepareAttributeMiddlewares($controllerMiddleware, $reflectionClass->getMethod($controller[1]));
             }
         }
         if ($appName === '') {
@@ -107,21 +104,13 @@ class Middleware
 
     /**
      * @param array $middlewares
-     * @param ReflectionAttribute[] $attributes
+     * @param ReflectionClass|ReflectionMethod $reflection
      * @return void
      */
-    private static function prepareAttributeMiddlewares(array &$middlewares, array $attributes, ?ReflectionAttribute $middlewareAttribute): void
+    private static function prepareAttributeMiddlewares(array &$middlewares, ReflectionClass|ReflectionMethod $reflection): void
     {
-        foreach ($attributes as $attribute) {
-            $className = $attribute->getName();
-            if (method_exists($className, 'process') && str_ends_with($className, 'Middleware')) {
-                $middlewares[] = [$className, 'process'];
-            }
-        }
-        if ($middlewareAttribute) {
-            /**
-             * @var Annotation\Middleware $middlewareAttributeInstance
-             */
+        $middlewareAttributes = $reflection->getAttributes(Annotation\Middleware::class);
+        foreach ($middlewareAttributes as $middlewareAttribute) {
             $middlewareAttributeInstance = $middlewareAttribute->newInstance();
             $middlewares = array_merge($middlewares, $middlewareAttributeInstance->getMiddlewares());
         }

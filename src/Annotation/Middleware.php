@@ -7,7 +7,7 @@ use Attribute;
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::TARGET_FUNCTION)]
 class Middleware
 {
-    protected $middlewares = [];
+    protected array $middlewares = [];
 
     public function __construct(...$middlewares)
     {
@@ -18,9 +18,7 @@ class Middleware
     {
         $middlewares = [];
         foreach ($this->middlewares as $middleware) {
-            if (class_exists($middleware) && method_exists($middleware, 'process')) {
-                $middlewares[] = [$middleware, 'process'];
-            }
+            $middlewares[] = [$middleware, 'process'];
         }
         return $middlewares;
     }
