@@ -354,7 +354,7 @@ class Route
             }
             if ($action && $reflectionClass->hasMethod($action)) {
                 $reflectionMethod = $reflectionClass->getMethod($action);
-                if ($reflectionMethod->getAttributes(DisableDefaultRoute::class)) {
+                if ($reflectionMethod->getAttributes(DisableDefaultRoute::class, ReflectionAttribute::IS_INSTANCEOF)) {
                     return true;
                 }
             }
