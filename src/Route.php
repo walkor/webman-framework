@@ -21,6 +21,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionException;
 use Webman\Annotation\DisableDefaultRoute;
@@ -348,7 +349,7 @@ class Route
     {
         if (class_exists($controller)) {
             $reflectionClass = new ReflectionClass($controller);
-            if ($reflectionClass->getAttributes(DisableDefaultRoute::class)) {
+            if ($reflectionClass->getAttributes(DisableDefaultRoute::class, ReflectionAttribute::IS_INSTANCEOF)) {
                 return true;
             }
             if ($action && $reflectionClass->hasMethod($action)) {
