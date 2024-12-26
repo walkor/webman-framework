@@ -16,7 +16,7 @@ namespace Webman;
 
 
 use Closure;
-use ReflectionAttribute;
+use Webman\Route\Route;
 use ReflectionClass;
 use ReflectionMethod;
 use RuntimeException;
@@ -70,37 +70,49 @@ class Middleware
      * @param string $plugin
      * @param string $appName
      * @param string|array|Closure $controller
+     * @param Route|null $route
      * @param bool $withGlobalMiddleware
      * @return array
      */
-    public static function getMiddleware(string $plugin, string $appName, string|array|Closure $controller, bool $withGlobalMiddleware = true): array
+    public static function getMiddleware(string $plugin, string $appName, string|array|Closure $controller, Route|null $route, bool $withGlobalMiddleware = true): array
     {
         $isController = is_array($controller) && is_string($controller[0]);
         $globalMiddleware = $withGlobalMiddleware ? static::$instances['']['@'] ?? [] : [];
         $appGlobalMiddleware = $withGlobalMiddleware && isset(static::$instances[$plugin]['']) ? static::$instances[$plugin][''] : [];
-        $controllerMiddleware = [];
+        $middlewares = $routeMiddlewares = [];
+        // Route middleware
+        if ($route) {
+            foreach (array_reverse($route->getMiddleware()) as $className) {
+                $routeMiddlewares[] = [$className, 'process'];
+            }
+        }
         if ($isController && $controller[0] && class_exists($controller[0])) {
             // Controller middleware annotation
             $reflectionClass = new ReflectionClass($controller[0]);
-            self::prepareAttributeMiddlewares($controllerMiddleware, $reflectionClass);
+            self::prepareAttributeMiddlewares($middlewares, $reflectionClass);
             // Controller middleware property
             if ($reflectionClass->hasProperty('middleware')) {
                 $defaultProperties = $reflectionClass->getDefaultProperties();
-                $controllerMiddlewareClasses = $defaultProperties['middleware'];
-                foreach ((array)$controllerMiddlewareClasses as $className) {
-                    $controllerMiddleware[] = [$className, 'process'];
+                $middlewaresClasses = $defaultProperties['middleware'];
+                foreach ((array)$middlewaresClasses as $className) {
+                    $middlewares[] = [$className, 'process'];
                 }
             }
-            // Method middleware
+            // Route middleware
+            $middlewares = array_merge($middlewares, $routeMiddlewares);
+            // Method middleware annotation
             if ($reflectionClass->hasMethod($controller[1])) {
-                self::prepareAttributeMiddlewares($controllerMiddleware, $reflectionClass->getMethod($controller[1]));
+                self::prepareAttributeMiddlewares($middlewares, $reflectionClass->getMethod($controller[1]));
             }
+        } else {
+            // Route middleware
+            $middlewares = array_merge($middlewares, $routeMiddlewares);
         }
         if ($appName === '') {
-            return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $controllerMiddleware));
+            return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $middlewares));
         }
         $appMiddleware = static::$instances[$plugin][$appName] ?? [];
-        return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $appMiddleware, $controllerMiddleware));
+        return array_reverse(array_merge($globalMiddleware, $appGlobalMiddleware, $appMiddleware, $middlewares));
     }
 
     /**

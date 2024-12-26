@@ -302,15 +302,8 @@ class App
      */
     public static function getCallback(string $plugin, string $app, $call, array $args = [], bool $withGlobalMiddleware = true, ?RouteObject $route = null)
     {
-        $middlewares = [];
-        if ($route) {
-            $routeMiddlewares = $route->getMiddleware();
-            foreach ($routeMiddlewares as $className) {
-                $middlewares[] = [$className, 'process'];
-            }
-        }
         $isController = is_array($call) && is_string($call[0]);
-        $middlewares = array_merge($middlewares, Middleware::getMiddleware($plugin, $app, $call, $withGlobalMiddleware));
+        $middlewares = Middleware::getMiddleware($plugin, $app, $call, $route, $withGlobalMiddleware);
 
         $container = static::container($plugin) ?? static::container('');
         foreach ($middlewares as $key => $item) {
