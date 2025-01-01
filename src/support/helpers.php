@@ -608,9 +608,12 @@ if (!function_exists('template_inputs')) {
         if ($template === null && $controller = $request->controller) {
             $controllerSuffix = config($plugin ? "plugin.$plugin.app.controller_suffix" : "app.controller_suffix", '');
             $controllerName = $controllerSuffix !== '' ? substr($controller, 0, -strlen($controllerSuffix)) : $controller;
-            $path = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', substr(strrchr($controllerName, '\\'), 1)));
-            $actionFileBaseName = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $request->action));
-            $template = "$path/$actionFileBaseName";
+            $path = str_replace(['controller', 'Controller', '\\'], ['view', 'view', '/'], $controllerName);
+            $path = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $path));
+            $backtrace = debug_backtrace();
+            $action = $backtrace[2]['function'] ?? $request->action;
+            $actionFileBaseName = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $action));
+            $template = "/$path/$actionFileBaseName";
         }
         return [$template, $vars, $app, $plugin];
     }
