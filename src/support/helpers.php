@@ -611,7 +611,7 @@ if (!function_exists('template_inputs')) {
             $path = str_replace(['controller', 'Controller', '\\'], ['view', 'view', '/'], $controllerName);
             $path = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $path));
             $action = $request->action;
-            $backtrace = debug_backtrace();
+            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             foreach ($backtrace as $backtraceItem) {
                 if (!isset($backtraceItem['class']) || !isset($backtraceItem['function'])) {
                     continue;
