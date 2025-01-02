@@ -610,8 +610,20 @@ if (!function_exists('template_inputs')) {
             $controllerName = $controllerSuffix !== '' ? substr($controller, 0, -strlen($controllerSuffix)) : $controller;
             $path = str_replace(['controller', 'Controller', '\\'], ['view', 'view', '/'], $controllerName);
             $path = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $path));
+            $action = $request->action;
             $backtrace = debug_backtrace();
-            $action = $backtrace[2]['function'] ?? $request->action;
+            foreach ($backtrace as $backtraceItem) {
+                if (!isset($backtraceItem['class']) || !isset($backtraceItem['function'])) {
+                    continue;
+                }
+                if ($backtraceItem['class'] === App::class) {
+                    break;
+                }
+                if (preg_match('/\\\\controller\\\\/i', $backtraceItem['class'])) {
+                    $action = $backtraceItem['function'];
+                    break;
+                }
+            }
             $actionFileBaseName = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $action));
             $template = "/$path/$actionFileBaseName";
         }
