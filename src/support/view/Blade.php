@@ -59,8 +59,13 @@ class Blade implements View
         $configPrefix = $plugin ? "plugin.$plugin." : '';
         $baseViewPath = $plugin ? base_path() . "/plugin/$plugin/app" : app_path();
         if ($template[0] === '/') {
-            $viewPath = base_path();
-            $template = substr($template, 1);
+            if (strpos($template, '/view/') !== false) {
+                [$viewPath, $template] = explode('/view/', $template, 2);
+                $viewPath = base_path("$viewPath/view");
+            } else {
+                $viewPath = base_path();
+                $template = ltrim($template, '/');
+            }
         } else {
             $viewPath = $app === '' ? "$baseViewPath/view" : "$baseViewPath/$app/view";
         }
