@@ -16,9 +16,7 @@
 namespace Webman;
 
 use Fiber;
-use SplObjectStorage;
 use StdClass;
-use Swow\Coroutine;
 use WeakMap;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
@@ -34,23 +32,22 @@ class Context
 {
 
     /**
-     * @var SplObjectStorage|WeakMap
+     * @var WeakMap|null
      */
-    protected static $objectStorage;
+    protected static ?WeakMap $objectStorage = null;
 
     /**
      * @var StdClass
      */
-    protected static $object;
-
+    protected static ?stdClass $object = null;
 
     /**
      * @return void
      */
-    public static function init()
+    public static function init(): void
     {
         if (!static::$objectStorage) {
-            static::$objectStorage = class_exists(WeakMap::class) ? new WeakMap() : new SplObjectStorage();
+            static::$objectStorage = new WeakMap();
             static::$object = new StdClass;
         }
     }
@@ -72,22 +69,19 @@ class Context
      */
     protected static function getKey()
     {
-        switch (Worker::$eventLoopClass) {
-            case Revolt::class:
-                return Fiber::getCurrent();
-            case Swoole::class:
-                return \Swoole\Coroutine::getContext();
-            case Swow::class:
-                return Coroutine::getCurrent();
-        }
-        return static::$object;
+        return match (Worker::$eventLoopClass) {
+            Revolt::class => Fiber::getCurrent() ?: static::$object,
+            Swoole::class => \Swoole\Coroutine::getContext(),
+            Swow::class => \Swow\Coroutine::getCurrent(),
+            default => static::$object,
+        };
     }
 
     /**
      * @param string|null $key
      * @return mixed
      */
-    public static function get(?string $key = null)
+    public static function get(?string $key = null): mixed
     {
         $obj = static::getObject();
         if ($key === null) {
@@ -128,10 +122,26 @@ class Context
     }
 
     /**
+     * @param $callback
+     * @return void
+     */
+    public static function onDestroy($callback): void
+    {
+        $obj = static::getObject();
+        $obj->destroyCallbacks[] = $callback;
+    }
+
+    /**
      * @return void
      */
     public static function destroy(): void
     {
+        $obj = static::getObject();
+        if (isset($obj->destroyCallbacks)) {
+            foreach ($obj->destroyCallbacks as $callback) {
+                $callback();
+            }
+        }
         unset(static::$objectStorage[static::getKey()]);
     }
 }

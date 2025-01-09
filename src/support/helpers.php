@@ -26,6 +26,7 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use Webman\App;
 use Webman\Config;
+use Webman\Context;
 use Webman\Route;
 use Workerman\Protocols\Http\Session;
 use Workerman\Worker;
@@ -668,16 +669,5 @@ if (!function_exists('input')) {
     function input(?string $param = null, mixed $default = null): mixed
     {
         return is_null($param) ? request()->all() : request()->input($param, $default);
-    }
-}
-
-if (!function_exists('enum_exists')) {
-    /**
-     * Enum exists.
-     * @return bool
-     */
-    function enum_exists(): bool
-    {
-        return false;
     }
 }

@@ -15,6 +15,7 @@
 use Dotenv\Dotenv;
 use support\Log;
 use Webman\Bootstrap;
+use Webman\Context;
 use Webman\Config;
 use Webman\Middleware;
 use Webman\Route;
@@ -55,6 +56,8 @@ support\App::loadAllConfig(['route']);
 if ($timezone = config('app.default_timezone')) {
     date_default_timezone_set($timezone);
 }
+
+Context::init();
 
 foreach (config('autoload.files', []) as $file) {
     include_once $file;
