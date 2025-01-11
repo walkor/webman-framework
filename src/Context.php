@@ -22,6 +22,7 @@ use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
 use Workerman\Worker;
+use Closure;
 use function property_exists;
 
 /**
@@ -125,10 +126,15 @@ class Context
      * @param $callback
      * @return void
      */
-    public static function onDestroy($callback): void
+    public static function onDestroy(Closure $callback): void
     {
         $obj = static::getObject();
-        $obj->destroyCallbacks[] = $callback;
+        $obj->destroyCallbacks[] = new class ($callback) {
+            public function __construct(protected Closure $callback){}
+            public function __destruct(){
+                ($this->callback)();
+            }
+        };
     }
 
     /**
@@ -136,12 +142,6 @@ class Context
      */
     public static function destroy(): void
     {
-        $obj = static::getObject();
-        if (isset($obj->destroyCallbacks)) {
-            foreach ($obj->destroyCallbacks as $callback) {
-                $callback();
-            }
-        }
         unset(static::$objectStorage[static::getKey()]);
     }
 }
