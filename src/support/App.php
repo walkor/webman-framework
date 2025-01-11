@@ -123,9 +123,6 @@ class App
         // Windows does not support custom processes.
         if (DIRECTORY_SEPARATOR === '/') {
             foreach (config('process', []) as $processName => $config) {
-                if (isset($config['enable']) && $config['enable'] == false) {
-                    continue;
-                }
                 worker_start($processName, $config);
             }
             foreach (config('plugin', []) as $firm => $projects) {
@@ -134,16 +131,10 @@ class App
                         continue;
                     }
                     foreach ($project['process'] ?? [] as $processName => $config) {
-                        if (isset($config['enable']) && $config['enable'] == false) {
-                            continue;
-                        }
                         worker_start("plugin.$firm.$name.$processName", $config);
                     }
                 }
                 foreach ($projects['process'] ?? [] as $processName => $config) {
-                    if (isset($config['enable']) && $config['enable'] == false) {
-                        continue;
-                    }
                     worker_start("plugin.$firm.$processName", $config);
                 }
             }
