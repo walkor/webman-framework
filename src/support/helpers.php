@@ -26,7 +26,6 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use Webman\App;
 use Webman\Config;
-use Webman\Context;
 use Webman\Route;
 use Workerman\Protocols\Http\Session;
 use Workerman\Worker;

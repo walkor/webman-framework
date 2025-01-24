@@ -38,6 +38,7 @@ use support\exception\MissingInputException;
 use support\exception\RecordNotFoundException;
 use support\exception\InputTypeException;
 use Throwable;
+use Webman\Context;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
@@ -140,7 +141,7 @@ class App
     public function onMessage($connection, $request)
     {
         try {
-            Context::set(Request::class, $request);
+            Context::init([Request::class => $request]);
             $path = $request->path();
             $key = $request->method() . $path;
             if (isset(static::$callbacks[$key])) {
@@ -737,8 +738,8 @@ class App
      */
     protected static function send($connection, $response, $request)
     {
-        $keepAlive = $request->header('connection');
         Context::destroy();
+        $keepAlive = $request->header('connection');
         if (($keepAlive === null && $request->protocolVersion() === '1.1')
             || $keepAlive === 'keep-alive' || $keepAlive === 'Keep-Alive'
             || (is_a($response, Response::class) && $response->getHeader('Transfer-Encoding') === 'chunked')
