@@ -141,7 +141,7 @@ class App
     public function onMessage($connection, $request)
     {
         try {
-            Context::init([Request::class => $request]);
+            Context::reset([Request::class => $request]);
             $path = $request->path();
             $key = $request->method() . $path;
             if (isset(static::$callbacks[$key])) {
