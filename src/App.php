@@ -15,6 +15,7 @@
 
 namespace Webman;
 
+use ArrayObject;
 use Closure;
 use Exception;
 use FastRoute\Dispatcher;
@@ -141,7 +142,7 @@ class App
     public function onMessage($connection, $request)
     {
         try {
-            Context::reset([Request::class => $request]);
+            Context::reset(new ArrayObject([Request::class => $request]));
             $path = $request->path();
             $key = $request->method() . $path;
             if (isset(static::$callbacks[$key])) {
