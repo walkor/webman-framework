@@ -20,12 +20,12 @@ use Closure;
 use Exception;
 use FastRoute\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
+use Psr\Log\LoggerInterface;
 use ReflectionEnum;
 use support\exception\InputValueException;
 use support\exception\PageNotFoundException;
 use think\Model as ThinkModel;
 use InvalidArgumentException;
-use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -98,9 +98,9 @@ class App
     protected static $worker = null;
 
     /**
-     * @var Logger
+     * @var ?LoggerInterface
      */
-    protected static $logger = null;
+    protected static ?LoggerInterface $logger = null;
 
     /**
      * @var string
@@ -120,11 +120,11 @@ class App
     /**
      * App constructor.
      * @param string $requestClass
-     * @param Logger $logger
+     * @param LoggerInterface $logger
      * @param string $appPath
      * @param string $publicPath
      */
-    public function __construct(string $requestClass, Logger $logger, string $appPath, string $publicPath)
+    public function __construct(string $requestClass, LoggerInterface $logger, string $appPath, string $publicPath)
     {
         static::$requestClass = $requestClass;
         static::$logger = $logger;
