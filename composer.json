@@ -41,12 +41,16 @@
       "Support\\": "./src/support",
       "Support\\Bootstrap\\": "./src/support/bootstrap",
       "Support\\Exception\\": "./src/support/exception",
-      "Support\\View\\": "./src/support/view"
+      "Support\\View\\": "./src/support/view",
+      "Tests\\": "./tests"
     },
     "files": [
       "./src/support/helpers.php"
     ]
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "require-dev": {
+    "phpunit/phpunit": "^12.0"
+  }
 }
