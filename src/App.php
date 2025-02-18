@@ -499,7 +499,7 @@ class App
     {
         $parameters = [];
         foreach ($reflector->getParameters() as $parameter) {
-            $parameterName = $parameter->name;
+            $parameterName = $parameter->getName();
             $type = $parameter->getType();
             $typeName = $type?->getName();
 
@@ -526,7 +526,7 @@ class App
             $parameterResolver = ParameterResolverFactory::make($typeName);
 
             if ($parameterResolver !== null) {
-                $parameterResolver->resolve($parameters, $parameterValue, gettype($parameterValue), $debug);
+                $parameterResolver->resolve($parameters, $parameterValue, $parameterName, $typeName, $debug);
             } else {
                 $subInputs = is_array($parameterValue) ? $parameterValue : [];
 

@@ -48,13 +48,6 @@ final class EnumParameterResolver implements ParameterResolverInterface
             ])->debug($debug);
         }
 
-        $parameters[$parameterName] = $resolveCallback();
-
-        if (!array_key_exists($parameterName, $parameters)) {
-            throw (new InputValueException())->data([
-                'parameter' => $parameterName,
-                'enum' => $typeName
-            ])->debug($debug);
-        }
+        $parameters[$parameterName] = $value;
     }
 }
