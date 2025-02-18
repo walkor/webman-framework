@@ -17,7 +17,7 @@ final class ParameterResolverFactory
             'bool' => new BooleanParameterResolver(),
             'array', 'object' => new ComplexObjectParameterResolver(),
             'string', 'mixed', 'resource', 'NULL', 'null' => new PrimitiveParameterResolver(),
-            default => throw new \RuntimeException('Unknown type: ' . $typeName),
+            default => null,
         };
     }
 }
