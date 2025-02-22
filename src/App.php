@@ -612,22 +612,22 @@ class App
                 }
             };
 
-            $typeNode = function ($types) use (&$typeNode, $action, $parameters, $parameterName) {
-                if (is_a($types, ReflectionIntersectionType::class, true)) {
+            $typeNode = function ($types) use (&$typeNode, $action, &$parameters, $parameterName) {
+                if ($types instanceof ReflectionIntersectionType::class) {
                     $types = $types->getTypes();
                     while ($types) {
                         $action(array_shift($types)->getName());
                     }
-                } elseif (is_a($types, ReflectionUnionType::class, true)) {
+                } elseif ($types instanceof ReflectionUnionType::class) {
                     $types = $types->getTypes();
                     while ($types) {
                         try {
                             $action(array_shift($types)->getName());
                         } catch (InputValueException|MissingInputException $e) {
-                            count($types) == 0 && isset($parameters[$parameterName]) && throw $e;
+                            count($types) == 0 && !isset($parameters[$parameterName]) && throw $e;
                         }
                     }
-                } elseif (is_a($types, ReflectionNamedType::class, true)) {
+                } elseif ($types instanceof ReflectionNamedType::class) {
                     $action($types->getName());
                     return $types->getName();
                 } else {
