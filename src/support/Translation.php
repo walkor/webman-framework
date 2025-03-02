@@ -57,7 +57,7 @@ class Translation
             static::$instance[$plugin] = $translator = new Translator($config['locale']);
             $translator->setFallbackLocales($config['fallback_locale']);
 
-            $classes = [
+            $classes = $config['loader'] ?? [
                 'Symfony\Component\Translation\Loader\PhpFileLoader' => [
                     'extension' => '.php',
                     'format' => 'phpfile'
