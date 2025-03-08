@@ -46,7 +46,7 @@ class App
 
         static::loadAllConfig(['route', 'container']);
 
-        if (DIRECTORY_SEPARATOR === '\\' && empty(config('server.listen'))) {
+        if (!is_phar() && DIRECTORY_SEPARATOR === '\\' && empty(config('server.listen'))) {
             echo "Please run 'php windows.php' on windows system." . PHP_EOL;
             exit;
         }
@@ -120,8 +120,12 @@ class App
             };
         }
 
-        // Windows does not support custom processes.
-        if (DIRECTORY_SEPARATOR === '/') {
+        $windowsWithoutServerListen = is_phar() && DIRECTORY_SEPARATOR === '\\' && empty($config['listen']);
+        $process = config('process', []);
+        if ($windowsWithoutServerListen && $process) {
+            $processName = isset($process['webman']) ? 'webman' : key($process);
+            worker_start($processName, $process[$processName]);
+        } else if (DIRECTORY_SEPARATOR === '/') {
             foreach (config('process', []) as $processName => $config) {
                 worker_start($processName, $config);
             }
