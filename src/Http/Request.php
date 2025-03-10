@@ -396,12 +396,14 @@ class Request extends \Workerman\Protocols\Http\Request
     }
 
     /**
-     * @return void
+     * Destroy
      */
-    public function __clone()
+    public function destroy(): void
     {
         if ($this->isDirty) {
             unset($this->data['get'], $this->data['post'], $this->data['headers']);
         }
+        parent::destroy();
     }
+
 }
