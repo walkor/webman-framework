@@ -532,7 +532,7 @@ class Route
      * Fallback.
      * @param callable|mixed $callback
      * @param string $plugin
-     * @return void
+     * @return RouteObject
      */
     public static function fallback(callable $callback, string $plugin = '')
     {
