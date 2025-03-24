@@ -128,7 +128,7 @@ class Middleware
             $middlewareAttributeInstance = $middlewareAttribute->newInstance();
             $middlewares = array_merge($middlewares, $middlewareAttributeInstance->getMiddlewares());
         }
-        if ($reflection->getParentClass()) {
+        if (method_exists($reflection, 'getParentClass') && $reflection->getParentClass()) {
             self::prepareAttributeMiddlewares($middlewares, $reflection->getParentClass());
         }
     }
