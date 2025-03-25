@@ -349,7 +349,7 @@ class Route
     {
         if (class_exists($controller)) {
             $reflectionClass = new ReflectionClass($controller);
-            if ($reflectionClass->getAttributes(DisableDefaultRoute::class, ReflectionAttribute::IS_INSTANCEOF)) {
+            if (static::isRefHasDefaultRouteDisabledAnnotation($reflectionClass)) {
                 return true;
             }
             if ($action && $reflectionClass->hasMethod($action)) {
@@ -357,6 +357,25 @@ class Route
                 if ($reflectionMethod->getAttributes(DisableDefaultRoute::class, ReflectionAttribute::IS_INSTANCEOF)) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param ReflectionClass $reflectionClass
+     * @return bool
+     */
+    protected static function isRefHasDefaultRouteDisabledAnnotation(ReflectionClass $reflectionClass): bool
+    {
+        $has = $reflectionClass->getAttributes(DisableDefaultRoute::class, ReflectionAttribute::IS_INSTANCEOF);
+        if ($has) {
+            return true;
+        }
+        if (method_exists($reflectionClass, 'getParentClass')) {
+            $parent = $reflectionClass->getParentClass();
+            if ($parent) {
+                return static::isRefHasDefaultRouteDisabledAnnotation($parent);
             }
         }
         return false;
