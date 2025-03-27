@@ -369,13 +369,20 @@ class App
                 return $response;
             });
         } else {
-            if (!$anonymousArgs) {
-                $callback = $call;
-            } else {
-                $callback = function ($request) use ($call, $anonymousArgs) {
-                    return $call($request, ...$anonymousArgs);
-                };
-            }
+            $callback = function ($request) use ($call, $anonymousArgs) {
+                if (!$anonymousArgs) {
+                    $response = $call($request);
+                } else {
+                    $response = $call($request, ...$anonymousArgs);
+                }
+                if (!$response instanceof Response) {
+                    if (!is_string($response)) {
+                        $response = static::stringify($response);
+                    }
+                    $response = new Response(200, [], $response);
+                }
+                return $response;
+            };
         }
         return $callback;
     }
