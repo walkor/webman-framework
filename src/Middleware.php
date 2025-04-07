@@ -123,6 +123,9 @@ class Middleware
      */
     private static function prepareAttributeMiddlewares(array &$middlewares, ReflectionClass|ReflectionMethod $reflection): void
     {
+        if ($reflection instanceof ReflectionClass && $parent_ref = $reflection->getParentClass()){
+            self::prepareAttributeMiddlewares($middlewares, $parent_ref);
+        }
         $middlewareAttributes = $reflection->getAttributes(Annotation\Middleware::class, ReflectionAttribute::IS_INSTANCEOF);
         foreach ($middlewareAttributes as $middlewareAttribute) {
             $middlewareAttributeInstance = $middlewareAttribute->newInstance();
