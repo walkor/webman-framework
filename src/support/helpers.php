@@ -180,7 +180,7 @@ if (!function_exists('json')) {
      * @param int $options
      * @return Response
      */
-    function json($data, int $options = JSON_UNESCAPED_UNICODE): Response
+    function json($data, int $options = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES): Response
     {
         return new Response(200, ['Content-Type' => 'application/json'], json_encode($data, $options));
     }
