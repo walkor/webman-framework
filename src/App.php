@@ -649,6 +649,7 @@ class App
             if ($args) {
                 $route->setParams($args);
             }
+            $args = array_merge($route->param(), $args);
             if (is_array($callback)) {
                 $controller = $callback[0];
                 $plugin = static::getPluginByClass($controller);
