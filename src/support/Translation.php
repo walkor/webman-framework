@@ -48,10 +48,10 @@ class Translation
      * @return Translator
      * @throws NotFoundException
      */
-    public static function instance(string $plugin = ''): Translator
+    public static function instance(string $plugin = '', array|null $test_config=null): Translator
     {
         if (!isset(static::$instance[$plugin])) {
-            $config = config($plugin ? "plugin.$plugin.translation" : 'translation', []);
+            $config = $test_config ?: config($plugin ? "plugin.$plugin.translation" : 'translation', []);
             $paths = (array)($config['path'] ?? []);
 
             static::$instance[$plugin] = $translator = new Translator($config['locale']);
