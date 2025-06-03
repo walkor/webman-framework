@@ -15,6 +15,8 @@
 namespace Webman\Http;
 
 use Webman\Route\Route;
+use support\Validator;
+use Webman\Http\UploadFile;
 use function current;
 use function filter_var;
 use function ip2long;
@@ -66,9 +68,21 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function all()
     {
-        return $this->get() + $this->post();
+        return array_merge($this->get() ,$this->post(), $this->file());
     }
 
+    /**
+     * 验证请求数据
+     */
+    public function validate(array $rules, array $messages = []): array
+    {
+        $data = $this->all();
+        $validator = new Validator($data, $rules, $messages);
+        
+        // 直接让 validator 抛出 ValidationException
+        // ValidationException 继承自 BusinessException，框架会自动处理
+        return $validator->validate();
+    }
     /**
      * Input
      * @param string $name
