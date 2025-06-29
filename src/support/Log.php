@@ -54,7 +54,11 @@ class Log
             $config = config('log', [])[$name];
             $handlers = self::handlers($config);
             $processors = self::processors($config);
-            static::$instance[$name] = new Logger($name, $handlers, $processors);
+            $logger = new Logger($name, $handlers, $processors);
+            if (method_exists($logger, 'useLoggingLoopDetection')) {
+                $logger->useLoggingLoopDetection(false);
+            }
+            static::$instance[$name] = $logger;
         }
         return static::$instance[$name];
     }
