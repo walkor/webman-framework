@@ -67,7 +67,7 @@ class Container implements ContainerInterface
         if (!class_exists($name)) {
             throw new NotFoundException("Class '$name' not found");
         }
-        return new $name(... array_values($constructor));
+        return new $name(... $constructor);
     }
 
     /**
