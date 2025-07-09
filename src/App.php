@@ -22,6 +22,9 @@ use FastRoute\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Psr\Log\LoggerInterface;
 use ReflectionEnum;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
+use ReflectionUnionType;
 use support\exception\InputValueException;
 use support\exception\PageNotFoundException;
 use think\Model as ThinkModel;
@@ -424,37 +427,44 @@ class App
             $parameterName = $parameter->name;
             $keys[] = $parameterName;
             if ($parameter->hasType()) {
-                $typeName = $parameter->getType()->getName();
-                if (!in_array($typeName, $adaptersList)) {
-                    $needInject = true;
-                    continue;
-                }
-                if (!array_key_exists($parameterName, $args)) {
-                    $needInject = true;
-                    continue;
-                }
-                switch ($typeName) {
-                    case 'int':
-                    case 'float':
-                        if (!is_numeric($args[$parameterName])) {
-                            return true;
-                        }
-                        $args[$parameterName] = $typeName === 'int' ? (int)$args[$parameterName]: (float)$args[$parameterName];
-                        break;
-                    case 'bool':
-                        $args[$parameterName] = (bool)$args[$parameterName];
-                        break;
-                    case 'array':
-                    case 'object':
-                        if (!is_array($args[$parameterName])) {
-                            return true;
-                        }
-                        $args[$parameterName] = $typeName === 'array' ? $args[$parameterName] : (object)$args[$parameterName];
-                        break;
-                    case 'string':
-                    case 'mixed':
-                    case 'resource':
-                        break;
+                $type = $parameter->getType();
+                $reflectionNamedTypes = match (get_class($type)) {
+                    ReflectionUnionType::class, ReflectionIntersectionType::class => $type->getTypes(),
+                    ReflectionNamedType::class => [$type],
+                };
+                foreach ($reflectionNamedTypes as $reflectionNamedType) {
+                    $typeName = $reflectionNamedType->getName();
+                    if (!in_array($typeName, $adaptersList)) {
+                        $needInject = true;
+                        continue 2;
+                    }
+                    if (!array_key_exists($parameterName, $args)) {
+                        $needInject = true;
+                        continue 2;
+                    }
+                    switch ($typeName) {
+                        case 'int':
+                        case 'float':
+                            if (!is_numeric($args[$parameterName])) {
+                                return true;
+                            }
+                            $args[$parameterName] = $typeName === 'int' ? (int)$args[$parameterName] : (float)$args[$parameterName];
+                            break;
+                        case 'bool':
+                            $args[$parameterName] = (bool)$args[$parameterName];
+                            break;
+                        case 'array':
+                        case 'object':
+                            if (!is_array($args[$parameterName])) {
+                                return true;
+                            }
+                            $args[$parameterName] = $typeName === 'array' ? $args[$parameterName] : (object)$args[$parameterName];
+                            break;
+                        case 'string':
+                        case 'mixed':
+                        case 'resource':
+                            break;
+                    }
                 }
             }
         }
@@ -464,8 +474,17 @@ class App
         if (!$firstParameter->hasType()) {
             return $firstParameter->getName() !== 'request';
         }
-        if (!is_a(static::$requestClass, $firstParameter->getType()->getName(), true)) {
-            return true;
+        $firstType = $firstParameter->getType();
+        if ($firstType instanceof ReflectionUnionType || $firstType instanceof ReflectionIntersectionType) {
+            foreach ($firstType->getTypes() as $type) {
+                if (!is_a(static::$requestClass, $type->getName(), true)) {
+                    return true;
+                }
+            }
+        } elseif ($firstType instanceof ReflectionNamedType) {
+            if (!is_a(static::$requestClass, $firstType->getName(), true)) {
+                return true;
+            }
         }
 
         return $needInject;
@@ -500,99 +519,126 @@ class App
         $parameters = [];
         foreach ($reflector->getParameters() as $parameter) {
             $parameterName = $parameter->name;
-            $type = $parameter->getType();
-            $typeName = $type?->getName();
 
-            if ($typeName && is_a($request, $typeName)) {
-                $parameters[$parameterName] = $request;
-                continue;
-            }
-
-            if (!array_key_exists($parameterName, $inputs)) {
-                if (!$parameter->isDefaultValueAvailable()) {
-                    if (!$typeName || (!class_exists($typeName) && !enum_exists($typeName)) || enum_exists($typeName)) {
-                        throw (new MissingInputException())->data([
-                            'parameter' => $parameterName,
-                        ])->debug($debug);
-                    }
-                } else {
-                    $parameters[$parameterName] = $parameter->getDefaultValue();
-                    continue;
+            $action = function ($typeName) use ($parameter, &$parameters, $parameterName, $container, $request, $inputs, $reflector, $debug) {
+                if ($typeName && is_a($request, $typeName)) {
+                    $parameters[$parameterName] = $request;
+                    return;
                 }
-            }
 
-            $parameterValue = $inputs[$parameterName] ?? null;
-
-            switch ($typeName) {
-                case 'int':
-                case 'float':
-                    if (!is_numeric($parameterValue)) {
-                        throw (new InputTypeException())->data([
-                            'parameter' => $parameterName,
-                            'exceptType' => $typeName,
-                            'actualType' => gettype($parameterValue),
-                        ])->debug($debug);
-                    }
-                    $parameters[$parameterName] = $typeName === 'float' ? (float)$parameterValue :  (int)$parameterValue;
-                    break;
-                case 'bool':
-                    $parameters[$parameterName] = (bool)$parameterValue;
-                    break;
-                case 'array':
-                case 'object':
-                    if (!is_array($parameterValue)) {
-                        throw (new InputTypeException())->data([
-                            'parameter' => $parameterName,
-                            'exceptType' => $typeName,
-                            'actualType' => gettype($parameterValue),
-                        ])->debug($debug);
-                    }
-                    $parameters[$parameterName] = $typeName === 'object' ? (object)$parameterValue : $parameterValue;
-                    break;
-                case 'string':
-                case 'mixed':
-                case 'resource':
-                case null:
-                    $parameters[$parameterName] = $parameterValue;
-                    break;
-                default:
-                    $subInputs = is_array($parameterValue) ? $parameterValue : [];
-                    if (is_a($typeName, Model::class, true) || is_a($typeName, ThinkModel::class, true)) {
-                        $parameters[$parameterName] = $container->make($typeName, [
-                            'attributes' => $subInputs,
-                            'data' => $subInputs
-                        ]);
-                        break;
-                    }
-                    if (enum_exists($typeName)) {
-                        $reflection = new ReflectionEnum($typeName);
-                        if ($reflection->hasCase($parameterValue)) {
-                            $parameters[$parameterName] = $reflection->getCase($parameterValue)->getValue();
-                            break;
-                        } elseif ($reflection->isBacked()) {
-                            foreach ($reflection->getCases() as $case) {
-                                if ($case->getValue()->value == $parameterValue) {
-                                    $parameters[$parameterName] = $case->getValue();
-                                    break;
-                                }
-                            }
-                        }
-                        if (!array_key_exists($parameterName, $parameters)) {
-                            throw (new InputValueException())->data([
+                if (!array_key_exists($parameterName, $inputs)) {
+                    if (!$parameter->isDefaultValueAvailable()) {
+                        if (!$typeName || (!class_exists($typeName) && !enum_exists($typeName)) || enum_exists($typeName)) {
+                            throw (new MissingInputException())->data([
                                 'parameter' => $parameterName,
-                                'enum' => $typeName
                             ])->debug($debug);
                         }
-                        break;
-                    }
-                    if (is_array($subInputs) && $constructor = (new ReflectionClass($typeName))->getConstructor()) {
-                        $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $subInputs, $constructor, $debug));
                     } else {
-                        $parameters[$parameterName] = $container->make($typeName);
+                        $parameters[$parameterName] = $parameter->getDefaultValue();
+                        return;
                     }
-                    break;
-            }
+                }
+
+                $parameterValue = $inputs[$parameterName] ?? null;
+
+                switch ($typeName) {
+                    case 'int':
+                    case 'float':
+                        if (!is_numeric($parameterValue)) {
+                            throw (new InputTypeException())->data([
+                                'parameter' => $parameterName,
+                                'exceptType' => $typeName,
+                                'actualType' => gettype($parameterValue),
+                            ])->debug($debug);
+                        }
+                        $parameters[$parameterName] = $typeName === 'float' ? (float)$parameterValue : (int)$parameterValue;
+                        break;
+                    case 'bool':
+                        $parameters[$parameterName] = (bool)$parameterValue;
+                        break;
+                    case 'array':
+                    case 'object':
+                        if (!is_array($parameterValue)) {
+                            throw (new InputTypeException())->data([
+                                'parameter' => $parameterName,
+                                'exceptType' => $typeName,
+                                'actualType' => gettype($parameterValue),
+                            ])->debug($debug);
+                        }
+                        $parameters[$parameterName] = $typeName === 'object' ? (object)$parameterValue : $parameterValue;
+                        break;
+                    case 'string':
+                    case 'mixed':
+                    case 'resource':
+                    case null:
+                        $parameters[$parameterName] = $parameterValue;
+                        break;
+                    default:
+                        $subInputs = is_array($parameterValue) ? $parameterValue : [];
+                        if (is_a($typeName, Model::class, true) || is_a($typeName, ThinkModel::class, true)) {
+                            $parameters[$parameterName] = $container->make($typeName, [
+                                'attributes' => $subInputs,
+                                'data' => $subInputs
+                            ]);
+                            break;
+                        }
+                        if (enum_exists($typeName)) {
+                            $reflection = new ReflectionEnum($typeName);
+                            if ($reflection->hasCase($parameterValue)) {
+                                $parameters[$parameterName] = $reflection->getCase($parameterValue)->getValue();
+                                break;
+                            } elseif ($reflection->isBacked()) {
+                                foreach ($reflection->getCases() as $case) {
+                                    if ($case->getValue()->value == $parameterValue) {
+                                        $parameters[$parameterName] = $case->getValue();
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!array_key_exists($parameterName, $parameters)) {
+                                throw (new InputValueException())->data([
+                                    'parameter' => $parameterName,
+                                    'enum' => $typeName
+                                ])->debug($debug);
+                            }
+                            break;
+                        }
+                        if (is_array($subInputs) && $constructor = (new ReflectionClass($typeName))->getConstructor()) {
+                            $parameters[$parameterName] = $container->make($typeName, static::resolveMethodDependencies($container, $request, $subInputs, $constructor, $debug));
+                        } else {
+                            $parameters[$parameterName] = $container->make($typeName);
+                        }
+                        break;
+                }
+            };
+
+            $typeNode = function ($types) use (&$typeNode, $action, &$parameters, $parameterName) {
+                if ($types instanceof ReflectionIntersectionType) {
+                    $types = $types->getTypes();
+                    while ($types) {
+                        $action(array_shift($types)->getName());
+                    }
+                } elseif ($types instanceof ReflectionUnionType) {
+                    $types = $types->getTypes();
+                    while ($types) {
+                        try {
+                            $action(array_shift($types)->getName());
+                        } catch (InputValueException|MissingInputException $e) {
+                            count($types) == 0 && !isset($parameters[$parameterName]) && throw $e;
+                        }
+                    }
+                } elseif ($types instanceof ReflectionNamedType) {
+                    $action($types->getName());
+                    return $types->getName();
+                } else {
+                    $action(null);
+                }
+                return null;
+            };
+
+            $typeNode($parameter->getType());
         }
+
         return $parameters;
     }
 
