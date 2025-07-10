@@ -85,6 +85,11 @@ class Route
     /**
      * @var bool
      */
+    protected static $disabledDefaultAllRoute = false;
+
+    /**
+     * @var array
+     */
     protected static $disabledDefaultRoutes = [];
 
     /**
@@ -273,6 +278,24 @@ class Route
     public static function getRoutes(): array
     {
         return static::$allRoutes;
+    }
+
+    /**
+     * disableDefaultAllRoute
+     */
+    public static function disableDefaultAllRoute()
+    {
+        static::$disabledDefaultAllRoute = true;
+    }
+
+    /**
+     * isDefaultAllRouteDisabled
+     *
+     * @return bool
+     */
+    public static function isDefaultAllRouteDisabled(): bool
+    {
+        return static::$disabledDefaultAllRoute;
     }
 
     /**

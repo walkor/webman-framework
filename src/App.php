@@ -160,6 +160,13 @@ class App
                 return null;
             }
 
+            if (Route::isDefaultAllRouteDisabled()) {
+                $callback = static::getFallback('', $status);
+                $request->app = $request->controller = $request->action = '';
+                static::send($connection, $callback($request), $request);
+                return null;
+            }
+
             $controllerAndAction = static::parseControllerAction($path);
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
             if (!$controllerAndAction || Route::isDefaultRouteDisabled($plugin, $controllerAndAction['app'] ?: '*') ||
@@ -681,6 +688,10 @@ class App
      */
     protected static function findFile(TcpConnection $connection, string $path, string $key, $request): bool
     {
+        if (static::config('', 'app.static_all_enable', false)) {
+            return false;
+        }
+
         if (preg_match('/%[0-9a-f]{2}/i', $path)) {
             $path = urldecode($path);
             if (static::unsafeUri($connection, $path, $request)) {
