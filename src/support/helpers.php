@@ -248,7 +248,7 @@ if (!function_exists('view')) {
     {
         [$template, $vars, $app, $plugin] = template_inputs($template, $vars, $app, $plugin);
         $handler = \config($plugin ? "plugin.$plugin.view.handler" : 'view.handler');
-        return new Response(200, [], $handler::render($template, $vars, $app, $plugin));
+        return new Response(200, ['Content-Type'=>'text/html; charset=utf-8'], $handler::render($template, $vars, $app, $plugin));
     }
 }
 
