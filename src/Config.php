@@ -144,6 +144,9 @@ class Config
                 foreach ($projects['thinkorm']['connections'] ?? [] as $key => $connection) {
                     $config['thinkorm']['connections']["plugin.$firm.$key"] = $connection;
                 }
+                foreach ($projects['think-orm']['connections'] ?? [] as $key => $connection) {
+                    $config['think-orm']['connections']["plugin.$firm.$key"] = $connection;
+                }
             }
             foreach ($projects as $name => $project) {
                 if (!is_array($project)) {
@@ -152,10 +155,16 @@ class Config
                 foreach ($project['thinkorm']['connections'] ?? [] as $key => $connection) {
                     $config['thinkorm']['connections']["plugin.$firm.$name.$key"] = $connection;
                 }
+                foreach ($project['think-orm']['connections'] ?? [] as $key => $connection) {
+                    $config['think-orm']['connections']["plugin.$firm.$name.$key"] = $connection;
+                }
             }
         }
         if (!empty($config['thinkorm']['connections'])) {
             $config['thinkorm']['default'] = $config['thinkorm']['default'] ?? key($config['thinkorm']['connections']);
+        }
+        if (!empty($config['think-orm']['connections'])) {
+            $config['think-orm']['default'] = $config['think-orm']['default'] ?? key($config['think-orm']['connections']);
         }
         // Merge redis config
         foreach ($config['plugin'] ?? [] as $firm => $projects) {
