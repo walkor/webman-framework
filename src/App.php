@@ -557,9 +557,14 @@ class App
                     break;
                 default:
                     $subInputs = is_array($parameterValue) ? $parameterValue : [];
-                    if (is_a($typeName, Model::class, true) || is_a($typeName, ThinkModel::class, true)) {
+                    if (is_a($typeName, Model::class, true)) {
                         $parameters[$parameterName] = $container->make($typeName, [
-                            'attributes' => $subInputs,
+                            'attributes' => $subInputs
+                        ]);
+                        break;
+                    }
+                    if (is_a($typeName, ThinkModel::class, true)) {
+                        $parameters[$parameterName] = $container->make($typeName, [
                             'data' => $subInputs
                         ]);
                         break;
