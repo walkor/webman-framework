@@ -746,6 +746,8 @@ class App
     protected static function send($connection, $response, $request)
     {
         Context::destroy();
+        // Remove the reference of request to session.
+        unset($request->context['session']);
         $keepAlive = $request->header('connection');
         if (($keepAlive === null && $request->protocolVersion() === '1.1')
             || $keepAlive === 'keep-alive' || $keepAlive === 'Keep-Alive'
