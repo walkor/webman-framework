@@ -24,7 +24,12 @@ use RecursiveIteratorIterator;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
+use RuntimeException;
+use Webman\Annotation\Middleware as MiddlewareAttribute;
 use Webman\Annotation\DisableDefaultRoute;
+use Webman\Annotation\Route as RouteAttribute;
+use Webman\Annotation\RouteGroup as RouteGroupAttribute;
 use Webman\Route\Route as RouteObject;
 use function array_diff;
 use function array_values;
@@ -103,6 +108,17 @@ class Route
     protected static $allRoutes = [];
 
     /**
+     * Index for conflict detection: ["METHOD path" => "callback string"]
+     * @var array<string, string>
+     */
+    protected static array $methodPathIndex = [];
+
+    /**
+     * @var string|null
+     */
+    protected static ?string $registeringSource = null;
+
+    /**
      * @var RouteObject[]
      */
     protected $routes = [];
@@ -113,6 +129,7 @@ class Route
     protected $children = [];
 
     /**
+     * Add GET route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -123,6 +140,7 @@ class Route
     }
 
     /**
+     * Add POST route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -133,6 +151,7 @@ class Route
     }
 
     /**
+     * Add PUT route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -143,6 +162,7 @@ class Route
     }
 
     /**
+     * Add PATCH route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -153,6 +173,7 @@ class Route
     }
 
     /**
+     * Add DELETE route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -173,6 +194,7 @@ class Route
     }
 
     /**
+     * Add HEAD route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -183,6 +205,7 @@ class Route
     }
 
     /**
+     * Add OPTIONS route.
      * @param string $path
      * @param callable|mixed $callback
      * @return RouteObject
@@ -193,6 +216,7 @@ class Route
     }
 
     /**
+     * Add route.
      * @param $method
      * @param string $path
      * @param callable|mixed $callback
@@ -204,6 +228,7 @@ class Route
     }
 
     /**
+     * Add group.
      * @param string|callable $path
      * @param callable|null $callback
      * @return static
@@ -228,6 +253,7 @@ class Route
     }
 
     /**
+     * Add resource.
      * @param string $name
      * @param string $controller
      * @param array $options
@@ -268,6 +294,7 @@ class Route
     }
 
     /**
+     * Get routes.
      * @return RouteObject[]
      */
     public static function getRoutes(): array
@@ -276,8 +303,7 @@ class Route
     }
 
     /**
-     * disableDefaultRoute.
-     *
+     * Disable default route.
      * @param array|string $plugin
      * @param string|null $app
      * @return bool
@@ -314,6 +340,7 @@ class Route
     }
 
     /**
+     * Is default route disabled.
      * @param array|string $plugin
      * @param string|null $app
      * @return bool
@@ -341,6 +368,7 @@ class Route
     }
 
     /**
+     * Is default route disabled by annotation.
      * @param string $controller
      * @param string|null $action
      * @return bool
@@ -363,6 +391,7 @@ class Route
     }
 
     /**
+     * Is reflection class has default route disabled annotation.
      * @param ReflectionClass $reflectionClass
      * @return bool
      */
@@ -382,6 +411,7 @@ class Route
     }
 
     /**
+     * Add middleware.
      * @param $middleware
      * @return $this
      */
@@ -397,6 +427,7 @@ class Route
     }
 
     /**
+     * Collect route.
      * @param RouteObject $route
      */
     public function collect(RouteObject $route)
@@ -405,6 +436,7 @@ class Route
     }
 
     /**
+     * Set by name.
      * @param string $name
      * @param RouteObject $instance
      */
@@ -414,6 +446,7 @@ class Route
     }
 
     /**
+     * Get by name.
      * @param string $name
      * @return null|RouteObject
      */
@@ -423,6 +456,7 @@ class Route
     }
 
     /**
+     * Add child.
      * @param Route $route
      * @return void
      */
@@ -432,6 +466,7 @@ class Route
     }
 
     /**
+     * Get children.
      * @return Route[]
      */
     public function getChildren()
@@ -440,6 +475,7 @@ class Route
     }
 
     /**
+     * Dispatch.
      * @param string $method
      * @param string $path
      * @return array
@@ -450,6 +486,7 @@ class Route
     }
 
     /**
+     * Convert to callable.
      * @param string $path
      * @param callable|mixed $callback
      * @return callable|false|string[]
@@ -478,6 +515,7 @@ class Route
     }
 
     /**
+     * Add route.
      * @param array|string $methods
      * @param string $path
      * @param callable|mixed $callback
@@ -485,6 +523,19 @@ class Route
      */
     protected static function addRoute($methods, string $path, $callback): RouteObject
     {
+        $fullPath = static::$groupPrefix . $path;
+        foreach ((array)$methods as $method) {
+            $method = strtoupper((string)$method);
+            $key = $method . ' ' . $fullPath;
+            if (isset(static::$methodPathIndex[$key])) {
+                $old = static::$methodPathIndex[$key];
+                $new = static::callbackToString($callback);
+                $source = static::$registeringSource ? (' from ' . static::$registeringSource) : '';
+                throw new RuntimeException("Route conflict: [$key] already registered as $old, cannot register $new$source");
+            }
+            static::$methodPathIndex[$key] = static::callbackToString($callback);
+        }
+
         $route = new RouteObject($methods, static::$groupPrefix . $path, $callback);
         static::$allRoutes[] = $route;
 
@@ -507,6 +558,18 @@ class Route
         if (!is_array($paths)) {
             return;
         }
+        static::$dispatcher = null;
+        static::$collector = null;
+        static::$fallbackRoutes = [];
+        static::$fallback = [];
+        static::$nameList = [];
+        static::$disabledDefaultRoutes = [];
+        static::$disabledDefaultRouteControllers = [];
+        static::$disabledDefaultRouteActions = [];
+        static::$allRoutes = [];
+        static::$methodPathIndex = [];
+        static::$registeringSource = null;
+
         static::$dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
             Route::setCollector($route);
             foreach ($paths as $configPath) {
@@ -534,6 +597,7 @@ class Route
                     require_once $file;
                 }
             }
+            static::loadAnnotationRoutes();
         });
     }
 
@@ -577,6 +641,448 @@ class Route
             static::$fallback[$plugin] = $route ? App::getCallback($plugin, 'NOT_FOUND', $route->getCallback(), ['status' => $status], false, $route) : null;
         }
         return static::$fallback[$plugin];
+    }
+
+    /**
+     * Load annotation routes.
+     * @return void
+     */
+    protected static function loadAnnotationRoutes(): void
+    {
+        $roots = [];
+
+        $appRoot = app_path();
+        if (is_dir($appRoot)) {
+            $roots[] = [
+                'dir' => $appRoot,
+                'ns' => 'app\\',
+                'suffix' => (string)Config::get('app.controller_suffix', ''),
+            ];
+        }
+
+        $pluginBase = base_path('plugin');
+        if (is_dir($pluginBase)) {
+            foreach (scandir($pluginBase) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                $pluginDir = $pluginBase . DIRECTORY_SEPARATOR . $entry;
+                if (!is_dir($pluginDir)) {
+                    continue;
+                }
+                if (!static::isValidIdentifier($entry)) {
+                    continue;
+                }
+                // Only load enabled plugins.
+                $pluginAppConfig = Config::get("plugin.$entry.app");
+                if (!$pluginAppConfig) {
+                    continue;
+                }
+                $pluginAppDir = $pluginDir . DIRECTORY_SEPARATOR . 'app';
+                if (!is_dir($pluginAppDir)) {
+                    continue;
+                }
+                $roots[] = [
+                    'dir' => $pluginAppDir,
+                    'ns' => 'plugin\\' . $entry . '\\app\\',
+                    'suffix' => is_array($pluginAppConfig) ? (string)($pluginAppConfig['controller_suffix'] ?? '') : (string)Config::get("plugin.$entry.app.controller_suffix", ''),
+                ];
+            }
+        }
+
+        foreach ($roots as $root) {
+            $controllerFiles = static::scanControllerFiles($root['dir'], $root['suffix'] ?? '');
+            if (!$controllerFiles) {
+                continue;
+            }
+            $routes = static::buildAnnotationRouteDefinitions($controllerFiles, $root['dir'], $root['ns']);
+            static::registerAnnotationRouteDefinitions($routes);
+        }
+    }
+
+    /**
+     * Build annotation route definitions.
+     * @param string[] $controllerFiles
+     * @param string $appRoot
+     * @return array<int,array{methods: string[], path: string, callback: array{0:string,1:string}, name: ?string, middlewares: array}>
+     */
+    protected static function buildAnnotationRouteDefinitions(array $controllerFiles, string $rootDir, string $rootNamespace): array
+    {
+        $definitions = [];
+
+        foreach ($controllerFiles as $file) {
+            $controllerClass = static::classFromFile($rootDir, $rootNamespace, $file);
+            if (!$controllerClass) {
+                continue;
+            }
+            $declaredClass = static::extractDeclaredClassFromFile($file);
+            if (!$declaredClass || $declaredClass !== $controllerClass) {
+                continue;
+            }
+            if (!class_exists($controllerClass)) {
+                require_once $file;
+            }
+            if (!class_exists($controllerClass)) {
+                continue;
+            }
+
+            $ref = new ReflectionClass($controllerClass);
+            if ($ref->isAbstract() || $ref->isInterface()) {
+                continue;
+            }
+
+            $prefix = '';
+            $groupAttrs = $ref->getAttributes(RouteGroupAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
+            if ($groupAttrs) {
+                /** @var RouteGroupAttribute $group */
+                $group = $groupAttrs[0]->newInstance();
+                $prefix = static::normalizeRoutePrefix($group->prefix);
+            }
+
+            $classMiddlewares = static::collectMiddlewaresFromAttributes(
+                $ref->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF)
+            );
+
+            foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+                if ($method->isConstructor() || $method->isDestructor()) {
+                    continue;
+                }
+                if ($method->getDeclaringClass()->getName() !== $controllerClass) {
+                    continue;
+                }
+
+                $routeAttrs = $method->getAttributes(RouteAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
+                if (!$routeAttrs) {
+                    continue;
+                }
+
+                $methodMiddlewares = static::collectMiddlewaresFromAttributes(
+                    $method->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF)
+                );
+
+                foreach ($routeAttrs as $routeAttr) {
+                    /** @var RouteAttribute $route */
+                    $route = $routeAttr->newInstance();
+                    if ($route->path === null) {
+                        // Null path means "method restriction only" for default route, do not register.
+                        continue;
+                    }
+                    $path = static::normalizeRoutePath($route->path, $controllerClass . '::' . $method->getName());
+                    $fullPath = $prefix ? rtrim($prefix, '/') . $path : $path;
+
+                    $methods = [];
+                    foreach ($route->methods as $m) {
+                        $methods[] = strtoupper((string)$m);
+                    }
+
+                    $definitions[] = [
+                        'methods' => $methods,
+                        'path' => $fullPath,
+                        'callback' => [$controllerClass, $method->getName()],
+                        'name' => $route->name,
+                        'middlewares' => array_merge($classMiddlewares, $methodMiddlewares),
+                    ];
+                }
+            }
+        }
+
+        return $definitions;
+    }
+
+    /**
+     * Collect middlewares from attributes.
+     * @param array<ReflectionAttribute> $attributes
+     * @return array
+     */
+    protected static function collectMiddlewaresFromAttributes(array $attributes): array
+    {
+        $middlewares = [];
+        foreach ($attributes as $attribute) {
+            /** @var MiddlewareAttribute $instance */
+            $instance = $attribute->newInstance();
+            $middlewares = array_merge($middlewares, $instance->getMiddlewares());
+        }
+        return $middlewares;
+    }
+
+    /**
+     * Register annotation route definitions.
+     * @param array $definitions
+     * @return void
+     */
+    protected static function registerAnnotationRouteDefinitions(array $definitions): void
+    {
+        foreach ($definitions as $definition) {
+            static::$registeringSource = 'annotation ' . $definition['callback'][0] . '::' . $definition['callback'][1];
+            $route = static::add($definition['methods'], $definition['path'], $definition['callback']);
+            if (!empty($definition['name'])) {
+                $route->name($definition['name']);
+            }
+            if (!empty($definition['middlewares'])) {
+                $route->middleware($definition['middlewares']);
+            }
+            static::$registeringSource = null;
+        }
+    }
+
+    /**
+     * Scan controller files.
+     * @param string $appRoot
+     * @return string[]
+     */
+    protected static function scanControllerFiles(string $appRoot, string $controllerSuffix = ''): array
+    {
+        $appRoot = get_realpath($appRoot) ?: $appRoot;
+        if (!is_dir($appRoot)) {
+            return [];
+        }
+
+        // Performance-first strategy:
+        // - First locate directories named "controller" (case-insensitive).
+        // - Then only scan PHP files under those controller folders.
+        $controllerDirs = [];
+        $pendingDirs = [$appRoot];
+        while ($pendingDirs) {
+            $dir = array_pop($pendingDirs);
+            try {
+                $iterator = new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            foreach ($iterator as $item) {
+                /** @var \SplFileInfo $item */
+                if (!$item->isDir()) {
+                    continue;
+                }
+                $name = $item->getBasename();
+                $path = $item->getPathname();
+                if (strcasecmp($name, 'controller') === 0) {
+                    $controllerDirs[] = $path;
+                } else {
+                    $pendingDirs[] = $path;
+                }
+            }
+        }
+
+        if (!$controllerDirs) {
+            return [];
+        }
+
+        $files = [];
+        foreach ($controllerDirs as $controllerDir) {
+            $it = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($controllerDir, FilesystemIterator::SKIP_DOTS)
+            );
+            foreach ($it as $item) {
+                /** @var \SplFileInfo $item */
+                if (!$item->isFile() || $item->getExtension() !== 'php') {
+                    continue;
+                }
+                $baseName = $item->getBasename('.php');
+                // Ignore backup/temporary files like bak.UserController.php, UserController.bak.php, etc.
+                if (!static::isValidIdentifier($baseName)) {
+                    continue;
+                }
+                if ($controllerSuffix !== '' && !str_ends_with($baseName, $controllerSuffix)) {
+                    continue;
+                }
+                $files[] = $item->getPathname();
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Class from file.
+     * @param string $rootDir
+     * @param string $rootNamespace
+     * @param string $filePath
+     * @return string|null
+     */
+    protected static function classFromFile(string $rootDir, string $rootNamespace, string $filePath): ?string
+    {
+        $rootDir = rtrim(get_realpath($rootDir) ?: $rootDir, '/\\');
+        $filePath = get_realpath($filePath) ?: $filePath;
+
+        $rootLen = strlen($rootDir);
+        if (strncasecmp($filePath, $rootDir, $rootLen) !== 0) {
+            return null;
+        }
+        $relative = ltrim(substr($filePath, $rootLen), '/\\');
+        if ($relative === false || $relative === '') {
+            return null;
+        }
+        if (!str_ends_with($relative, '.php')) {
+            return null;
+        }
+        $relative = substr($relative, 0, -4);
+        $relative = str_replace(['/', '\\'], '\\', $relative);
+        if (!static::isValidPsr4ClassPath($relative)) {
+            return null;
+        }
+        return rtrim($rootNamespace, '\\') . '\\' . $relative;
+    }
+
+    /**
+     * Is valid PSR-4 class path.
+     * @param string $relativeClassPath
+     * @return bool
+     */
+    protected static function isValidPsr4ClassPath(string $relativeClassPath): bool
+    {
+        return (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*$/', $relativeClassPath);
+    }
+
+    /**
+     * Is valid identifier.
+     * @param string $name
+     * @return bool
+     */
+    protected static function isValidIdentifier(string $name): bool
+    {
+        return $name !== '' && (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name);
+    }
+
+    /**
+     * Extract declared class FQCN from file.
+     * Returns the first declared class in the file (ignores anonymous classes).
+     * @param string $filePath
+     * @return string|null
+     */
+    protected static function extractDeclaredClassFromFile(string $filePath): ?string
+    {
+        $code = file_get_contents($filePath);
+        if ($code === false || $code === '') {
+            return null;
+        }
+        // Fast path: no PHP8 attributes -> cannot contain annotation routes.
+        if (strpos($code, '#[') === false) {
+            return null;
+        }
+
+        $tokens = token_get_all($code);
+        $namespace = '';
+        $count = count($tokens);
+        $prevSignificant = null;
+
+        for ($i = 0; $i < $count; $i++) {
+            $token = $tokens[$i];
+            $id = is_array($token) ? $token[0] : null;
+
+            if ($id === T_NAMESPACE) {
+                $ns = '';
+                for ($j = $i + 1; $j < $count; $j++) {
+                    $t = $tokens[$j];
+                    if (is_array($t)) {
+                        if ($t[0] === T_STRING || $t[0] === T_NS_SEPARATOR) {
+                            $ns .= $t[1];
+                            continue;
+                        }
+                        if (defined('T_NAME_QUALIFIED') && $t[0] === T_NAME_QUALIFIED) {
+                            $ns .= $t[1];
+                            continue;
+                        }
+                        if ($t[0] === T_WHITESPACE) {
+                            continue;
+                        }
+                    } else {
+                        if ($t === ';' || $t === '{') {
+                            break;
+                        }
+                    }
+                }
+                $namespace = trim($ns, '\\');
+                continue;
+            }
+
+            if ($id === T_CLASS) {
+                // Skip anonymous class: "new class"
+                if ($prevSignificant === T_NEW) {
+                    continue;
+                }
+                for ($j = $i + 1; $j < $count; $j++) {
+                    $t = $tokens[$j];
+                    if (!is_array($t)) {
+                        continue;
+                    }
+                    if ($t[0] === T_WHITESPACE) {
+                        continue;
+                    }
+                    if ($t[0] === T_STRING) {
+                        $class = $t[1];
+                        return $namespace !== '' ? ($namespace . '\\' . $class) : $class;
+                    }
+                    break;
+                }
+            }
+
+            if (is_array($token)) {
+                if ($id !== T_WHITESPACE && $id !== T_COMMENT && $id !== T_DOC_COMMENT) {
+                    $prevSignificant = $id;
+                }
+            } else {
+                if (trim($token) !== '') {
+                    $prevSignificant = null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalize route prefix.
+     * @param string $prefix
+     * @return string
+     */
+    protected static function normalizeRoutePrefix(string $prefix): string
+    {
+        $prefix = trim($prefix);
+        if ($prefix === '') {
+            return '';
+        }
+        if ($prefix[0] !== '/') {
+            $prefix = '/' . $prefix;
+        }
+        return rtrim($prefix, '/');
+    }
+
+    /**
+     * Normalize route path.
+     * @param string $path
+     * @param string $source
+     * @return string
+     */
+    protected static function normalizeRoutePath(string $path, string $source): string
+    {
+        $path = trim($path);
+        if ($path === '' || $path[0] !== '/') {
+            throw new RuntimeException("Annotation route path must start with '/': $path ($source)");
+        }
+        return $path;
+    }
+
+    /**
+     * Callback to string.
+     * @param mixed $callback
+     * @return string
+     */
+    protected static function callbackToString(mixed $callback): string
+    {
+        if (is_array($callback)) {
+            $callback = array_values($callback);
+            $class = $callback[0] ?? '';
+            $method = $callback[1] ?? '';
+            return $class && $method ? ($class . '::' . $method) : json_encode($callback);
+        }
+        if ($callback instanceof \Closure) {
+            return 'Closure';
+        }
+        if (is_string($callback)) {
+            return $callback;
+        }
+        return get_debug_type($callback);
     }
 
     /**

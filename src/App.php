@@ -45,6 +45,7 @@ use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\Route\Route as RouteObject;
+use Webman\Annotation\Route as RouteAttribute;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
@@ -174,6 +175,15 @@ class App
             $app = $controllerAndAction['app'];
             $controller = $controllerAndAction['controller'];
             $action = $controllerAndAction['action'];
+
+            if ($methodNotAllowed = static::defaultRouteMethodNotAllowedResponse($controller, $action, $request->method())) {
+                $callback = $methodNotAllowed;
+                static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
+                [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
+                static::send($connection, $callback($request), $request);
+                return null;
+            }
+
             $callback = static::getCallback($plugin, $app, [$controller, $action]);
             static::collectCallbacks($key, [$callback, $plugin, $app, $controller, $action, null]);
             [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
@@ -182,6 +192,61 @@ class App
             static::send($connection, static::exceptionResponse($e, $request), $request);
         }
         return null;
+    }
+
+    /**
+     * Method allowlist for default route (no explicit route path).
+     * If action method has Route attributes with empty path, they are treated as allowed methods.
+     * Returns a cached callback producing 405 response when current method is not allowed, otherwise null.
+     * @param string $controllerClass
+     * @param string $action
+     * @param string $httpMethod
+     * @return callable|null
+     */
+    protected static function defaultRouteMethodNotAllowedResponse(string $controllerClass, string $action, string $httpMethod): ?callable
+    {
+        $httpMethod = strtoupper($httpMethod);
+        try {
+            if (!method_exists($controllerClass, $action)) {
+                // Magic __call or other dynamic dispatch: cannot reliably reflect attributes.
+                return null;
+            }
+            $ref = new ReflectionMethod($controllerClass, $action);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $attrs = $ref->getAttributes(RouteAttribute::class, \ReflectionAttribute::IS_INSTANCEOF);
+        if (!$attrs) {
+            return null;
+        }
+
+        $allowed = [];
+        foreach ($attrs as $attr) {
+            /** @var RouteAttribute $route */
+            $route = $attr->newInstance();
+            if ($route->path !== null) {
+                // Explicit route registration annotation, not a default-route restriction.
+                continue;
+            }
+            foreach ($route->methods as $m) {
+                $m = strtoupper((string)$m);
+                $allowed[$m] = $m;
+            }
+        }
+
+        if (!$allowed) {
+            return null;
+        }
+
+        if (isset($allowed[$httpMethod])) {
+            return null;
+        }
+
+        $allowHeader = implode(', ', array_values($allowed));
+        return static function () use ($allowHeader) {
+            return new Response(405, ['Allow' => $allowHeader], '');
+        };
     }
 
     /**
