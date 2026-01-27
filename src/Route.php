@@ -698,6 +698,7 @@ class Route
             $routes = static::buildAnnotationRouteDefinitions($controllerFiles, $root['dir'], $root['ns']);
             static::registerAnnotationRouteDefinitions($routes);
         }
+
     }
 
     /**
@@ -739,10 +740,6 @@ class Route
                 $prefix = static::normalizeRoutePrefix($group->prefix);
             }
 
-            $classMiddlewares = static::collectMiddlewaresFromAttributes(
-                $ref->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF)
-            );
-
             foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
                 if ($method->isConstructor() || $method->isDestructor()) {
                     continue;
@@ -755,10 +752,6 @@ class Route
                 if (!$routeAttrs) {
                     continue;
                 }
-
-                $methodMiddlewares = static::collectMiddlewaresFromAttributes(
-                    $method->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF)
-                );
 
                 foreach ($routeAttrs as $routeAttr) {
                     /** @var RouteAttribute $route */
@@ -780,7 +773,6 @@ class Route
                         'path' => $fullPath,
                         'callback' => [$controllerClass, $method->getName()],
                         'name' => $route->name,
-                        'middlewares' => array_merge($classMiddlewares, $methodMiddlewares),
                     ];
                 }
             }
@@ -800,7 +792,15 @@ class Route
         foreach ($attributes as $attribute) {
             /** @var MiddlewareAttribute $instance */
             $instance = $attribute->newInstance();
-            $middlewares = array_merge($middlewares, $instance->getMiddlewares());
+            foreach ($instance->getMiddlewares() as $middleware) {
+                if (is_string($middleware)) {
+                    $middlewares[] = $middleware;
+                    continue;
+                }
+                if (is_array($middleware) && isset($middleware[0]) && is_string($middleware[0])) {
+                    $middlewares[] = $middleware[0];
+                }
+            }
         }
         return $middlewares;
     }
@@ -997,6 +997,11 @@ class Route
             }
 
             if ($id === T_CLASS) {
+                // Skip class constant usage like Foo::class
+                if ($prevSignificant === T_DOUBLE_COLON) {
+                    $prevSignificant = null;
+                    continue;
+                }
                 // Skip anonymous class: "new class"
                 if ($prevSignificant === T_NEW) {
                     continue;
@@ -1023,7 +1028,7 @@ class Route
                 }
             } else {
                 if (trim($token) !== '') {
-                    $prevSignificant = null;
+                    $prevSignificant = $token;
                 }
             }
         }
