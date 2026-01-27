@@ -997,6 +997,11 @@ class Route
             }
 
             if ($id === T_CLASS) {
+                // Skip class constant usage like Foo::class
+                if ($prevSignificant === '::') {
+                    $prevSignificant = null;
+                    continue;
+                }
                 // Skip anonymous class: "new class"
                 if ($prevSignificant === T_NEW) {
                     continue;
@@ -1023,7 +1028,7 @@ class Route
                 }
             } else {
                 if (trim($token) !== '') {
-                    $prevSignificant = null;
+                    $prevSignificant = $token;
                 }
             }
         }
