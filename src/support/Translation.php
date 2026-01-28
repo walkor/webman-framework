@@ -71,7 +71,7 @@ class Translation
             foreach ($paths as $path) {
                 // Phar support. Compatible with the 'realpath' function in the phar file.
                 if (!$translationsPath = get_realpath($path)) {
-                    throw new NotFoundException("File {$path} not found");
+                    continue;
                 }
 
                 foreach ($classes as $class => $opts) {
