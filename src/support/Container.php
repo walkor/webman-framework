@@ -42,7 +42,6 @@ class Container
      */
     public static function __callStatic(string $name, array $arguments)
     {
-        $plugin = \Webman\App::getPluginByClass($name);
-        return static::instance($plugin)->{$name}(... $arguments);
+        return static::instance()->{$name}(... $arguments);
     }
 }
