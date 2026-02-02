@@ -96,7 +96,7 @@ class App
         }
 
         if ($config['listen'] ?? false) {
-            $worker = new Worker($config['listen'], $config['context']);
+            $worker = new Worker($config['listen'], $config['context'] ?? []);
             $propertyMap = [
                 'name',
                 'count',
