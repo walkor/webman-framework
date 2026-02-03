@@ -44,7 +44,7 @@ use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\Route\Route as RouteObject;
-use Webman\Annotation\Route as RouteAttribute;
+use support\annotation\Route as RouteAttribute;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
@@ -735,6 +735,7 @@ class App
      * Get method parameter metadata from cache.
      * @param ReflectionFunctionAbstract $reflector
      * @return array<int, array<string, mixed>>
+     * @throws ReflectionException
      */
     protected static function getMethodParameterMetadata(ReflectionFunctionAbstract $reflector): array
     {
@@ -748,18 +749,18 @@ class App
             $type = $parameter->getType();
             $typeName = $type?->getName();
             $hasDefault = $parameter->isDefaultValueAvailable();
-            $isEnum = $typeName ? enum_exists($typeName) : false;
-            $isClass = $typeName ? class_exists($typeName) : false;
+            $isEnum = $typeName && enum_exists($typeName);
+            $isClass = $typeName && class_exists($typeName);
             $metadataList[] = [
                 'name' => $parameter->name,
                 'type' => $typeName,
                 'hasDefault' => $hasDefault,
                 'default' => $hasDefault ? $parameter->getDefaultValue() : null,
-                'isRequest' => $typeName ? is_a(static::$requestClass, $typeName, true) : false,
+                'isRequest' => $typeName && is_a(static::$requestClass, $typeName, true),
                 'isEnum' => $isEnum,
                 'isClass' => $isClass,
-                'isModel' => $typeName ? is_a($typeName, Model::class, true) : false,
-                'isThinkModel' => $typeName ? is_a($typeName, ThinkModel::class, true) : false,
+                'isModel' => $typeName && is_a($typeName, Model::class, true),
+                'isThinkModel' => $typeName && is_a($typeName, ThinkModel::class, true),
             ];
         }
 

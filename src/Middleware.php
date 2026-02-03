@@ -17,6 +17,7 @@ namespace Webman;
 
 use Closure;
 use ReflectionAttribute;
+use support\annotation\Middleware as MiddlewareAttribute;
 use Webman\Route\Route;
 use ReflectionClass;
 use ReflectionMethod;
@@ -126,7 +127,7 @@ class Middleware
         if ($reflection instanceof ReflectionClass && $parent_ref = $reflection->getParentClass()){
             self::prepareAttributeMiddlewares($middlewares, $parent_ref);
         }
-        $middlewareAttributes = $reflection->getAttributes(Annotation\Middleware::class, ReflectionAttribute::IS_INSTANCEOF);
+        $middlewareAttributes = $reflection->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
         foreach ($middlewareAttributes as $middlewareAttribute) {
             $middlewareAttributeInstance = $middlewareAttribute->newInstance();
             $middlewares = array_merge($middlewares, $middlewareAttributeInstance->getMiddlewares());

@@ -26,10 +26,12 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use RuntimeException;
-use Webman\Annotation\Middleware as MiddlewareAttribute;
-use Webman\Annotation\DisableDefaultRoute;
-use Webman\Annotation\Route as RouteAttribute;
-use Webman\Annotation\RouteGroup as RouteGroupAttribute;
+use support\annotation\Middleware as MiddlewareAttribute;
+use support\annotation\DisableDefaultRoute;
+use support\annotation\Route as RouteAttribute;
+use support\annotation\RouteGroup as RouteGroupAttribute;
+use Webman\Finder\Finder;
+use Webman\Finder\FileInfo;
 use Webman\Route\Route as RouteObject;
 use function array_diff;
 use function array_values;
@@ -597,7 +599,9 @@ class Route
                     require_once $file;
                 }
             }
+            $t = microtime(true);
             static::loadAnnotationRoutes();
+            echo (microtime(true) - $t), "\r\n\n";
         });
     }
 
@@ -655,7 +659,6 @@ class Route
         if (is_dir($appRoot)) {
             $roots[] = [
                 'dir' => $appRoot,
-                'ns' => 'app\\',
                 'suffix' => (string)Config::get('app.controller_suffix', ''),
             ];
         }
@@ -684,42 +687,61 @@ class Route
                 }
                 $roots[] = [
                     'dir' => $pluginAppDir,
-                    'ns' => 'plugin\\' . $entry . '\\app\\',
                     'suffix' => is_array($pluginAppConfig) ? (string)($pluginAppConfig['controller_suffix'] ?? '') : (string)Config::get("plugin.$entry.app.controller_suffix", ''),
                 ];
             }
         }
 
         foreach ($roots as $root) {
-            $controllerFiles = static::scanControllerFiles($root['dir'], $root['suffix'] ?? '');
+            $controllerFiles = static::findControllerFiles($root['dir'], $root['suffix'] ?? '');
             if (!$controllerFiles) {
                 continue;
             }
-            $routes = static::buildAnnotationRouteDefinitions($controllerFiles, $root['dir'], $root['ns']);
+            $routes = static::buildAnnotationRouteDefinitions($controllerFiles);
             static::registerAnnotationRouteDefinitions($routes);
         }
 
     }
 
     /**
+     * Find controller files using Finder with caching.
+     * @param string $rootDir
+     * @param string $controllerSuffix
+     * @return FileInfo[]
+     */
+    protected static function findControllerFiles(string $rootDir, string $controllerSuffix = ''): array
+    {
+        $controllerPathRegex = $controllerSuffix !== ''
+            ? ('/(^|[\/\\\\])controller[\/\\\\].*' . preg_quote($controllerSuffix, '/') . '\.php$/i')
+            : '/(^|[\/\\\\])controller[\/\\\\].+\.php$/i';
+
+        $finder = Finder::in($rootDir)
+            ->files()
+            ->path($controllerPathRegex)
+            ->hasAttributes(true)
+            ->typeIn(['class'])
+            ->psr4(true);
+
+        return $finder->find();
+    }
+
+    /**
      * Build annotation route definitions.
-     * @param string[] $controllerFiles
-     * @param string $appRoot
+     * @param FileInfo[] $controllerFiles
      * @return array<int,array{methods: string[], path: string, callback: array{0:string,1:string}, name: ?string, middlewares: array}>
      */
-    protected static function buildAnnotationRouteDefinitions(array $controllerFiles, string $rootDir, string $rootNamespace): array
+    protected static function buildAnnotationRouteDefinitions(array $controllerFiles): array
     {
         $definitions = [];
 
-        foreach ($controllerFiles as $file) {
-            $controllerClass = static::classFromFile($rootDir, $rootNamespace, $file);
+        foreach ($controllerFiles as $foundFile) {
+            $meta = $foundFile->meta();
+            $controllerClass = $meta['class'] ?? null;
             if (!$controllerClass) {
                 continue;
             }
-            $declaredClass = static::extractDeclaredClassFromFile($file);
-            if (!$declaredClass || $declaredClass !== $controllerClass) {
-                continue;
-            }
+
+            $file = $foundFile->getPathname();
             if (!class_exists($controllerClass)) {
                 require_once $file;
             }
@@ -826,115 +848,6 @@ class Route
     }
 
     /**
-     * Scan controller files.
-     * @param string $appRoot
-     * @return string[]
-     */
-    protected static function scanControllerFiles(string $appRoot, string $controllerSuffix = ''): array
-    {
-        $appRoot = get_realpath($appRoot) ?: $appRoot;
-        if (!is_dir($appRoot)) {
-            return [];
-        }
-
-        // Performance-first strategy:
-        // - First locate directories named "controller" (case-insensitive).
-        // - Then only scan PHP files under those controller folders.
-        $controllerDirs = [];
-        $pendingDirs = [$appRoot];
-        while ($pendingDirs) {
-            $dir = array_pop($pendingDirs);
-            try {
-                $iterator = new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS);
-            } catch (\Throwable $e) {
-                continue;
-            }
-            foreach ($iterator as $item) {
-                /** @var \SplFileInfo $item */
-                if (!$item->isDir()) {
-                    continue;
-                }
-                $name = $item->getBasename();
-                $path = $item->getPathname();
-                if (strcasecmp($name, 'controller') === 0) {
-                    $controllerDirs[] = $path;
-                } else {
-                    $pendingDirs[] = $path;
-                }
-            }
-        }
-
-        if (!$controllerDirs) {
-            return [];
-        }
-
-        $files = [];
-        foreach ($controllerDirs as $controllerDir) {
-            $it = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($controllerDir, FilesystemIterator::SKIP_DOTS)
-            );
-            foreach ($it as $item) {
-                /** @var \SplFileInfo $item */
-                if (!$item->isFile() || $item->getExtension() !== 'php') {
-                    continue;
-                }
-                $baseName = $item->getBasename('.php');
-                // Ignore backup/temporary files like bak.UserController.php, UserController.bak.php, etc.
-                if (!static::isValidIdentifier($baseName)) {
-                    continue;
-                }
-                if ($controllerSuffix !== '' && !str_ends_with($baseName, $controllerSuffix)) {
-                    continue;
-                }
-                $files[] = $item->getPathname();
-            }
-        }
-
-        return $files;
-    }
-
-    /**
-     * Class from file.
-     * @param string $rootDir
-     * @param string $rootNamespace
-     * @param string $filePath
-     * @return string|null
-     */
-    protected static function classFromFile(string $rootDir, string $rootNamespace, string $filePath): ?string
-    {
-        $rootDir = rtrim(get_realpath($rootDir) ?: $rootDir, '/\\');
-        $filePath = get_realpath($filePath) ?: $filePath;
-
-        $rootLen = strlen($rootDir);
-        if (strncasecmp($filePath, $rootDir, $rootLen) !== 0) {
-            return null;
-        }
-        $relative = ltrim(substr($filePath, $rootLen), '/\\');
-        if ($relative === false || $relative === '') {
-            return null;
-        }
-        if (!str_ends_with($relative, '.php')) {
-            return null;
-        }
-        $relative = substr($relative, 0, -4);
-        $relative = str_replace(['/', '\\'], '\\', $relative);
-        if (!static::isValidPsr4ClassPath($relative)) {
-            return null;
-        }
-        return rtrim($rootNamespace, '\\') . '\\' . $relative;
-    }
-
-    /**
-     * Is valid PSR-4 class path.
-     * @param string $relativeClassPath
-     * @return bool
-     */
-    protected static function isValidPsr4ClassPath(string $relativeClassPath): bool
-    {
-        return (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*$/', $relativeClassPath);
-    }
-
-    /**
      * Is valid identifier.
      * @param string $name
      * @return bool
@@ -942,98 +855,6 @@ class Route
     protected static function isValidIdentifier(string $name): bool
     {
         return $name !== '' && (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name);
-    }
-
-    /**
-     * Extract declared class FQCN from file.
-     * Returns the first declared class in the file (ignores anonymous classes).
-     * @param string $filePath
-     * @return string|null
-     */
-    protected static function extractDeclaredClassFromFile(string $filePath): ?string
-    {
-        $code = file_get_contents($filePath);
-        if ($code === false || $code === '') {
-            return null;
-        }
-        // Fast path: no PHP8 attributes -> cannot contain annotation routes.
-        if (strpos($code, '#[') === false) {
-            return null;
-        }
-
-        $tokens = token_get_all($code);
-        $namespace = '';
-        $count = count($tokens);
-        $prevSignificant = null;
-
-        for ($i = 0; $i < $count; $i++) {
-            $token = $tokens[$i];
-            $id = is_array($token) ? $token[0] : null;
-
-            if ($id === T_NAMESPACE) {
-                $ns = '';
-                for ($j = $i + 1; $j < $count; $j++) {
-                    $t = $tokens[$j];
-                    if (is_array($t)) {
-                        if ($t[0] === T_STRING || $t[0] === T_NS_SEPARATOR) {
-                            $ns .= $t[1];
-                            continue;
-                        }
-                        if (defined('T_NAME_QUALIFIED') && $t[0] === T_NAME_QUALIFIED) {
-                            $ns .= $t[1];
-                            continue;
-                        }
-                        if ($t[0] === T_WHITESPACE) {
-                            continue;
-                        }
-                    } else {
-                        if ($t === ';' || $t === '{') {
-                            break;
-                        }
-                    }
-                }
-                $namespace = trim($ns, '\\');
-                continue;
-            }
-
-            if ($id === T_CLASS) {
-                // Skip class constant usage like Foo::class
-                if ($prevSignificant === T_DOUBLE_COLON) {
-                    $prevSignificant = null;
-                    continue;
-                }
-                // Skip anonymous class: "new class"
-                if ($prevSignificant === T_NEW) {
-                    continue;
-                }
-                for ($j = $i + 1; $j < $count; $j++) {
-                    $t = $tokens[$j];
-                    if (!is_array($t)) {
-                        continue;
-                    }
-                    if ($t[0] === T_WHITESPACE) {
-                        continue;
-                    }
-                    if ($t[0] === T_STRING) {
-                        $class = $t[1];
-                        return $namespace !== '' ? ($namespace . '\\' . $class) : $class;
-                    }
-                    break;
-                }
-            }
-
-            if (is_array($token)) {
-                if ($id !== T_WHITESPACE && $id !== T_COMMENT && $id !== T_DOC_COMMENT) {
-                    $prevSignificant = $id;
-                }
-            } else {
-                if (trim($token) !== '') {
-                    $prevSignificant = $token;
-                }
-            }
-        }
-
-        return null;
     }
 
     /**
