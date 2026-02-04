@@ -56,6 +56,53 @@ class FileInfo extends File
     }
 
     /**
+     * Get declared class (FQCN) from meta.
+     * Example: "App\\Controller\\IndexController"
+     *
+     * @return string|null
+     */
+    public function class(): ?string
+    {
+        $class = $this->meta['class'] ?? null;
+        if (!is_string($class) || $class === '') {
+            return null;
+        }
+        return ltrim($class, '\\');
+    }
+
+    /**
+     * Get declared short class name (without namespace).
+     * Example: "IndexController"
+     *
+     * @return string|null
+     */
+    public function className(): ?string
+    {
+        $fqcn = $this->class();
+        if ($fqcn === null) {
+            return null;
+        }
+        $pos = strrpos($fqcn, '\\');
+        return $pos === false ? $fqcn : substr($fqcn, $pos + 1);
+    }
+
+    /**
+     * Get declared namespace.
+     * Example: "App\\Controller"
+     *
+     * @return string|null
+     */
+    public function namespace(): ?string
+    {
+        $fqcn = $this->class();
+        if ($fqcn === null) {
+            return null;
+        }
+        $pos = strrpos($fqcn, '\\');
+        return $pos === false ? null : substr($fqcn, 0, $pos);
+    }
+
+    /**
      * Set meta info.
      * @param array $meta
      * @return $this

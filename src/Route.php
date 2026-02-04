@@ -30,8 +30,8 @@ use support\annotation\Middleware as MiddlewareAttribute;
 use support\annotation\DisableDefaultRoute;
 use support\annotation\Route as RouteAttribute;
 use support\annotation\RouteGroup as RouteGroupAttribute;
-use Webman\Finder\Finder;
 use Webman\Finder\FileInfo;
+use Webman\Finder\ControllerFinder;
 use Webman\Route\Route as RouteObject;
 use function array_diff;
 use function array_values;
@@ -599,9 +599,7 @@ class Route
                     require_once $file;
                 }
             }
-            $t = microtime(true);
             static::loadAnnotationRoutes();
-            echo (microtime(true) - $t), "\r\n\n";
         });
     }
 
@@ -653,76 +651,13 @@ class Route
      */
     protected static function loadAnnotationRoutes(): void
     {
-        $roots = [];
-
-        $appRoot = app_path();
-        if (is_dir($appRoot)) {
-            $roots[] = [
-                'dir' => $appRoot,
-                'suffix' => (string)Config::get('app.controller_suffix', ''),
-            ];
+        $controllerFiles = ControllerFinder::files('*');
+        if (!$controllerFiles) {
+            return;
         }
+        $routes = static::buildAnnotationRouteDefinitions($controllerFiles);
+        static::registerAnnotationRouteDefinitions($routes);
 
-        $pluginBase = base_path('plugin');
-        if (is_dir($pluginBase)) {
-            foreach (scandir($pluginBase) ?: [] as $entry) {
-                if ($entry === '.' || $entry === '..') {
-                    continue;
-                }
-                $pluginDir = $pluginBase . DIRECTORY_SEPARATOR . $entry;
-                if (!is_dir($pluginDir)) {
-                    continue;
-                }
-                if (!static::isValidIdentifier($entry)) {
-                    continue;
-                }
-                // Only load enabled plugins.
-                $pluginAppConfig = Config::get("plugin.$entry.app");
-                if (!$pluginAppConfig) {
-                    continue;
-                }
-                $pluginAppDir = $pluginDir . DIRECTORY_SEPARATOR . 'app';
-                if (!is_dir($pluginAppDir)) {
-                    continue;
-                }
-                $roots[] = [
-                    'dir' => $pluginAppDir,
-                    'suffix' => is_array($pluginAppConfig) ? (string)($pluginAppConfig['controller_suffix'] ?? '') : (string)Config::get("plugin.$entry.app.controller_suffix", ''),
-                ];
-            }
-        }
-
-        foreach ($roots as $root) {
-            $controllerFiles = static::findControllerFiles($root['dir'], $root['suffix'] ?? '');
-            if (!$controllerFiles) {
-                continue;
-            }
-            $routes = static::buildAnnotationRouteDefinitions($controllerFiles);
-            static::registerAnnotationRouteDefinitions($routes);
-        }
-
-    }
-
-    /**
-     * Find controller files using Finder with caching.
-     * @param string $rootDir
-     * @param string $controllerSuffix
-     * @return FileInfo[]
-     */
-    protected static function findControllerFiles(string $rootDir, string $controllerSuffix = ''): array
-    {
-        $controllerPathRegex = $controllerSuffix !== ''
-            ? ('/(^|[\/\\\\])controller[\/\\\\].*' . preg_quote($controllerSuffix, '/') . '\.php$/i')
-            : '/(^|[\/\\\\])controller[\/\\\\].+\.php$/i';
-
-        $finder = Finder::in($rootDir)
-            ->files()
-            ->path($controllerPathRegex)
-            ->hasAttributes(true)
-            ->typeIn(['class'])
-            ->psr4(true);
-
-        return $finder->find();
     }
 
     /**
@@ -845,16 +780,6 @@ class Route
             }
             static::$registeringSource = null;
         }
-    }
-
-    /**
-     * Is valid identifier.
-     * @param string $name
-     * @return bool
-     */
-    protected static function isValidIdentifier(string $name): bool
-    {
-        return $name !== '' && (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name);
     }
 
     /**
