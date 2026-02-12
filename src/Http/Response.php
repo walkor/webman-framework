@@ -53,6 +53,8 @@ class Response extends \Workerman\Protocols\Http\Response
     {
         $this->withFile($file);
         if ($downloadName) {
+            // Sanitize to prevent header injection
+            $downloadName = str_replace(['"', "\r", "\n", "\0"], '', $downloadName);
             $this->header('Content-Disposition', "attachment; filename=\"$downloadName\"");
         }
         return $this;

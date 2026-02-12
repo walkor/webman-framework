@@ -357,7 +357,7 @@ class App
             $response->exception($e);
             return $response;
         } catch (Throwable $e) {
-            $response = new Response(500, [], static::config($plugin ?? '', 'app.debug', true) ? (string)$e : $e->getMessage());
+            $response = new Response(500, [], static::config($plugin ?? '', 'app.debug') ? (string)$e : $e->getMessage());
             $response->exception($e);
             return $response;
         }
@@ -905,7 +905,7 @@ class App
             }
             static::collectCallbacks($key, [function () use ($file) {
                 return static::execPhpFile($file);
-            }, '', '', '', '', null]);
+            }, $plugin, '', '', '', null]);
             [, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
             static::send($connection, static::execPhpFile($file), $request);
             return true;
@@ -942,7 +942,7 @@ class App
         unset($request->context['session']);
         $keepAlive = $request->header('connection');
         if (($keepAlive === null && $request->protocolVersion() === '1.1')
-            || $keepAlive === 'keep-alive' || $keepAlive === 'Keep-Alive'
+            || ($keepAlive !== null && \strcasecmp($keepAlive, 'keep-alive') === 0)
             || (is_a($response, Response::class) && $response->getHeader('Transfer-Encoding') === 'chunked')
         ) {
             $connection->send($response);
@@ -1186,8 +1186,9 @@ class App
         // Try to include php file.
         try {
             include $file;
-        } catch (Exception $e) {
-            echo $e;
+        } catch (Throwable $e) {
+            ob_get_clean();
+            throw $e;
         }
         return ob_get_clean();
     }
