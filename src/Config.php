@@ -47,6 +47,11 @@ class Config
     protected static $loaded = false;
 
     /**
+     * @var array Flat cache for repeated get() lookups.
+     */
+    protected static $flatCache = [];
+
+    /**
      * Load.
      * @param string $configPath
      * @param array $excludeFile
@@ -56,6 +61,7 @@ class Config
     public static function load(string $configPath, array $excludeFile = [], ?string $key = null)
     {
         static::$configPath = $configPath;
+        static::$flatCache = [];
         if (!$configPath) {
             return;
         }
@@ -94,6 +100,7 @@ class Config
     public static function clear()
     {
         static::$config = [];
+        static::$flatCache = [];
     }
 
     /**
@@ -235,6 +242,9 @@ class Config
         if ($key === null) {
             return static::$config;
         }
+        if (isset(static::$flatCache[$key])) {
+            return static::$flatCache[$key];
+        }
         $keyArray = explode('.', $key);
         $value = static::$config;
         $found = true;
@@ -249,6 +259,12 @@ class Config
             $value = $value[$index];
         }
         if ($found) {
+            if (static::$loaded) {
+                static::$flatCache[$key] = $value;
+                if (count(static::$flatCache) > 1024) {
+                    unset(static::$flatCache[key(static::$flatCache)]);
+                }
+            }
             return $value;
         }
         return static::read($key, $default);
