@@ -96,30 +96,32 @@ class Middleware
         if ($isController && $controller[0] && class_exists($controller[0])) {
             $cacheKey = $controller[0] . '::' . $controller[1];
             if (isset(static::$controllerMiddlewareCache[$cacheKey])) {
-                $middlewares = static::$controllerMiddlewareCache[$cacheKey];
+                $cached = static::$controllerMiddlewareCache[$cacheKey];
+                $middlewares = array_merge($cached['before_route'], $routeMiddlewares, $cached['after_route']);
             } else {
+                $beforeRoute = [];
+                $afterRoute = [];
                 // Controller middleware annotation
                 $reflectionClass = new ReflectionClass($controller[0]);
-                self::prepareAttributeMiddlewares($middlewares, $reflectionClass);
+                self::prepareAttributeMiddlewares($beforeRoute, $reflectionClass);
                 // Controller middleware property
                 if ($reflectionClass->hasProperty('middleware')) {
                     $defaultProperties = $reflectionClass->getDefaultProperties();
                     $middlewaresClasses = $defaultProperties['middleware'];
                     foreach ((array)$middlewaresClasses as $className) {
-                        $middlewares[] = [$className, 'process'];
+                        $beforeRoute[] = [$className, 'process'];
                     }
                 }
-                // Method middleware annotation
+                // Method middleware annotation (route must be between controller and method)
                 if ($reflectionClass->hasMethod($controller[1])) {
-                    self::prepareAttributeMiddlewares($middlewares, $reflectionClass->getMethod($controller[1]));
+                    self::prepareAttributeMiddlewares($afterRoute, $reflectionClass->getMethod($controller[1]));
                 }
-                static::$controllerMiddlewareCache[$cacheKey] = $middlewares;
+                $middlewares = array_merge($beforeRoute, $routeMiddlewares, $afterRoute);
+                static::$controllerMiddlewareCache[$cacheKey] = ['before_route' => $beforeRoute, 'after_route' => $afterRoute];
                 if (count(static::$controllerMiddlewareCache) > 1024) {
                     unset(static::$controllerMiddlewareCache[key(static::$controllerMiddlewareCache)]);
                 }
             }
-            // Route middleware
-            $middlewares = array_merge($middlewares, $routeMiddlewares);
         } else {
             // Route middleware
             $middlewares = array_merge($middlewares, $routeMiddlewares);
