@@ -33,18 +33,16 @@ use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
-use support\exception\BusinessException;
 use support\exception\MissingInputException;
 use support\exception\RecordNotFoundException;
 use support\exception\InputTypeException;
 use Throwable;
-use Webman\Context;
 use Webman\Exception\ExceptionHandler;
 use Webman\Exception\ExceptionHandlerInterface;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\Route\Route as RouteObject;
-use support\annotation\Route as RouteAttribute;
+use support\annotation\route\Route as RouteAttribute;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
@@ -237,7 +235,7 @@ class App
                         }
                     }
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
             }
             $allowedCache[$cacheKey] = $allowed;
             if (count($allowedCache) > 1024) {
@@ -253,7 +251,7 @@ class App
 
         $allowHeader = implode(', ', array_values($allowed));
         return static function () use ($allowHeader) {
-            return new Response(405, ['Allow' => $allowHeader], '');
+            return new Response(405, ['Allow' => $allowHeader], '405 Method Not Allowed');
         };
     }
 
@@ -406,7 +404,7 @@ class App
                 $alwaysReturnsResponse = $returnType instanceof \ReflectionNamedType
                     && !$returnType->allowsNull()
                     && is_a($returnType->getName(), Response::class, true);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
             }
         }
         if ($isController) {

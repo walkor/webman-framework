@@ -5,9 +5,9 @@ namespace support\annotation;
 use Attribute;
 
 /**
- * Disable webman's default route mapping for a controller or action.
+ * @deprecated Use support\annotation\route\DisableDefaultRoute instead.
  */
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD)]
-class DisableDefaultRoute
+class DisableDefaultRoute extends \support\annotation\route\DisableDefaultRoute
 {
 }

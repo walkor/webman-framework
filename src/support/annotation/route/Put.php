@@ -1,6 +1,6 @@
 <?php
 
-namespace support\annotation;
+namespace support\annotation\route;
 
 use Attribute;
 

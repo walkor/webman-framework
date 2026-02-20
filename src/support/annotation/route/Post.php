@@ -1,14 +1,14 @@
 <?php
 
-namespace support\annotation;
+namespace support\annotation\route;
 
 use Attribute;
 
 /**
- * Shortcut for #[Route(methods: 'GET', ...)].
+ * Shortcut for #[Route(methods: 'POST', ...)].
  */
 #[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-class Get extends Route
+class Post extends Route
 {
     /**
      * @param string|null $path Route path. Null means default-route method restriction only.
@@ -16,7 +16,7 @@ class Get extends Route
      */
     public function __construct(?string $path = null, ?string $name = null)
     {
-        parent::__construct($path, 'GET', $name);
+        parent::__construct($path, 'POST', $name);
     }
 }
 

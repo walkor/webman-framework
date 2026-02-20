@@ -1,14 +1,14 @@
 <?php
 
-namespace support\annotation;
+namespace support\annotation\route;
 
 use Attribute;
 
 /**
- * Shortcut for #[Route(methods: ['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS'], ...)].
+ * Shortcut for #[Route(methods: 'PATCH', ...)].
  */
 #[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-class Any extends Route
+class Patch extends Route
 {
     /**
      * @param string|null $path Route path. Null means default-route method restriction only.
@@ -16,7 +16,7 @@ class Any extends Route
      */
     public function __construct(?string $path = null, ?string $name = null)
     {
-        parent::__construct($path, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], $name);
+        parent::__construct($path, 'PATCH', $name);
     }
 }
 
