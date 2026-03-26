@@ -54,17 +54,18 @@ class Middleware
             if (!is_array($middlewares)) {
                 throw new RuntimeException('Bad middleware config');
             }
-            if ($appName === '@') {
-                $plugin = '';
-            }
-            if (strpos($appName, 'plugin.') !== false) {
-                $explode = explode('.', $appName, 4);
-                $plugin = $explode[1];
-                $appName = $explode[2] ?? '';
+            $pluginKey = $plugin;
+            $appKey = $appName;
+            if ($appKey === '@') {
+                $pluginKey = '';
+            } elseif (strpos($appKey, 'plugin.') !== false) {
+                $explode = explode('.', $appKey, 4);
+                $pluginKey = $explode[1];
+                $appKey = $explode[2] ?? '';
             }
             foreach ($middlewares as $className) {
                 if (method_exists($className, 'process')) {
-                    static::$instances[$plugin][$appName][] = [$className, 'process'];
+                    static::$instances[$pluginKey][$appKey][] = [$className, 'process'];
                 } else {
                     // @todo Log
                     echo "middleware $className::process not exsits\n";
