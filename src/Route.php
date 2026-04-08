@@ -717,8 +717,7 @@ class Route
                         // Null path means "method restriction only" for default route, do not register.
                         continue;
                     }
-                    $path = static::normalizeRoutePath($route->path, $controllerClass . '::' . $method->getName());
-                    $fullPath = $prefix ? rtrim($prefix, '/') . $path : $path;
+                    $path = $prefix. static::normalizeRoutePath($prefix, $route->path);
 
                     $methods = [];
                     foreach ($route->methods as $m) {
@@ -727,7 +726,7 @@ class Route
 
                     $definitions[] = [
                         'methods' => $methods,
-                        'path' => $fullPath,
+                        'path' => $path,
                         'callback' => [$controllerClass, $method->getName()],
                         'name' => $route->name,
                     ];
@@ -801,15 +800,15 @@ class Route
 
     /**
      * Normalize route path.
+     * @param string $prefix
      * @param string $path
-     * @param string $source
      * @return string
      */
-    protected static function normalizeRoutePath(string $path, string $source): string
+    protected static function normalizeRoutePath(string $prefix, string $path): string
     {
         $path = trim($path);
-        if ($path === '' || $path[0] !== '/') {
-            throw new RuntimeException("Annotation route path must start with '/': $path ($source)");
+        if ($prefix === '' && $path[0] !== '/') {
+            $path = '/' . $path;
         }
         return $path;
     }
