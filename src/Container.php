@@ -2,7 +2,6 @@
 
 namespace Webman;
 
-use Psr\Container\ContainerInterface;
 use Webman\Exception\NotFoundException;
 use function array_key_exists;
 use function class_exists;
@@ -75,7 +74,7 @@ class Container implements ContainerInterface
      * @param array $definitions
      * @return $this
      */
-    public function addDefinitions(array $definitions): Container
+    public function addDefinitions(array $definitions): static
     {
         $this->definitions = array_merge($this->definitions, $definitions);
         return $this;

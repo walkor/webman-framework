@@ -26,7 +26,6 @@ use support\exception\InputValueException;
 use support\exception\PageNotFoundException;
 use think\Model as ThinkModel;
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
