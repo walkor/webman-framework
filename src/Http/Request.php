@@ -87,28 +87,17 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public function only(array $keys): array
     {
-        $all = $this->all();
-        $result = [];
-        foreach ($keys as $key) {
-            if (isset($all[$key])) {
-                $result[$key] = $all[$key];
-            }
-        }
-        return $result;
+        return array_filter($this->all() ?? [], fn($k) => in_array($k, $keys), ARRAY_FILTER_USE_KEY);
     }
 
     /**
      * Except
      * @param array $keys
-     * @return mixed|null
+     * @return array
      */
-    public function except(array $keys)
+    public function except(array $keys): array
     {
-        $all = $this->all();
-        foreach ($keys as $key) {
-            unset($all[$key]);
-        }
-        return $all;
+        return array_filter($this->all() ?? [], fn($k) => !in_array($k, $keys), ARRAY_FILTER_USE_KEY);
     }
 
     /**
