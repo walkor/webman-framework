@@ -90,7 +90,7 @@ class Request extends \Workerman\Protocols\Http\Request
         $all = $this->all();
         $result = [];
         foreach ($keys as $key) {
-            if (isset($all[$key])) {
+            if (array_key_exists($key, $all)) {
                 $result[$key] = $all[$key];
             }
         }
