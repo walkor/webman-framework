@@ -991,11 +991,67 @@ class App
                 $callback = static::getFallback($plugin);
                 return $callback($request);
             }
+            $fileSize = (int) filesize($file);
+            $range = static::parseRangeHeader($request->header('range'), $fileSize);
+            if ($range === false) {
+                return (new Response(416, [
+                    'Content-Range' => "bytes */$fileSize",
+                    'Accept-Ranges' => 'bytes',
+                ]));
+            }
+            if ($range !== null) {
+                [$offset, $length] = $range;
+                return (new Response())->withFile($file, $offset, $length);
+            }
             return (new Response())->file($file);
         }, [], false), '', '', '', '', null]);
         [$callback, $request->plugin, $request->app, $request->controller, $request->action, $request->route] = static::$callbacks[$key];
         static::send($connection, $callback($request), $request);
         return true;
+    }
+
+    /**
+     * Parse a single HTTP byte range.
+     *
+     * @param string|null $rangeHeader
+     * @param int $fileSize
+     * @return array{0:int,1:int}|false|null
+     */
+    protected static function parseRangeHeader(?string $rangeHeader, int $fileSize): array|false|null
+    {
+        if ($rangeHeader === null || $rangeHeader === '' || $fileSize <= 0) {
+            return null;
+        }
+        if (!preg_match('/^bytes=(\d*)-(\d*)$/', trim($rangeHeader), $matches)) {
+            return null;
+        }
+
+        $start = $matches[1];
+        $end = $matches[2];
+        if ($start === '' && $end === '') {
+            return false;
+        }
+
+        if ($start === '') {
+            $suffixLength = (int) $end;
+            if ($suffixLength <= 0) {
+                return false;
+            }
+            $offset = max(0, $fileSize - $suffixLength);
+            return [$offset, $fileSize - $offset];
+        }
+
+        $offset = (int) $start;
+        if ($offset >= $fileSize) {
+            return false;
+        }
+
+        $offsetEnd = $end === '' ? $fileSize - 1 : min((int) $end, $fileSize - 1);
+        if ($offsetEnd < $offset) {
+            return false;
+        }
+
+        return [$offset, $offsetEnd - $offset + 1];
     }
 
     /**
