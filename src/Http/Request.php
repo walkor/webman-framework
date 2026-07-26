@@ -17,9 +17,13 @@ namespace Webman\Http;
 use Webman\Route\Route;
 use function current;
 use function filter_var;
+use function inet_ntop;
+use function inet_pton;
 use function ip2long;
 use function is_array;
+use function strlen;
 use function strpos;
+use function substr;
 use const FILTER_FLAG_IPV4;
 use const FILTER_FLAG_NO_PRIV_RANGE;
 use const FILTER_FLAG_NO_RES_RANGE;
@@ -309,9 +313,29 @@ class Request extends \Workerman\Protocols\Http\Request
      */
     public static function isIntranetIp(string $ip): bool
     {
+        // TcpConnection may return an IPv6 address enclosed in brackets.
+        if (strlen($ip) > 2
+            && $ip[0] === '['
+            && substr($ip, -1) === ']'
+            && strpos($ip, ':') !== false
+        ) {
+            $ip = substr($ip, 1, -1);
+        }
         // Not validate ip .
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {
             return false;
+        }
+        // Convert IPv4-mapped IPv6 addresses so their embedded IPv4 address
+        // is checked against the IPv4 private and reserved ranges below.
+        $binaryIp = inet_pton($ip);
+        if ($binaryIp !== false
+            && strlen($binaryIp) === 16
+            && substr($binaryIp, 0, 12) === "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff"
+        ) {
+            $mappedIp = inet_ntop(substr($binaryIp, 12));
+            if ($mappedIp !== false) {
+                $ip = $mappedIp;
+            }
         }
         // Is intranet ip ? For IPv4, the result of false may not be accurate, so we need to check it manually later .
         if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
