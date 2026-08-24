@@ -14,6 +14,8 @@
 
 namespace Webman\Finder;
 
+use support\Log;
+
 /**
  * Class Finder
  * File finder with PHP file caching support.
@@ -344,7 +346,7 @@ class Finder
         try {
             $entries = scandir($dir, SCANDIR_SORT_NONE);
             if ($entries === false) {
-                error_log("Failed to scan directory $dir");
+                Log::error("Failed to scan directory $dir");
                 return;
             }
 
@@ -369,7 +371,7 @@ class Finder
                 $files[] = static::normalizePath($path);
             }
         } catch (\Throwable $e) {
-            error_log("Failed to scan directory $dir: {$e->getMessage()}");
+            Log::error("Failed to scan directory $dir: {$e->getMessage()}");
         }
     }
 
