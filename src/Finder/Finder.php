@@ -342,39 +342,34 @@ class Finder
     protected function scanDirectoryRecursive(string $dir, array $excludeSet, array &$files): void
     {
         try {
-            error_clear_last();
-            $entries = @scandir($dir, SCANDIR_SORT_NONE);
+            $entries = scandir($dir, SCANDIR_SORT_NONE);
+            if ($entries === false) {
+                error_log("Failed to scan directory $dir");
+                return;
+            }
+
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+
+                $path = $dir . DIRECTORY_SEPARATOR . $entry;
+                if (is_dir($path)) {
+                    if (!isset($excludeSet[$entry]) && !is_link($path)) {
+                        $this->scanDirectoryRecursive($path, $excludeSet, $files);
+                    }
+                    continue;
+                }
+
+                // Skip if only files mode and not a file
+                if ($this->onlyFiles && !is_file($path)) {
+                    continue;
+                }
+
+                $files[] = static::normalizePath($path);
+            }
         } catch (\Throwable $e) {
             error_log("Failed to scan directory $dir: {$e->getMessage()}");
-            return;
-        }
-
-        if ($entries === false) {
-            $error = error_get_last();
-            $message = $error['message'] ?? 'unknown error';
-            error_log("Failed to scan directory $dir: $message");
-            return;
-        }
-
-        foreach ($entries as $entry) {
-            if ($entry === '.' || $entry === '..') {
-                continue;
-            }
-
-            $path = $dir . DIRECTORY_SEPARATOR . $entry;
-            if (is_dir($path)) {
-                if (!isset($excludeSet[$entry]) && !is_link($path)) {
-                    $this->scanDirectoryRecursive($path, $excludeSet, $files);
-                }
-                continue;
-            }
-
-            // Skip if only files mode and not a file
-            if ($this->onlyFiles && !is_file($path)) {
-                continue;
-            }
-
-            $files[] = static::normalizePath($path);
         }
     }
 
