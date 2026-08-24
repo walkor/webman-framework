@@ -14,11 +14,6 @@
 
 namespace Webman\Finder;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use RecursiveCallbackFilterIterator;
-
 /**
  * Class Finder
  * File finder with PHP file caching support.
@@ -332,40 +327,55 @@ class Finder
         $files = [];
         $excludeSet = array_flip($this->excludeDirs);
 
-        try {
-            $directoryIterator = new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS);
-            $filterIterator = new RecursiveCallbackFilterIterator(
-                $directoryIterator,
-                function (\SplFileInfo $current) use ($excludeSet) {
-                    if ($current->isDir()) {
-                        return !isset($excludeSet[$current->getBasename()]);
-                    }
-                    return true;
-                }
-            );
-            $iterator = new RecursiveIteratorIterator($filterIterator, RecursiveIteratorIterator::SELF_FIRST);
-
-            foreach ($iterator as $item) {
-                /** @var \SplFileInfo $item */
-                $basename = $item->getBasename();
-
-                // Skip excluded directories
-                if ($item->isDir()) {
-                    continue;
-                }
-
-                // Skip if only files mode and not a file
-                if ($this->onlyFiles && !$item->isFile()) {
-                    continue;
-                }
-
-                $files[] = static::normalizePath($item->getPathname());
-            }
-        } catch (\Throwable $e) {
-            // Ignore unreadable directories
-        }
+        $this->scanDirectoryRecursive($dir, $excludeSet, $files);
 
         return $files;
+    }
+
+    /**
+     * Scan a directory recursively.
+     * @param string $dir
+     * @param array $excludeSet
+     * @param array $files
+     * @return void
+     */
+    protected function scanDirectoryRecursive(string $dir, array $excludeSet, array &$files): void
+    {
+        try {
+            error_clear_last();
+            $entries = @scandir($dir, SCANDIR_SORT_NONE);
+        } catch (\Throwable $e) {
+            error_log("Failed to scan directory $dir: {$e->getMessage()}");
+            return;
+        }
+
+        if ($entries === false) {
+            $error = error_get_last();
+            $message = $error['message'] ?? 'unknown error';
+            error_log("Failed to scan directory $dir: $message");
+            return;
+        }
+
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $path = $dir . DIRECTORY_SEPARATOR . $entry;
+            if (is_dir($path)) {
+                if (!isset($excludeSet[$entry]) && !is_link($path)) {
+                    $this->scanDirectoryRecursive($path, $excludeSet, $files);
+                }
+                continue;
+            }
+
+            // Skip if only files mode and not a file
+            if ($this->onlyFiles && !is_file($path)) {
+                continue;
+            }
+
+            $files[] = static::normalizePath($path);
+        }
     }
 
     /**
