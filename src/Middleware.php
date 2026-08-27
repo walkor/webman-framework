@@ -104,7 +104,7 @@ class Middleware
                 $afterRoute = [];
                 // Controller middleware annotation
                 $reflectionClass = new ReflectionClass($controller[0]);
-                self::prepareAttributeMiddlewares($beforeRoute, $reflectionClass);
+                static::prepareAttributeMiddlewares($beforeRoute, $reflectionClass);
                 // Controller middleware property
                 if ($reflectionClass->hasProperty('middleware')) {
                     $defaultProperties = $reflectionClass->getDefaultProperties();
@@ -115,7 +115,7 @@ class Middleware
                 }
                 // Method middleware annotation (route must be between controller and method)
                 if ($reflectionClass->hasMethod($controller[1])) {
-                    self::prepareAttributeMiddlewares($afterRoute, $reflectionClass->getMethod($controller[1]));
+                    static::prepareAttributeMiddlewares($afterRoute, $reflectionClass->getMethod($controller[1]));
                 }
                 $middlewares = array_merge($beforeRoute, $routeMiddlewares, $afterRoute);
                 static::$controllerMiddlewareCache[$cacheKey] = ['before_route' => $beforeRoute, 'after_route' => $afterRoute];
@@ -139,10 +139,10 @@ class Middleware
      * @param ReflectionClass|ReflectionMethod $reflection
      * @return void
      */
-    private static function prepareAttributeMiddlewares(array &$middlewares, ReflectionClass|ReflectionMethod $reflection): void
+    protected static function prepareAttributeMiddlewares(array &$middlewares, ReflectionClass|ReflectionMethod $reflection): void
     {
         if ($reflection instanceof ReflectionClass && $parent_ref = $reflection->getParentClass()) {
-            self::prepareAttributeMiddlewares($middlewares, $parent_ref);
+            static::prepareAttributeMiddlewares($middlewares, $parent_ref);
         }
         $middlewareAttributes = $reflection->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
         foreach ($middlewareAttributes as $middlewareAttribute) {

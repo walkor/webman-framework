@@ -573,7 +573,7 @@ class Route
         static::$registeringSource = null;
 
         static::$dispatcher = simpleDispatcher(function (RouteCollector $route) use ($paths) {
-            Route::setCollector($route);
+            static::setCollector($route);
             foreach ($paths as $configPath) {
                 $routeConfigFile = $configPath . '/route.php';
                 if (is_file($routeConfigFile)) {
