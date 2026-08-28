@@ -171,9 +171,9 @@ class App
 
             $controllerAndAction = static::parseControllerAction($path);
             $plugin = $controllerAndAction['plugin'] ?? static::getPluginByPath($path);
-            if (!$controllerAndAction || Route::isDefaultRouteDisabled($plugin, $controllerAndAction['app'] ?: '*') ||
-                Route::isDefaultRouteDisabled($controllerAndAction['controller']) ||
-                Route::isDefaultRouteDisabled([$controllerAndAction['controller'], $controllerAndAction['action']])) {
+            if (!$controllerAndAction || \Webman\Route::isDefaultRouteDisabled($plugin, $controllerAndAction['app'] ?: '*') ||
+                \Webman\Route::isDefaultRouteDisabled($controllerAndAction['controller']) ||
+                \Webman\Route::isDefaultRouteDisabled([$controllerAndAction['controller'], $controllerAndAction['action']])) {
                 $request->plugin = $plugin;
                 $callback = static::getFallback($plugin, $status);
                 $request->app = $request->controller = $request->action = '';
@@ -323,7 +323,7 @@ class App
     protected static function getFallback(string $plugin = '', int $status = 404): Closure
     {
         // When route, controller and action not found, try to use Route::fallback
-        return Route::getFallback($plugin, $status) ?: function () {
+        return \Webman\Route::getFallback($plugin, $status) ?: function ($req = null) {
             throw new PageNotFoundException();
         };
     }
@@ -905,7 +905,7 @@ class App
      */
     protected static function findRoute(TcpConnection $connection, string $path, string $key, $request, &$status): bool
     {
-        $routeInfo = Route::dispatch($request->method(), $path);
+        $routeInfo = \Webman\Route::dispatch($request->method(), $path);
         if ($routeInfo[0] === Dispatcher::FOUND) {
             $status = 200;
             $routeInfo[0] = 'route';
