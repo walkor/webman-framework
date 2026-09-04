@@ -205,14 +205,15 @@ class Config
         $iterator = new RecursiveIteratorIterator($dirIterator);
         foreach ($iterator as $file) {
             /** var SplFileInfo $file */
-            if (is_dir($file) || $file->getExtension() != 'php' || in_array($file->getBaseName('.php'), $excludeFile)) {
+            if ($file->isDir() || $file->getExtension() != 'php' || in_array($file->getBaseName('.php'), $excludeFile)) {
                 continue;
             }
+            $filePath = $file->getPathname();
             $appConfigFile = $file->getPath() . '/app.php';
             if (!is_file($appConfigFile)) {
                 continue;
             }
-            $relativePath = str_replace($configPath . DIRECTORY_SEPARATOR, '', substr($file, 0, -4));
+            $relativePath = str_replace($configPath . DIRECTORY_SEPARATOR, '', substr($filePath, 0, -4));
             $explode = array_reverse(explode(DIRECTORY_SEPARATOR, $relativePath));
             if (count($explode) >= 2) {
                 $appConfig = include $appConfigFile;
@@ -220,7 +221,7 @@ class Config
                     continue;
                 }
             }
-            $config = include $file;
+            $config = include $filePath;
             foreach ($explode as $section) {
                 $tmp = [];
                 $tmp[$section] = $config;
