@@ -588,7 +588,8 @@ class Route
                     if ($file->getBaseName('.php') !== 'route') {
                         continue;
                     }
-                    $appConfigFile = pathinfo($file, PATHINFO_DIRNAME) . '/app.php';
+                    $filePath = $file->getPathname();
+                    $appConfigFile = pathinfo($filePath, PATHINFO_DIRNAME) . '/app.php';
                     if (!is_file($appConfigFile)) {
                         continue;
                     }
@@ -596,7 +597,7 @@ class Route
                     if (empty($appConfig['enable'])) {
                         continue;
                     }
-                    require_once $file;
+                    require_once $filePath;
                 }
             }
             static::loadAnnotationRoutes();
