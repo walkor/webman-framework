@@ -2,7 +2,9 @@
 
 namespace support;
 
+use function current;
 use function defined;
+use function is_array;
 use function is_callable;
 use function is_file;
 use function method_exists;
@@ -19,6 +21,7 @@ class Plugin
         static::findHelper();
         $psr4 = static::getPsr4($event);
         foreach ($psr4 as $namespace => $path) {
+            static::findInstallFile($event, $path);
             $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
             if (!defined($pluginConst)) {
                 continue;
@@ -40,6 +43,7 @@ class Plugin
         static::findHelper();
         $psr4 = static::getPsr4($event);
         foreach ($psr4 as $namespace => $path) {
+            static::findInstallFile($event, $path);
             $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
             if (!defined($pluginConst)) {
                 continue;
@@ -66,6 +70,7 @@ class Plugin
         static::findHelper();
         $psr4 = static::getPsr4($event);
         foreach ($psr4 as $namespace => $path) {
+            static::findInstallFile($event, $path);
             $pluginConst = "\\{$namespace}Install::WEBMAN_PLUGIN";
             if (!defined($pluginConst)) {
                 continue;
@@ -74,6 +79,23 @@ class Plugin
             if (is_callable($uninstallFunction)) {
                 $uninstallFunction();
             }
+        }
+    }
+
+    /**
+     * FindInstallFile.
+     * @param mixed $event
+     * @param mixed $path
+     * @return void
+     */
+    protected static function findInstallFile($event, $path)
+    {
+        $operation = $event->getOperation();
+        $package = method_exists($operation, 'getPackage') ? $operation->getPackage() : $operation->getTargetPackage();
+        $srcPath = is_array($path) ? current($path) : $path;
+        $file = base_path() . "/vendor/{$package->getName()}/$srcPath/Install.php";
+        if (is_file($file)) {
+            require_once $file;
         }
     }
 
