@@ -698,8 +698,6 @@ class Route
                 $prefix = static::normalizeRoutePrefix($group->prefix);
             }
 
-            $classMiddlewares = static::collectMiddlewaresFromReflection($ref);
-
             foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
                 if ($method->isConstructor() || $method->isDestructor()) {
                     continue;
@@ -712,8 +710,6 @@ class Route
                 if (!$routeAttrs) {
                     continue;
                 }
-
-                $methodMiddlewares = static::collectMiddlewaresFromReflection($method);
 
                 foreach ($routeAttrs as $routeAttr) {
                     /** @var RouteAttribute $route */
@@ -739,7 +735,6 @@ class Route
                         'path' => $fullPath,
                         'callback' => [$controllerClass, $method->getName()],
                         'name' => $route->name,
-                        'middlewares' => array_merge($classMiddlewares, $methodMiddlewares),
                     ];
                 }
             }
@@ -749,23 +744,7 @@ class Route
     }
 
     /**
-     * Collect middlewares from a class or method's attributes.
-     * @param ReflectionClass|ReflectionMethod $reflection
-     * @return array
-     */
-    protected static function collectMiddlewaresFromReflection(ReflectionClass|ReflectionMethod $reflection): array
-    {
-        $middlewares = [];
-        if ($reflection instanceof ReflectionClass && $parent = $reflection->getParentClass()) {
-            $middlewares = static::collectMiddlewaresFromReflection($parent);
-        }
-        return array_merge($middlewares, static::collectMiddlewaresFromAttributes(
-            $reflection->getAttributes(MiddlewareAttribute::class, ReflectionAttribute::IS_INSTANCEOF)
-        ));
-    }
-
-    /**
-     * Collect middleware class names from attributes.
+     * Collect middlewares from attributes.
      * @param array<ReflectionAttribute> $attributes
      * @return array
      */
@@ -802,7 +781,7 @@ class Route
                 $route->name($definition['name']);
             }
             if (!empty($definition['middlewares'])) {
-                $route->attributeMiddleware($definition['middlewares']);
+                $route->middleware($definition['middlewares']);
             }
             static::$registeringSource = null;
         }

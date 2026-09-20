@@ -90,7 +90,7 @@ class Middleware
         $middlewares = $routeMiddlewares = [];
         // Route middleware
         if ($route) {
-            foreach (array_reverse($route->getRouteMiddleware()) as $className) {
+            foreach (array_reverse($route->getMiddleware()) as $className) {
                 $routeMiddlewares[] = [$className, 'process'];
             }
         }
