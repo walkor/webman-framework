@@ -52,6 +52,15 @@ class Route
     protected $middlewares = [];
 
     /**
+     * Attribute middlewares exposed as route metadata.
+     *
+     * They are resolved separately by Webman\Middleware at runtime, so keeping
+     * them out of $middlewares prevents duplicate execution.
+     * @var array
+     */
+    protected $attributeMiddlewares = [];
+
+    /**
      * @var array
      */
     protected $params = [];
@@ -105,6 +114,22 @@ class Route
     }
 
     /**
+     * Add attribute middlewares as route metadata.
+     *
+     * Attribute middlewares are executed through controller reflection rather
+     * than as route middlewares. Keeping them as metadata makes them visible to
+     * route inspection tools without adding them to the execution chain twice.
+     * @param mixed $middleware
+     * @return $this
+     */
+    public function attributeMiddleware(mixed $middleware): Route
+    {
+        $middlewares = is_array($middleware) ? array_reverse($middleware) : [$middleware];
+        $this->attributeMiddlewares = array_merge($this->attributeMiddlewares, $middlewares);
+        return $this;
+    }
+
+    /**
      * GetPath.
      * @return string
      */
@@ -137,7 +162,18 @@ class Route
      */
     public function getMiddleware(): array
     {
-        return $this->middlewares;
+        return $this->attributeMiddlewares
+            ? array_merge($this->middlewares, $this->attributeMiddlewares)
+            : $this->middlewares;
+    }
+
+    /**
+     * Get middlewares explicitly attached to this route.
+     * @return array
+     */
+    public function getRouteMiddleware(): array
+    {
+        return $this->attributeMiddlewares ? $this->middlewares : $this->getMiddleware();
     }
 
     /**
