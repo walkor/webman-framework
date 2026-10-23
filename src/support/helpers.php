@@ -14,6 +14,7 @@
  */
 
 use support\Container;
+use support\PharStream;
 use support\Request;
 use support\Response;
 use support\Translation;
@@ -673,4 +674,8 @@ if (!function_exists('input')) {
     {
         return is_null($param) ? \request()->all() : \request()->input($param, $default);
     }
+}
+
+if (is_phar()) {
+    PharStream::register();
 }

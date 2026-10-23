@@ -1,0 +1,319 @@
+<?php
+/**
+ * This file is part of webman.
+ *
+ * Licensed under The MIT License
+ * For full copyright and license information, please see the MIT-LICENSE.txt
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @author    walkor<walkor@workerman.net>
+ * @copyright walkor<walkor@workerman.net>
+ * @link      http://www.workerman.net/
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT License
+ */
+
+namespace support;
+
+use Phar;
+use RuntimeException;
+
+/**
+ * Serializes access to the running phar across forked processes.
+ *
+ * The phar extension reads an entry by seeking the archive descriptor and then
+ * reading from it. A compressed archive keeps that descriptor (a decompressed
+ * temp file) open for the whole process lifetime, so after fork all workers
+ * share one file offset and interleaved seek/read pairs return foreign bytes.
+ *
+ * Every native phar call is wrapped in an exclusive flock on the archive file.
+ * The lock covers a single call, never the lifetime of an open stream, so a
+ * long-lived handle (e.g. a file being sent to a slow client) does not block
+ * other workers.
+ */
+final class PharStream
+{
+    private const LOCK_ATTEMPTS = 10;
+
+    /** @var resource|null */
+    public $context;
+
+    /** @var resource|null */
+    private $stream = null;
+
+    /** @var resource|null */
+    private $directory = null;
+
+    private static string $archive = '';
+
+    /** @var resource|null */
+    private static $lock = null;
+
+    private static int $lockPid = 0;
+
+    private static bool $locked = false;
+
+    private static bool $native = false;
+
+    /**
+     * Only needed where workers are forked. Windows has no fork, and its
+     * mandatory file locks would make the archive unreadable while locked.
+     */
+    public static function register(): void
+    {
+        if (self::$archive !== '' || !function_exists('pcntl_fork')) {
+            return;
+        }
+        $archive = Phar::running(false);
+        if ($archive === '' || !in_array('phar', stream_get_wrappers(), true)) {
+            return;
+        }
+        stream_wrapper_unregister('phar');
+        if (!stream_wrapper_register('phar', self::class)) {
+            stream_wrapper_restore('phar');
+            trigger_error('Unable to register phar stream wrapper', E_USER_WARNING);
+            return;
+        }
+        self::$archive = $archive;
+    }
+
+    /**
+     * @param callable $operation
+     * @return mixed
+     */
+    private static function locked(callable $operation): mixed
+    {
+        if (self::$locked) {
+            return $operation();
+        }
+        $hooks = self::suspendFileHooks();
+        try {
+            $lock = self::acquire();
+            self::$locked = true;
+            try {
+                return $operation();
+            } finally {
+                self::$locked = false;
+                flock($lock, LOCK_UN);
+            }
+        } finally {
+            self::resumeFileHooks($hooks);
+        }
+    }
+
+    /**
+     * Run a path based operation with the original phar wrapper in place.
+     *
+     * The user wrapper is unregistered before the original one is restored:
+     * restoring over it directly never frees the user wrapper and leaks memory
+     * on every call.
+     *
+     * @param callable $operation
+     * @return mixed
+     */
+    private static function native(callable $operation): mixed
+    {
+        return self::locked(static function () use ($operation) {
+            if (self::$native) {
+                return $operation();
+            }
+            stream_wrapper_unregister('phar');
+            stream_wrapper_restore('phar');
+            self::$native = true;
+            try {
+                return $operation();
+            } finally {
+                self::$native = false;
+                stream_wrapper_unregister('phar');
+                stream_wrapper_register('phar', self::class);
+            }
+        });
+    }
+
+    /**
+     * flock() locks belong to the open file description, which forked
+     * processes share, so every process needs its own handle.
+     *
+     * @return resource
+     */
+    private static function acquire()
+    {
+        $pid = getmypid();
+        if (self::$lockPid !== $pid) {
+            $lock = fopen(self::$archive, 'rb');
+            if ($lock === false) {
+                throw new RuntimeException('Unable to open ' . self::$archive . ' for locking');
+            }
+            if (is_resource(self::$lock)) {
+                fclose(self::$lock);
+            }
+            self::$lock = $lock;
+            self::$lockPid = $pid;
+        }
+        // A signal handler installed without SA_RESTART interrupts a blocking flock.
+        for ($attempt = 1; !flock(self::$lock, LOCK_EX); $attempt++) {
+            if ($attempt === self::LOCK_ATTEMPTS) {
+                throw new RuntimeException('Unable to lock ' . self::$archive);
+            }
+        }
+        return self::$lock;
+    }
+
+    /**
+     * Swoole's file hook turns flock into a yielding call, letting another
+     * coroutine of the same process enter the critical section.
+     */
+    private static function suspendFileHooks(): int
+    {
+        if (!defined('SWOOLE_HOOK_FILE')) {
+            return 0;
+        }
+        $flags = \Swoole\Runtime::getHookFlags();
+        if (!($flags & SWOOLE_HOOK_FILE)) {
+            return 0;
+        }
+        \Swoole\Runtime::setHookFlags($flags & ~SWOOLE_HOOK_FILE);
+        return $flags;
+    }
+
+    private static function resumeFileHooks(int $flags): void
+    {
+        if ($flags !== 0) {
+            \Swoole\Runtime::setHookFlags($flags);
+        }
+    }
+
+    /**
+     * The original wrapper reports normalized entry paths, which become
+     * __FILE__ of included files and keys of include_once.
+     */
+    private static function normalize(string $path): string
+    {
+        $prefix = 'phar://' . self::$archive . '/';
+        if (!str_starts_with($path, $prefix)) {
+            return $path;
+        }
+        $segments = [];
+        foreach (explode('/', substr($path, strlen($prefix))) as $segment) {
+            if ($segment === '..') {
+                array_pop($segments);
+            } elseif ($segment !== '' && $segment !== '.') {
+                $segments[] = $segment;
+            }
+        }
+        return $prefix . implode('/', $segments);
+    }
+
+    public function stream_open(string $path, string $mode, int $options, ?string &$openedPath): bool
+    {
+        $context = $this->context;
+        $stream = self::native(static fn() => $options & STREAM_REPORT_ERRORS
+            ? fopen($path, $mode, false, $context)
+            : @fopen($path, $mode, false, $context));
+        if ($stream === false) {
+            return false;
+        }
+        $this->stream = $stream;
+        $openedPath = self::normalize($path);
+        return true;
+    }
+
+    public function stream_read(int $count): string|false
+    {
+        return self::locked(fn() => fread($this->stream, $count));
+    }
+
+    public function stream_write(string $data): int
+    {
+        return self::locked(fn() => (int)fwrite($this->stream, $data));
+    }
+
+    public function stream_seek(int $offset, int $whence): bool
+    {
+        return self::locked(fn() => fseek($this->stream, $offset, $whence) === 0);
+    }
+
+    public function stream_flush(): bool
+    {
+        return self::locked(fn() => fflush($this->stream));
+    }
+
+    public function stream_close(): void
+    {
+        self::locked(fn() => fclose($this->stream));
+        $this->stream = null;
+    }
+
+    public function stream_tell(): int
+    {
+        return (int)ftell($this->stream);
+    }
+
+    public function stream_eof(): bool
+    {
+        return feof($this->stream);
+    }
+
+    public function stream_stat(): array|false
+    {
+        return fstat($this->stream);
+    }
+
+    public function stream_set_option(int $option, int $arg1, int $arg2): bool
+    {
+        return false;
+    }
+
+    public function url_stat(string $path, int $flags): array|false
+    {
+        $stat = $flags & STREAM_URL_STAT_LINK ? 'lstat' : 'stat';
+        return self::native(static fn() => $flags & STREAM_URL_STAT_QUIET ? @$stat($path) : $stat($path));
+    }
+
+    public function dir_opendir(string $path, int $options): bool
+    {
+        $directory = self::native(static fn() => opendir($path));
+        if ($directory === false) {
+            return false;
+        }
+        $this->directory = $directory;
+        return true;
+    }
+
+    public function dir_readdir(): string|false
+    {
+        return readdir($this->directory);
+    }
+
+    public function dir_rewinddir(): bool
+    {
+        rewinddir($this->directory);
+        return true;
+    }
+
+    public function dir_closedir(): bool
+    {
+        closedir($this->directory);
+        $this->directory = null;
+        return true;
+    }
+
+    public function mkdir(string $path, int $mode, int $options): bool
+    {
+        return self::native(static fn() => mkdir($path, $mode, (bool)($options & STREAM_MKDIR_RECURSIVE)));
+    }
+
+    public function rmdir(string $path, int $options): bool
+    {
+        return self::native(static fn() => rmdir($path));
+    }
+
+    public function rename(string $pathFrom, string $pathTo): bool
+    {
+        return self::native(static fn() => rename($pathFrom, $pathTo));
+    }
+
+    public function unlink(string $path): bool
+    {
+        return self::native(static fn() => unlink($path));
+    }
+}
