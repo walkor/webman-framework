@@ -652,7 +652,7 @@ class Route
      */
     protected static function loadAnnotationRoutes(): void
     {
-        $controllerFiles = ControllerFinder::files('*');
+        $controllerFiles = ControllerFinder::files('*', false);
         if (!$controllerFiles) {
             return;
         }

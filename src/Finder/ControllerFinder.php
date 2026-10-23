@@ -41,9 +41,10 @@ class ControllerFinder
      * Find controller files by scope.
      *
      * @param string|null $scope
+     * @param bool $attributesOnly When false, all controller files are returned (attribute filtering skipped).
      * @return FileInfo[]
      */
-    public static function files(?string $scope = null): array
+    public static function files(?string $scope = null, bool $attributesOnly = true): array
     {
         $roots = static::resolveRoots($scope);
         if (!$roots) {
@@ -54,7 +55,7 @@ class ControllerFinder
         foreach ($roots as $root) {
             $dir = $root['dir'];
             $suffix = $root['suffix'] ?? '';
-            $controllerFiles = static::findControllerFiles($dir, $suffix);
+            $controllerFiles = static::findControllerFiles($dir, $suffix, $attributesOnly);
             foreach ($controllerFiles as $file) {
                 $resultsByPath[$file->getPathname()] = $file;
             }
@@ -203,9 +204,10 @@ class ControllerFinder
      *
      * @param string $rootDir
      * @param string $controllerSuffix
+     * @param bool $attributesOnly
      * @return FileInfo[]
      */
-    protected static function findControllerFiles(string $rootDir, string $controllerSuffix = ''): array
+    protected static function findControllerFiles(string $rootDir, string $controllerSuffix = '', bool $attributesOnly = true): array
     {
         $controllerPathRegex = $controllerSuffix !== ''
             ? ('/(^|[\/\\\\])controller[\/\\\\].*' . preg_quote($controllerSuffix, '/') . '\.php$/i')
@@ -214,9 +216,11 @@ class ControllerFinder
         $finder = Finder::in($rootDir)
             ->files()
             ->path($controllerPathRegex)
-            ->hasAttributes(true)
             ->typeIn(['class'])
             ->psr4(true);
+        if ($attributesOnly) {
+            $finder->hasAttributes(true);
+        }
 
         return $finder->find();
     }
