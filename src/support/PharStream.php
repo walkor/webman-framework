@@ -93,7 +93,8 @@ final class PharStream
             return;
         }
         if (filter_var(ini_get('swow.async_file'), FILTER_VALIDATE_BOOL) || filter_var(ini_get('swow.async_tty'), FILTER_VALIDATE_BOOL)) {
-            trigger_error('Swow async IO interleaves phar reads across coroutines, set swow.async_file=0 and swow.async_tty=0 in php.ini', E_USER_WARNING);
+            $config = PHP_SAPI === 'micro' ? 'custom_ini of the webman/console build config' : 'php.ini';
+            trigger_error("Swow async IO interleaves phar reads across coroutines, set swow.async_file=0 and swow.async_tty=0 in $config", E_USER_WARNING);
         }
     }
 
@@ -154,12 +155,15 @@ final class PharStream
      * flock() locks belong to the open file description, which forked
      * processes share, so every process needs its own handle.
      *
+     * PHP closes resources newest first on shutdown, so a phar stream opened
+     * before this process created its handle is closed after the handle.
+     *
      * @return resource
      */
     private static function acquire()
     {
         $pid = getmypid();
-        if (self::$lockPid !== $pid) {
+        if (self::$lockPid !== $pid || !is_resource(self::$lock)) {
             $lock = fopen(self::$archive, 'rb');
             if ($lock === false) {
                 throw new RuntimeException('Unable to open ' . self::$archive . ' for locking');
@@ -184,10 +188,14 @@ final class PharStream
      * hook swaps the ops of every plain file stream, including the archive
      * descriptor and the lock handle. Either one lets another coroutine of
      * this process enter the critical section inside flock or fread.
+     *
+     * Hooked calls only yield inside a coroutine. Outside one the flags are
+     * left alone, which also keeps away from the Swoole runtime while PHP
+     * closes the remaining streams on shutdown, where changing them crashes.
      */
     private static function suspendFileHooks(): int
     {
-        if (!defined('SWOOLE_HOOK_STDIO')) {
+        if (!defined('SWOOLE_HOOK_STDIO') || \Swoole\Coroutine::getCid() < 0) {
             return 0;
         }
         $flags = \Swoole\Runtime::getHookFlags();
