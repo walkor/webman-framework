@@ -21,14 +21,20 @@ use RuntimeException;
  * Serializes access to the running phar across forked processes.
  *
  * The phar extension reads an entry by seeking the archive descriptor and then
- * reading from it. A compressed archive keeps that descriptor (a decompressed
- * temp file) open for the whole process lifetime, so after fork all workers
+ * reading from it. That descriptor stays open for the whole process lifetime
+ * when the archive is compressed (it is a decompressed temp file) or tar/zip
+ * based (the running stub keeps it referenced), so after fork all workers
  * share one file offset and interleaved seek/read pairs return foreign bytes.
  *
  * Every native phar call is wrapped in an exclusive flock on the archive file.
  * The lock covers a single call, never the lifetime of an open stream, so a
  * long-lived handle (e.g. a file being sent to a slow client) does not block
  * other workers.
+ *
+ * The lock alone is not enough. PHP satisfies a forward seek from its read
+ * buffer and then continues with read() at the kernel offset. After fork that
+ * offset belongs to whichever worker used the descriptor last, so a read is
+ * preceded by a seek that PHP cannot satisfy from the buffer.
  */
 final class PharStream
 {
@@ -74,6 +80,21 @@ final class PharStream
             return;
         }
         self::$archive = $archive;
+        self::checkSwowAsyncIo();
+    }
+
+    /**
+     * Swow's async file IO cannot be switched off at runtime, so a coroutine
+     * would yield inside flock or fread and let another one enter.
+     */
+    private static function checkSwowAsyncIo(): void
+    {
+        if (!extension_loaded('swow') || !filter_var(ini_get('swow.enable'), FILTER_VALIDATE_BOOL)) {
+            return;
+        }
+        if (filter_var(ini_get('swow.async_file'), FILTER_VALIDATE_BOOL) || filter_var(ini_get('swow.async_tty'), FILTER_VALIDATE_BOOL)) {
+            trigger_error('Swow async IO interleaves phar reads across coroutines, set swow.async_file=0 and swow.async_tty=0 in php.ini', E_USER_WARNING);
+        }
     }
 
     /**
@@ -159,19 +180,22 @@ final class PharStream
     }
 
     /**
-     * Swoole's file hook turns flock into a yielding call, letting another
-     * coroutine of the same process enter the critical section.
+     * Swoole's file hook makes newly opened plain files yield, and its stdio
+     * hook swaps the ops of every plain file stream, including the archive
+     * descriptor and the lock handle. Either one lets another coroutine of
+     * this process enter the critical section inside flock or fread.
      */
     private static function suspendFileHooks(): int
     {
-        if (!defined('SWOOLE_HOOK_FILE')) {
+        if (!defined('SWOOLE_HOOK_STDIO')) {
             return 0;
         }
         $flags = \Swoole\Runtime::getHookFlags();
-        if (!($flags & SWOOLE_HOOK_FILE)) {
+        $fileHooks = $flags & (SWOOLE_HOOK_FILE | SWOOLE_HOOK_STDIO);
+        if ($fileHooks === 0) {
             return 0;
         }
-        \Swoole\Runtime::setHookFlags($flags & ~SWOOLE_HOOK_FILE);
+        \Swoole\Runtime::setHookFlags($flags & ~$fileHooks);
         return $flags;
     }
 
@@ -219,12 +243,29 @@ final class PharStream
 
     public function stream_read(int $count): string|false
     {
-        return self::locked(fn() => fread($this->stream, $count));
+        return self::locked(function () use ($count) {
+            $this->resync();
+            return fread($this->stream, $count);
+        });
     }
 
     public function stream_write(string $data): int
     {
         return self::locked(fn() => (int)fwrite($this->stream, $data));
+    }
+
+    /**
+     * Move the shared descriptor to this stream's position with a real lseek.
+     *
+     * Only a forward seek can be served from PHP's read buffer. Seeking to the
+     * end of the entry first makes the seek back to the current position
+     * reach the descriptor and drop whatever was buffered before the lock.
+     */
+    private function resync(): void
+    {
+        $position = (int)ftell($this->stream);
+        fseek($this->stream, 0, SEEK_END);
+        fseek($this->stream, $position);
     }
 
     public function stream_seek(int $offset, int $whence): bool
